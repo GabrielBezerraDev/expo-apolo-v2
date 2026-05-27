@@ -11,7 +11,16 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.valorlogocrexpo"
-    }
+      "package": "com.valorlogocrexpo",
+      "permissions": ["android.permission.CAMERA"]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permita que o Valorlog use a câmera para escanear etiquetas."
+        }
+      ]
+    ]
   }
 }
