@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { PackageCheck, PackageOpen, Warehouse } from 'lucide-react-native';
-import { MainTabsParamList } from '../config/navigation';
+import { MainTabsParamList } from '../config/navigation.protocol';
 import { EntryListScreen } from '../features/pallets/screens/EntryListScreen';
 import { ExitListScreen } from '../features/pallets/screens/ExitListScreen';
 import { PalletListScreen } from '../features/pallets/screens/PalletListScreen';

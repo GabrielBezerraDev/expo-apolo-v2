@@ -1,9 +1,8 @@
-import React, { ReactNode, useState } from 'react';
-import { Pressable, TextInput, TextInputProps } from 'react-native';
-import { Eye, EyeOff } from 'lucide-react-native';
-import { styled, Text, View } from 'tamagui';
-import { typography } from '../config/typography';
-import { useThemeMode } from '../hooks/useThemeMode';
+import React, { ReactNode, useState } from "react";
+import { Pressable, TextInputProps } from "react-native";
+import { Eye, EyeOff } from "lucide-react-native";
+import { useThemeMode } from "../../../hooks/useThemeMode";
+import { ErrorText, InputFrame, Label, StyledInput, Wrapper } from "./styled";
 
 type Props = TextInputProps & {
   label?: string;
@@ -12,31 +11,6 @@ type Props = TextInputProps & {
   rightIcon?: ReactNode;
   isPassword?: boolean;
 };
-
-const Wrapper = styled(View, { gap: 7 });
-
-const Label = styled(Text, { ...typography.label, color: '$text', textTransform: 'uppercase' });
-
-const InputFrame = styled(View, {
-  minHeight: 52,
-  borderRadius: 14,
-  borderWidth: 1,
-  backgroundColor: '$background',
-  flexDirection: 'row',
-  alignItems: 'center',
-  paddingHorizontal: 14,
-  gap: 10,
-  variants: {
-    hasError: {
-      true: { borderColor: '$error' },
-      false: { borderColor: '$border' },
-    },
-  } as const,
-});
-
-const StyledInput = styled(TextInput, { flex: 1, ...typography.bodyLarge, padding: 0 });
-
-const ErrorText = styled(Text, { ...typography.bodySmall, color: '$error' });
 
 export function AppInput({ label, error, leftIcon, rightIcon, isPassword, secureTextEntry, ...props }: Props) {
   const { theme } = useThemeMode();

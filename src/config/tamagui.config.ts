@@ -1,5 +1,5 @@
 import { createTamagui, createTokens } from 'tamagui';
-import { darkTheme, lightTheme } from './theme';
+import { darkTheme, lightTheme } from '../shared/theme';
 
 const tokens = createTokens({
   color: {

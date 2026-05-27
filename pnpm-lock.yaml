@@ -72,6 +72,9 @@ importers:
       '@babel/plugin-transform-export-namespace-from':
         specifier: ^7.29.7
         version: 7.29.7(@babel/core@7.29.7)
+      '@types/node':
+        specifier: ^25.9.1
+        version: 25.9.1
       '@types/react':
         specifier: ~19.1.10
         version: 19.1.17

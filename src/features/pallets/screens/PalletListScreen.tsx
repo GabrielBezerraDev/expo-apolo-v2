@@ -8,7 +8,7 @@ export function PalletListScreen() {
   return (
     <ListScreenShell title="Pallets">
       <ScrollView contentContainerStyle={{ gap: 14 }} showsVerticalScrollIndicator={false}>
-        {palletItems.map(item => <PalletCard key={item.id} item={item} />)}
+        {[...palletItems,...palletItems].map((item,index) => <PalletCard key={index} item={item} />)}
       </ScrollView>
     </ListScreenShell>
   );
