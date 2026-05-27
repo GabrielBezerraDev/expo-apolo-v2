@@ -9,11 +9,6 @@ export function PalletListScreen() {
   return (
     <ListScreenShell
       title="Pallets"
-      floatActions={[
-        { Icon: PackagePlus, label: 'Novo pallet', onPress: () => Alert.alert('Novo pallet') },
-        { Icon: Search, label: 'Buscar', onPress: () => Alert.alert('Buscar pallet') },
-        { Icon: SlidersHorizontal, label: 'Filtros', onPress: () => Alert.alert('Filtros') },
-      ]}
     >
       <ScrollView contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
         {[...palletItems,...palletItems].map((item,index) => <PalletCard key={index} item={item} />)}
