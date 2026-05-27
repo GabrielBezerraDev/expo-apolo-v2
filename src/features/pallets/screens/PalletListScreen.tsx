@@ -7,7 +7,7 @@ import { ListScreenShell } from './ListScreenShell';
 export function PalletListScreen() {
   return (
     <ListScreenShell title="Pallets">
-      <ScrollView contentContainerStyle={{ gap: 14 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
         {[...palletItems,...palletItems].map((item,index) => <PalletCard key={index} item={item} />)}
       </ScrollView>
     </ListScreenShell>

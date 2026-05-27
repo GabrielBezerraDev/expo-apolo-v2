@@ -1,7 +1,7 @@
 import React, { ReactNode, useState } from "react";
 import { Pressable, TextInputProps } from "react-native";
 import { Eye, EyeOff } from "lucide-react-native";
-import { useThemeMode } from "../../../hooks/useThemeMode";
+import { useThemeMode } from "@hooks/useThemeMode";
 import { ErrorText, InputFrame, Label, StyledInput, Wrapper } from "./styled";
 
 type Props = TextInputProps & {

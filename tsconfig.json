@@ -2,7 +2,17 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "lib": ["esnext", "dom"]
+    "lib": ["esnext", "dom"],
+    "baseUrl": ".",
+    "paths": {
+      "@application/*": ["src/application/*"],
+      "@config/*": ["src/config/*"],
+      "@features/*": ["src/features/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@navigation/*": ["src/navigation/*"],
+      "@shared/*": ["src/shared/*"],
+      "@styles/*": ["src/styles/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]

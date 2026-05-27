@@ -12,6 +12,21 @@ module.exports = function (api) {
           config: './src/config/tamagui.config.ts',
         },
       ],
+      [
+        'module-resolver',
+        {
+          root: ['./src'],
+          alias: {
+            '@application': './src/application',
+            '@config': './src/config',
+            '@features': './src/features',
+            '@hooks': './src/hooks',
+            '@navigation': './src/navigation',
+            '@shared': './src/shared',
+            '@styles': './src/styles',
+          },
+        },
+      ],
     ],
   };
 };

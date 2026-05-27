@@ -35,7 +35,7 @@ export function AppCard({
       {header ? (
         <Header orange={variant === "orangeHeader"}>
           {typeof header === "string" ? (
-            <CardTitle>{header}</CardTitle>
+            <CardTitle colorVariant="white">{header}</CardTitle>
           ) : (
             header
           )}

@@ -1,15 +1,17 @@
 import { Pressable } from "react-native";
 import { styled, Text, View } from "tamagui";
-import { typography } from "../../typography";
+import { typography } from "@shared/typography";
 
 export const Card = styled(View, {
   backgroundColor: "$card",
   borderRadius: 18,
   overflow: "hidden",
+  borderColor: '$primary',
+  borderWidth: 1.6,
   shadowColor: "#000000",
-  shadowOpacity: 0.12,
+  shadowOpacity: 0.6,
   shadowRadius: 8,
-  shadowOffset: { width: 0, height: 3 },
+  shadowOffset: { width: 2, height: 6 },
 });
 
 export const Header = styled(View, {

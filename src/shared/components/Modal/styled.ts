@@ -1,6 +1,6 @@
 import { Pressable } from "react-native";
 import { ScrollView, styled, Text, View } from "tamagui";
-import { typography } from "../../typography";
+import { typography } from "@shared/typography";
 
 export const ModalContainer = styled(View, {
   position: "absolute",

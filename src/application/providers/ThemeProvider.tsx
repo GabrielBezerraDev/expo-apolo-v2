@@ -1,9 +1,9 @@
 import React, { PropsWithChildren, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { TamaguiProvider, Theme } from 'tamagui';
-import tamaguiConfig from '../../config/tamagui.config';
-import { appThemes, ThemeMode } from '../../shared/theme';
-import { ThemeModeContext } from '../../hooks/useThemeMode';
+import tamaguiConfig from '@config/tamagui.config';
+import { ThemeModeContext } from '@hooks/useThemeMode';
+import { appThemes, ThemeMode } from '@shared/theme';
 
 export function AppThemeProvider({ children }: PropsWithChildren) {
   const systemMode = useColorScheme();
