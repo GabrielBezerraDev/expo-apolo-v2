@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "ValorlogOcrExpo",
+    "slug": "valorlog-ocr-expo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.valorlogocrexpo"
+    }
+  }
+}
