@@ -1,6 +1,6 @@
 import { TextInput } from "react-native";
 import { styled, Text, View } from "tamagui";
-import { typography } from "../../typography";
+import { typography } from "@shared/typography";
 
 export const Wrapper = styled(View, { gap: 7 });
 

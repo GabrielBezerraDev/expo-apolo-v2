@@ -1,7 +1,7 @@
 import React from "react";
 import { styled, Text, View } from "tamagui";
-import { AppCard } from "../../../shared/components/AppCard";
-import { typography } from "../../../shared/typography";
+import { AppCard } from "@shared/components/AppCard";
+import { typography } from "@shared/typography";
 import { PalletItem } from "../mocks/palletMock";
 
 const Header = styled(View, {

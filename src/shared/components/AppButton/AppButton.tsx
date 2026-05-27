@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator } from 'react-native';
-import { useThemeMode } from '../../../hooks/useThemeMode';
+import { useThemeMode } from '@hooks/useThemeMode';
 import { ButtonRoot, ButtonText } from './styled';
 
 

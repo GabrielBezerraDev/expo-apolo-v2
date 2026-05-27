@@ -7,7 +7,7 @@ import { ListScreenShell } from './ListScreenShell';
 export function EntryListScreen() {
   return (
     <ListScreenShell title="Entradas">
-      <ScrollView contentContainerStyle={{ gap: 14 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
         {entryOperations.map(item => <OperationCard key={item.id} item={item} />)}
       </ScrollView>
     </ListScreenShell>

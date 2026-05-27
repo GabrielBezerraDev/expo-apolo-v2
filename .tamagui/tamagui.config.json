@@ -25730,9 +25730,11 @@
         "border": "#333333",
         "primary": "#ff6200ff",
         "primaryDark": "#d94f00",
+        "primaryLight": "#ffdec7",
         "error": "#ff6b6b",
         "success": "#66bb6a",
         "warning": "#ffca28",
+        "grey": "#5f5e5e",
         "color": "#ffffff",
         "borderColor": "#333333",
         "id": "dark"
@@ -25756,9 +25758,11 @@
         "border": "#dedede",
         "primary": "#ff6200ff",
         "primaryDark": "#d94f00",
+        "primaryLight": "#fccaa9",
         "error": "#d32f2f",
         "success": "#2e7d32",
         "warning": "#f9a825",
+        "grey": "#5f5e5e",
         "color": "#1f1f1f",
         "borderColor": "#dedede",
         "id": "light"

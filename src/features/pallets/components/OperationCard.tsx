@@ -1,7 +1,7 @@
 import React from 'react';
 import { styled, Text, View } from 'tamagui';
-import { AppCard } from '../../../shared/components/AppCard';
-import { typography } from '../../../shared/typography';
+import { AppCard } from '@shared/components/AppCard';
+import { typography } from '@shared/typography';
 import { OperationItem } from '../mocks/palletMock';
 
 const HeaderRow = styled(View, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' });

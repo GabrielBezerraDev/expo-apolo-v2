@@ -5,12 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Check } from 'lucide-react-native';
 import { styled, Text, View } from 'tamagui';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppButton } from '../../../shared/components/AppButton';
-import { AppInput } from '../../../shared/components/AppInput';
-import { ThemeToggle } from '../../../shared/components/ThemeToggle';
-import { AuthStackParamList } from '../../../config/navigation.protocol';
-import { typography } from '../../../shared/typography';
-import { useThemeMode } from '../../../hooks/useThemeMode';
+import { AuthStackParamList } from '@config/navigation.protocol';
+import { useThemeMode } from '@hooks/useThemeMode';
+import { AppButton } from '@shared/components/AppButton';
+import { AppInput } from '@shared/components/AppInput';
+import { ThemeToggle } from '@shared/components/ThemeToggle';
+import { typography } from '@shared/typography';
 import { loginSchema } from '../schemas/loginSchema';
 import { LoginFormData } from '../types/loginTypes';
 
