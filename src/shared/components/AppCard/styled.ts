@@ -43,4 +43,13 @@ export const CardTitle = styled(Text, {
   textAlign: "center",
   margin: 0,
   padding: 0,
+  variants: {
+    colorVariant: {
+      black: { color: "$black" },
+      white: { color: "$white" },
+    },
+  } as const,
+  defaultVariants: {
+    colorVariant: "black",
+  },
 });
