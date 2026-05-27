@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../config/navigation';
+import { RootStackParamList } from '../config/navigation.protocol';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
