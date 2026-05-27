@@ -1,13 +1,13 @@
 import React, { PropsWithChildren } from 'react';
 import { styled, View } from 'tamagui';
-import { AppHeader } from '../../../components/AppHeader';
+import { AppHeader } from '../../../shared/components/AppHeader';
 
 type Props = PropsWithChildren<{
   title: string;
 }>;
 
 const Screen = styled(View, { flex: 1, backgroundColor: '$background' });
-const Content = styled(View, { flex: 1, paddingTop: 10, paddingHorizontal: 20, paddingBottom: 110, gap: 14 });
+const Content = styled(View, { flex: 1, paddingVertical: 10, paddingHorizontal: 20,  gap: 14 });
 
 export function ListScreenShell({ title, children }: Props) {
   return (
