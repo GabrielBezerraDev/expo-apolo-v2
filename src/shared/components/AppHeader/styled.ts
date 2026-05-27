@@ -1,5 +1,5 @@
 import { styled, Text, View } from "tamagui";
-import { typography } from "../../typography";
+import { typography } from "@shared/typography";
 
 export const Root = styled(View, {
   backgroundColor: "$background",

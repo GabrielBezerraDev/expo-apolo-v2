@@ -7,7 +7,7 @@ import { ListScreenShell } from './ListScreenShell';
 export function ExitListScreen() {
   return (
     <ListScreenShell title="Saídas">
-      <ScrollView contentContainerStyle={{ gap: 14 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
         {exitOperations.map(item => <OperationCard key={item.id} item={item} />)}
       </ScrollView>
     </ListScreenShell>

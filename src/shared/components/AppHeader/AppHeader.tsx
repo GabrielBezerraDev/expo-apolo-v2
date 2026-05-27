@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable } from "react-native";
 import { ArrowLeft, Menu } from "lucide-react-native";
 import { View } from "tamagui";
-import { useThemeMode } from "../../../hooks/useThemeMode";
+import { useThemeMode } from "@hooks/useThemeMode";
 import { ThemeToggle } from "../ThemeToggle";
 import { Actions, Left, Logo, LogoText, Root, Subtitle, Title } from "./styled";
 

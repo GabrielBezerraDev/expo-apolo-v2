@@ -8,10 +8,12 @@ export const lightTheme = {
   border: '#dedede',
   primary: '#ff6200ff',
   primaryDark: '#d94f00',
+  primaryLight: '#fabb80',
   error: '#d32f2f',
   success: '#2e7d32',
   warning: '#f9a825',
   white: '#ffffff',
+  grey: '#5f5e5e',
   black: '#000000',
 };
 
@@ -25,10 +27,12 @@ export const darkTheme = {
   border: '#333333',
   primary: '#ff6200ff',
   primaryDark: '#d94f00',
+  primaryLight: '#fabb80',
   error: '#ff6b6b',
   success: '#66bb6a',
   warning: '#ffca28',
   white: '#ffffff',
+  grey: '#5f5e5e',
   black: '#000000',
 };
 
