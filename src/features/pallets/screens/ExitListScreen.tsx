@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, ScrollView } from 'react-native';
-import { FileCheck2, Plus, ScanLine } from 'lucide-react-native';
+import { BaggageClaim, ClipboardPlus, FileCheck2, Filter, Plus, ScanLine } from 'lucide-react-native';
 import { OperationCard } from '../components/OperationCard';
 import { exitOperations } from '../mocks/palletMock';
 import { ListScreenShell } from './ListScreenShell';
@@ -10,9 +10,8 @@ export function ExitListScreen() {
     <ListScreenShell
       title="Saídas"
       floatActions={[
-        { Icon: Plus, label: 'Nova saída', onPress: () => Alert.alert('Nova saída') },
-        { Icon: ScanLine, label: 'Escanear', onPress: () => Alert.alert('Escanear saída') },
-        { Icon: FileCheck2, label: 'Finalizar', onPress: () => Alert.alert('Finalizar saída') },
+        { Icon: BaggageClaim, label: 'Nova Saída', onPress: () => Alert.alert('Nova entrada') },
+        { Icon: Filter, label: 'Filtro', onPress: () => Alert.alert('Escanear entrada') },
       ]}
     >
       <ScrollView contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
