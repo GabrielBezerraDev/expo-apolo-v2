@@ -6,6 +6,7 @@
     "baseUrl": ".",
     "paths": {
       "@application/*": ["src/application/*"],
+      "@assets/*": ["src/assets/*"],
       "@config/*": ["src/config/*"],
       "@features/*": ["src/features/*"],
       "@hooks/*": ["src/hooks/*"],

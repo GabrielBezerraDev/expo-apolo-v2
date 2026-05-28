@@ -1,15 +1,15 @@
 import React from 'react';
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar } from 'react-native';
 import { useThemeMode } from '@hooks/useThemeMode';
 import { RootNavigator } from '@navigation/RootNavigator';
 import { AppProviders } from './providers/AppProviders';
 
 function AppShell() {
-  const { mode } = useThemeMode();
+  const { theme } = useThemeMode();
 
   return (
     <>
-      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <StatusBar barStyle="light-content" backgroundColor={theme.primary} translucent={false} />
       <RootNavigator />
     </>
   );
