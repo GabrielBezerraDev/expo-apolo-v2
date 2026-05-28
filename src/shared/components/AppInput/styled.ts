@@ -20,6 +20,10 @@ export const InputFrame = styled(View, {
       true: { borderColor: "$error" },
       false: { borderColor: "$border" },
     },
+    isFocused: {
+      true: { borderColor: "$primary" },
+      false: {},
+    },
   } as const,
 });
 

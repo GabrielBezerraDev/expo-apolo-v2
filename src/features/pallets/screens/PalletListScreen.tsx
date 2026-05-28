@@ -30,7 +30,7 @@ export function PalletListScreen() {
     <ListScreenShell
       title="Pallets"
       floatActions={[
-        { Icon: PackagePlus, label: 'Novo pallet', onPress: () => Alert.alert('Novo pallet') },
+        { Icon: PackagePlus, label: 'Novo palete', onPress: () => Alert.alert('Novo palete') },
         { Icon: ScanLine, label: 'Escanear', onPress: () => setScannerOpen(true) },
         { Icon: SlidersHorizontal, label: 'Filtros', onPress: () => Alert.alert('Filtros') },
       ]}

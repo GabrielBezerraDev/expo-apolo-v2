@@ -24,7 +24,7 @@ export function AppCard({
   const { openModal } = useModal();
 
   const defaultFooterConfig = {
-    title: "Opções",
+    title: "OPÇÕES",
     footerCallback: () => {
       openModal(<Text>Teste</Text>);
     },
