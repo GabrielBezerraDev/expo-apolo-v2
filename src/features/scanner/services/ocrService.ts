@@ -13,7 +13,7 @@ type OCRModuleType = {
 
 const nativeOCR = NativeModules.OCRModule as OCRModuleType | undefined;
 
-export async function recognizeTextFromImage(imageUri: string) {
+export async function recognizeTextFromImage(imageUri: string, options?: Record<string, unknown>) {
   if (!nativeOCR?.recognizeText) {
     return null;
   }
@@ -21,5 +21,6 @@ export async function recognizeTextFromImage(imageUri: string) {
   return nativeOCR.recognizeText(imageUri, {
     enhance: true,
     multipleAttempts: true,
+    ...options,
   });
 }
