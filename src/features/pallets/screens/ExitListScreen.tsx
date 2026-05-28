@@ -31,7 +31,6 @@ export function ExitListScreen() {
       title="Saídas"
       floatActions={[
         { Icon: BaggageClaim, label: 'Nova Saída', onPress: () => Alert.alert('Nova saída') },
-        { Icon: ScanLine, label: 'Escanear', onPress: () => setScannerOpen(true) },
         { Icon: Filter, label: 'Filtro', onPress: () => Alert.alert('Filtrar saídas') },
       ]}
     >

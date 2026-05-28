@@ -1,169 +1,412 @@
-import React, { useRef, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import { X } from "lucide-react-native";
-import { useThemeMode } from "@hooks/useThemeMode";
-import { FramePresetName, FrameProvider, useFrame } from "../providers/FrameProvider";
-import { recognizeTextFromImage } from "../services/ocrService";
+// FramedCameraScanner.tsx
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  CaptureButtonInner,
-  CaptureButtonOuter,
-  FrameBox,
-  FrameCorner,
-  PermissionButton,
-  PermissionButtonText,
-  PermissionPanel,
-  PermissionText,
-  ScannerDescription,
-  ScannerIconButton,
-  ScannerOverlay,
-  ScannerRoot,
-  ScannerTitle,
-  ScannerTopBar,
-} from "./styled";
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  NativeModules,
+} from 'react-native';
+import {
+  Camera,
+  useCameraDevices,
+  CameraPermissionStatus,
+} from 'react-native-vision-camera';
+import { useFrame } from '@hooks/useFrame';
 
-export type ScannerCaptureResult = {
-  imageUri: string;
-  text?: string;
-  fields?: Record<string, string>;
-};
+const { OCRModule } = NativeModules;
 
-type Props = {
-  preset?: FramePresetName;
-  title?: string;
-  description?: string;
+interface Props {
+  onCapture: (croppedImagePath: string, liveData?: LiveOCRResult) => void;
   onCancel: () => void;
-  onCapture: (result: ScannerCaptureResult) => void;
-};
-
-export function FramedCameraScanner({ preset = "singleField", title, description, onCancel, onCapture }: Props) {
-  return (
-    <FrameProvider initial={preset}>
-      <FramedCameraScannerContent title={title} description={description} onCancel={onCancel} onCapture={onCapture} />
-    </FrameProvider>
-  );
+  /** How often to re-run OCR on the preview (ms). Default 600ms. */
+  pollIntervalMs?: number;
+  /** Require this many consecutive identical reads before showing "stable". Default 2. */
+  stableReadsRequired?: number;
 }
 
-function FramedCameraScannerContent({ title = "Escanear etiqueta", description = "Alinhe o campo da etiqueta dentro da moldura.", onCancel, onCapture }: Omit<Props, "preset">) {
-  const cameraRef = useRef<CameraView | null>(null);
-  const [permission, requestPermission] = useCameraPermissions();
-  const [loading, setLoading] = useState(false);
-  const { theme } = useThemeMode();
-  const { geometry } = useFrame();
+export interface LiveOCRResult {
+  text: string;
+  fields: Record<string, string>;
+  matchedFields: number;
+  isStable: boolean;
+}
 
-  const takePicture = async () => {
-    if (!cameraRef.current || loading) return;
+export const FramedCameraScanner: React.FC<Props> = ({
+  onCapture,
+  onCancel,
+  pollIntervalMs = 600,
+  stableReadsRequired = 2,
+}) => {
+  const cameraRef = useRef<Camera>(null);
+  const devices = useCameraDevices();
+  const device = useMemo(() => {
+    if (!devices) return undefined;
+    if (Array.isArray(devices)) {
+      return devices.find((d: any) => d.position === 'back');
+    }
+    return devices.back;
+  }, [devices]);
+
+  const [permissionStatus, setPermissionStatus] = useState<CameraPermissionStatus>('not-determined');
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [liveResult, setLiveResult] = useState<LiveOCRResult | null>(null);
+
+  // Refs avoid re-creating the poll loop on every render
+  const isPollingRef = useRef(false);
+  const isProcessingRef = useRef(false);
+  const consecutiveSameReads = useRef(0);
+  const lastTextRef = useRef<string>('');
+  const latestResultRef = useRef<LiveOCRResult | null>(null);
+
+  const requestPermission = useCallback(async () => {
+    Alert.alert('TESTE');
+    const status = await Camera.requestCameraPermission();
+    setPermissionStatus(status);
+    return status;
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const current = await Camera.getCameraPermissionStatus();
+      setPermissionStatus(current);
+      if (current !== 'authorized') await requestPermission();
+    })();
+  }, [requestPermission]);
+
+  const hasPermission = permissionStatus === 'authorized';
+
+  const { geometry } = useFrame();
+  const {
+    width: FRAME_W, height: FRAME_H,
+    x: FRAME_X, y: FRAME_Y,
+    screenWidth: SCREEN_W, screenHeight: SCREEN_H,
+  } = geometry;
+
+  // -------------------------------------------------------------------------
+  // Map screen frame → photo pixel coords
+  // -------------------------------------------------------------------------
+  const computeCropRect = useCallback((rawW: number, rawH: number) => {
+    // Normalize photo dims to match screen orientation. vision-camera returns
+    // sensor-native dims (landscape on most Android phones), but the native
+    // cropImage rotates the bitmap via EXIF before cropping. Swap so our math
+    // targets the post-rotation bitmap — this is why it worked on Tab A9 but
+    // broke on other devices with different sensor/EXIF alignment.
+    const screenIsPortrait = SCREEN_H > SCREEN_W;
+    const photoIsPortrait = rawH > rawW;
+    const photoW = screenIsPortrait === photoIsPortrait ? rawW : rawH;
+    const photoH = screenIsPortrait === photoIsPortrait ? rawH : rawW;
+
+    const screenAspect = SCREEN_W / SCREEN_H;
+    const photoAspect = photoW / photoH;
+
+
+    let visibleW: number, visibleH: number, offsetX: number, offsetY: number;
+    if (photoAspect > screenAspect) {
+      visibleH = photoH;
+      visibleW = photoH * screenAspect;
+    
+      offsetX = (photoW - visibleW) / 2;
+      offsetY = 0;
+    } else {
+      visibleW = photoW;
+      visibleH = photoW / screenAspect;
+      offsetX = 0;
+      offsetY = (photoH - visibleH) / 2;
+    }
+    const scaleX = visibleW / SCREEN_W;
+    const scaleY = visibleH / SCREEN_H;
+    return {
+      cropX: Math.round(offsetX + FRAME_X * scaleX),
+      cropY: Math.round(offsetY + FRAME_Y * scaleY),
+      cropW: Math.round(FRAME_W * scaleX),
+      cropH: Math.round(FRAME_H * scaleY),
+    };
+  }, [SCREEN_W, SCREEN_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H]);
+
+  // -------------------------------------------------------------------------
+  // Live OCR loop — takes snapshots and runs OCR in the background
+  // -------------------------------------------------------------------------
+  const runOCRTick = useCallback(async () => {
+    if (isProcessingRef.current || !cameraRef.current) return;
+    isProcessingRef.current = true;
 
     try {
-      setLoading(true);
-      const photo = await cameraRef.current.takePictureAsync({ quality: 1, skipProcessing: false });
+      // takeSnapshot is much faster than takePhoto — ~100ms vs ~800ms.
+      // Perfect for live feedback, though lower quality.
+      const snapshot = await cameraRef.current.takeSnapshot({
+        quality: 80,
+        skipMetadata: true,
+      });
 
-      if (!photo?.uri || !photo.width || !photo.height) {
-        throw new Error("Não foi possível capturar a imagem.");
+      const snapPath = Platform.OS === 'android'
+        ? `file://${snapshot.path}`
+        : snapshot.path;
+
+      // Crop to frame before OCR — faster and filters out noise outside the frame
+      const { cropX, cropY, cropW, cropH } = computeCropRect(
+        snapshot.width, snapshot.height,
+      );
+
+      const cropped = await OCRModule.cropImage(
+        snapPath, cropX, cropY, cropW, cropH,
+      );
+
+      // Single pass OCR, no rotation retries — speed matters here
+      const ocrResult = await OCRModule.recognizeText(cropped.path, {
+        multipleAttempts: false,
+      });
+
+      const text = ocrResult.text?.trim() || '';
+      const fields = ocrResult.fields || {};
+      const matchedFields = ocrResult.matchedFields || 0;
+
+      // Stability check — same read N times in a row = stable
+      if (text === lastTextRef.current && text.length > 0) {
+        consecutiveSameReads.current++;
+      } else {
+        consecutiveSameReads.current = 1;
+        lastTextRef.current = text;
       }
 
-      const crop = getCropRegion({
-        photoWidth: photo.width,
-        photoHeight: photo.height,
-        frame: geometry,
-      });
+      const isStable = consecutiveSameReads.current >= stableReadsRequired;
 
-      const cropped = await manipulateAsync(photo.uri, [{ crop }], {
-        compress: 1,
-        format: SaveFormat.JPEG,
-      });
+      const result: LiveOCRResult = { text, fields, matchedFields, isStable };
+      latestResultRef.current = result;
+      setLiveResult(result);
 
-      const ocrResult = await recognizeTextFromImage(cropped.uri);
-
-      onCapture({
-        imageUri: cropped.uri,
-        text: ocrResult?.text,
-        fields: ocrResult?.fields,
-      });
-    } catch (error) {
-      Alert.alert("Erro", error instanceof Error ? error.message : "Não foi possível escanear a etiqueta.");
+    } catch (err) {
+      // Failed OCR on a snapshot isn't fatal — just skip this tick
+      // console.log('Live OCR tick failed:', err);
     } finally {
-      setLoading(false);
+      isProcessingRef.current = false;
     }
-  };
+  }, [computeCropRect, stableReadsRequired]);
 
-  if (!permission) {
-    return <PermissionPanel />;
+  // Start/stop the polling loop based on camera readiness
+  useEffect(() => {
+    if (!hasPermission || !device || isCapturing) {
+      isPollingRef.current = false;
+      return;
+    }
+
+    isPollingRef.current = true;
+    const interval = setInterval(() => {
+      if (isPollingRef.current) runOCRTick();
+    }, pollIntervalMs);
+
+    return () => {
+      isPollingRef.current = false;
+      clearInterval(interval);
+    };
+  }, [hasPermission, device, isCapturing, pollIntervalMs, runOCRTick]);
+
+  // -------------------------------------------------------------------------
+  // Final capture — uses the most recent live result + a high-quality photo
+  // -------------------------------------------------------------------------
+  const handleCapture = useCallback(async () => {
+    if (!cameraRef.current || isCapturing) return;
+
+    try {
+      setIsCapturing(true);
+      isPollingRef.current = false; // stop live loop during capture
+
+      const photo = await cameraRef.current.takePhoto({
+        flash: 'off',
+        qualityPrioritization: 'quality',
+        enableAutoStabilization: true,
+      });
+
+      const photoPath = Platform.OS === 'android'
+        ? `file://${photo.path}`
+        : photo.path;
+
+      const { cropX, cropY, cropW, cropH } = computeCropRect(
+        photo.width, photo.height,
+      );
+
+      const result = await OCRModule.cropImage(
+        photoPath, cropX, cropY, cropW, cropH,
+      );
+
+      // Pass both the cropped image path AND the last live read
+      // so the parent can use whichever is more reliable
+      onCapture(result.path, latestResultRef.current || undefined);
+    } catch (err: any) {
+      console.error('Capture error:', err);
+      Alert.alert('Erro', err?.message || 'Não foi possível capturar a imagem');
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [isCapturing, onCapture, computeCropRect]);
+
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
+  if (permissionStatus === 'not-determined') {
+    return <View style={styles.center}><ActivityIndicator color="#fff" size="large" /></View>;
   }
 
-  if (!permission.granted) {
+  if (!hasPermission) {
     return (
-      <PermissionPanel>
-        <PermissionText>Precisamos da permissão da câmera para escanear etiquetas.</PermissionText>
-        <PermissionButton onPress={requestPermission}>
-          <PermissionButtonText>Permitir câmera</PermissionButtonText>
-        </PermissionButton>
-        <PermissionButton onPress={onCancel}>
-          <PermissionButtonText>Voltar</PermissionButtonText>
-        </PermissionButton>
-      </PermissionPanel>
+      <View style={styles.center}>
+        <Text style={styles.permissionText}>Permissão de câmera necessária</Text>
+        <TouchableOpacity style={styles.button} onPress={requestPermission}>
+          <Text style={styles.buttonText}>Solicitar permissão</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, styles.cancelButton, { marginTop: 12 }]}
+          onPress={onCancel}>
+          <Text style={styles.buttonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
+  if (!device) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color="#fff" size="large" />
+        <Text style={[styles.permissionText, { marginTop: 12 }]}>Carregando câmera...</Text>
+      </View>
+    );
+  }
+
+  const dim = 'rgba(0, 0, 0, 0.6)';
+  const hasLive = liveResult && liveResult.text.length > 0;
   return (
-    <ScannerRoot>
-      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+    <View style={styles.container}>
+      <Camera
+        ref={cameraRef}
+        style={StyleSheet.absoluteFill}
+        device={device}
+        isActive={true}
+        photo={true}
+      />
 
-      <ScannerOverlay pointerEvents="box-none">
-        <View style={[styles.mask, { top: 0, height: geometry.y }]} />
-        <View style={[styles.mask, { top: geometry.y + geometry.height, bottom: 0 }]} />
-        <View style={[styles.mask, { top: geometry.y, left: 0, width: geometry.x, height: geometry.height }]} />
-        <View style={[styles.mask, { top: geometry.y, left: geometry.x + geometry.width, right: 0, height: geometry.height }]} />
+      {/* Dimmed overlay */}
+      <View style={{
+        position: 'absolute', top: 0, left: 0,
+        width: SCREEN_W, height: FRAME_Y, backgroundColor: dim,
+      }} />
+      <View style={{
+        position: 'absolute', top: FRAME_Y + FRAME_H, left: 0,
+        width: SCREEN_W, height: SCREEN_H - (FRAME_Y + FRAME_H), backgroundColor: dim,
+      }} />
+      <View style={{
+        position: 'absolute', top: FRAME_Y, left: 0,
+        width: FRAME_X, height: FRAME_H, backgroundColor: dim,
+      }} />
+      <View style={{
+        position: 'absolute', top: FRAME_Y, left: FRAME_X + FRAME_W,
+        width: SCREEN_W - (FRAME_X + FRAME_W), height: FRAME_H, backgroundColor: dim,
+      }} />
 
-        <ScannerTopBar>
-          <ScannerIconButton onPress={onCancel} hitSlop={8}>
-            <X size={24} color={theme.white} />
-          </ScannerIconButton>
-          <View style={{ alignItems: "center", gap: 4 }}>
-            <ScannerTitle>{title}</ScannerTitle>
-            <ScannerDescription>{description}</ScannerDescription>
+      {/* Frame border — color changes based on detection state */}
+      <View style={{
+        position: 'absolute',
+        top: FRAME_Y, left: FRAME_X,
+        width: FRAME_W, height: FRAME_H,
+        borderWidth: 3,
+        borderColor: liveResult?.isStable ? '#00ff00' : hasLive ? '#ffcc00' : '#fff',
+        borderRadius: 8,
+      }} />
+
+      {/* Live OCR preview above the frame */}
+      <View style={[styles.helpBox, { top: FRAME_Y - 220, width: SCREEN_W }]}>
+        {hasLive ? (
+          <View style={styles.livePreview}>
+            <Text style={styles.liveLabel}>
+              {liveResult!.isStable ? '✓ Estável' : 'Lendo...'}
+            </Text>
+            <Text style={styles.liveText} numberOfLines={2}>
+              {liveResult!.text}
+            </Text>
+            {liveResult!.matchedFields > 0 && (
+              <Text style={styles.liveFields}>
+                {liveResult!.matchedFields} campo(s) detectado(s)
+              </Text>
+            )}
           </View>
-          <View style={{ width: 46 }} />
-        </ScannerTopBar>
+        ) : (
+          <Text style={styles.helpText}>Alinhe a etiqueta dentro da área</Text>
+        )}
+      </View>
 
-        <FrameBox style={{ width: geometry.width, height: geometry.height, left: geometry.x, top: geometry.y }}>
-          <FrameCorner corner="topLeft" />
-          <FrameCorner corner="topRight" />
-          <FrameCorner corner="bottomLeft" />
-          <FrameCorner corner="bottomRight" />
-        </FrameBox>
+      {/* Action buttons */}
+      <View style={[styles.actions, { top: FRAME_Y + FRAME_H + 40, width: SCREEN_W }]}>
+        <TouchableOpacity
+          style={[styles.button, styles.cancelButton]}
+          onPress={onCancel}
+          disabled={isCapturing}>
+          <Text style={styles.buttonText}>Cancelar</Text>
+        </TouchableOpacity>
 
-        <CaptureButtonOuter onPress={takePicture} disabled={loading}>
-          {loading ? <ActivityIndicator color={theme.white} /> : <CaptureButtonInner />}
-        </CaptureButtonOuter>
-      </ScannerOverlay>
-    </ScannerRoot>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.captureButton,
+            liveResult?.isStable && styles.captureButtonStable,
+          ]}
+          onPress={handleCapture}
+          disabled={isCapturing}>
+          {isCapturing ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>
+              {liveResult?.isStable ? 'Confirmar' : 'Capturar'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
   );
-}
-
-function getCropRegion({
-  photoWidth,
-  photoHeight,
-  frame,
-}: {
-  photoWidth: number;
-  photoHeight: number;
-  frame: ReturnType<typeof useFrame>["geometry"];
-}) {
-  const scaleX = photoWidth / frame.screenWidth;
-  const scaleY = photoHeight / frame.screenHeight;
-  const originX = Math.max(0, Math.round(frame.x * scaleX));
-  const originY = Math.max(0, Math.round(frame.y * scaleY));
-  const width = Math.min(photoWidth - originX, Math.round(frame.width * scaleX));
-  const height = Math.min(photoHeight - originY, Math.round(frame.height * scaleY));
-
-  return { originX, originY, width, height };
-}
+};
 
 const styles = StyleSheet.create({
-  mask: {
-    position: "absolute",
-    backgroundColor: "rgba(0, 0, 0, 0.58)",
+  container: { flex: 1, backgroundColor: '#000' },
+  center: {
+    flex: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#000',
   },
+  permissionText: { color: '#fff', fontSize: 16, marginBottom: 20 },
+  helpBox: { position: 'absolute', alignItems: 'center', paddingHorizontal: 20 },
+  helpText: {
+    color: '#fff', fontSize: 16, fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4,
+  },
+  livePreview: {
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    paddingHorizontal: 16, paddingVertical: 10,
+    borderRadius: 8, alignItems: 'center',
+    maxWidth: '90%',
+    borderColor: '#ff6200ff', 
+    borderWidth: 1.5
+  },
+  liveLabel: {
+    color: '#ffcc00', fontSize: 12, fontWeight: '700',
+    marginBottom: 4, letterSpacing: 1,
+  },
+  liveText: {
+    color: '#fff', fontSize: 16, fontWeight: '600', textAlign: 'center',
+  },
+  liveFields: {
+    color: '#00ff00', fontSize: 12, marginTop: 4, fontWeight: '600',
+  },
+  actions: {
+    position: 'absolute',
+    flexDirection: 'row', justifyContent: 'space-around',
+    paddingHorizontal: 40,
+  },
+  button: {
+    paddingHorizontal: 24, paddingVertical: 14,
+    borderRadius: 30, minWidth: 120, alignItems: 'center',
+  },
+  captureButton: { backgroundColor: '#ff6200' },
+  captureButtonStable: { backgroundColor: '#00a844' }, 
+  cancelButton: { backgroundColor: '#555' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
