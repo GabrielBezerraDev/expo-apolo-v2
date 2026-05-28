@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { Pressable } from "react-native";
+import { Image, Pressable } from "react-native";
 import { ArrowLeft, Menu } from "lucide-react-native";
 import { View } from "tamagui";
 import { useThemeMode } from "@hooks/useThemeMode";
-import ValorlogLogo from "@shared/assets/svg/varlog_transparent.svg";
 import { AppHeaderDrawer } from "./AppHeaderDrawer";
 import { ThemeToggle } from "../ThemeToggle";
 import { Actions, Left, Logo, Root, Subtitle, Title } from "./styled";
@@ -38,7 +37,11 @@ export function AppHeader({ title, subtitle, onBack, onMenu }: Props) {
             </Pressable>
           ) : (
             <Logo>
-              <ValorlogLogo width={80} height={80} />
+              <Image
+                source={require("@assets/svg/Varlog_logo_2.png")}
+                style={{ width: 80, height: 80 }}
+                resizeMode="contain"
+              />
             </Logo>
           )}
           <View>
