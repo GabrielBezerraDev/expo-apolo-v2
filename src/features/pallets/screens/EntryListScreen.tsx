@@ -97,6 +97,7 @@ export function EntryListScreen() {
       <FramedCameraScanner
         onCancel={() => setScanTarget(null)}
         onCapture={handleCapture}
+        preset='tinyData'
       />
     );
   }

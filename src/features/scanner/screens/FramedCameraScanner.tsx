@@ -14,6 +14,7 @@ import {
   Camera,
   useCameraDevices,
   CameraPermissionStatus,
+  CameraDevice,
 } from 'react-native-vision-camera';
 import { useFrame } from '@hooks/useFrame';
 
@@ -46,9 +47,9 @@ export const FramedCameraScanner: React.FC<Props> = ({
   const device = useMemo(() => {
     if (!devices) return undefined;
     if (Array.isArray(devices)) {
-      return devices.find((d: any) => d.position === 'back');
+      return devices.find((d: CameraDevice) => d.position === 'back');
     }
-    return devices.back;
+    return devices;
   }, [devices]);
 
   const [permissionStatus, setPermissionStatus] = useState<CameraPermissionStatus>('not-determined');
@@ -63,7 +64,6 @@ export const FramedCameraScanner: React.FC<Props> = ({
   const latestResultRef = useRef<LiveOCRResult | null>(null);
 
   const requestPermission = useCallback(async () => {
-    Alert.alert('TESTE');
     const status = await Camera.requestCameraPermission();
     setPermissionStatus(status);
     return status;
@@ -73,11 +73,11 @@ export const FramedCameraScanner: React.FC<Props> = ({
     (async () => {
       const current = await Camera.getCameraPermissionStatus();
       setPermissionStatus(current);
-      if (current !== 'authorized') await requestPermission();
+      if (current !== 'denied') await requestPermission();
     })();
   }, [requestPermission]);
 
-  const hasPermission = permissionStatus === 'authorized';
+  const hasPermission = permissionStatus === 'granted';
 
   const { geometry } = useFrame();
   const {
@@ -139,7 +139,6 @@ export const FramedCameraScanner: React.FC<Props> = ({
       // Perfect for live feedback, though lower quality.
       const snapshot = await cameraRef.current.takeSnapshot({
         quality: 80,
-        skipMetadata: true,
       });
 
       const snapPath = Platform.OS === 'android'
@@ -216,8 +215,6 @@ export const FramedCameraScanner: React.FC<Props> = ({
 
       const photo = await cameraRef.current.takePhoto({
         flash: 'off',
-        qualityPrioritization: 'quality',
-        enableAutoStabilization: true,
       });
 
       const photoPath = Platform.OS === 'android'

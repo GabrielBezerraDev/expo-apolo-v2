@@ -20,6 +20,12 @@
         {
           "cameraPermission": "Permita que o Valorlog use a câmera para escanear etiquetas."
         }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Permita que o Valorlog use a câmera para escanear etiquetas."
+        }
       ]
     ]
   }
