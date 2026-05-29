@@ -44,7 +44,8 @@ export const FRAME_PRESETS = {
   barcode: { widthRatio: 0.5, heightRatio: 0.08 },
   // Thinner horizontal strip — product codes, short IDs
   shortCode: { widthRatio: 0.6, heightRatio: 0.1 },
-  tinyData: { widthRatio: 0.5, heightRatio: 0.07 },
+  tinyData: { widthRatio: 0.3, heightRatio: 0.09 },
+  tinyDataLandScape: { widthRatio: 0.2, heightRatio: 0.10 },
   // Medium rectangle — single label field (PO N, BATCH, etc.)
   singleField: { widthRatio: 0.75, heightRatio: 0.15 },
   // Large rectangle — full Salcomp shipping label

@@ -1,5 +1,6 @@
 package com.valorlogocrexpo
 
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 
@@ -16,6 +17,7 @@ class MainActivity : ReactActivity() {
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
+    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     super.onCreate(null)
   }
 

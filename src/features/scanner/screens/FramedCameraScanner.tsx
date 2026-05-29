@@ -21,12 +21,15 @@ import { FramePresetName, useFrame } from '@hooks/useFrame';
 
 const { OCRModule } = NativeModules;
 
+type ScannerOrientation = 'LandScape' | 'Portrait';
+
 interface Props {
   onCapture: (result: ScannerCaptureResult) => void;
   onCancel: () => void;
   preset?: FramePresetName;
   title?: string;
   description?: string;
+  orientation?: ScannerOrientation;
   /** How often to re-run OCR on the preview (ms). Default 600ms. */
   pollIntervalMs?: number;
   /** Require this many consecutive identical reads before showing "stable". Default 2. */
@@ -52,6 +55,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
   onCapture,
   onCancel,
   preset,
+  orientation = 'LandScape',
   pollIntervalMs = 600,
   stableReadsRequired = 2,
 }) => {
@@ -115,8 +119,16 @@ export const FramedCameraScanner: React.FC<Props> = ({
   }, []);
 
   useEffect(() => {
-    if (preset) setPreset(preset);
+    if (preset) setPreset(`${preset}${orientation}`);
   }, [preset, setPreset]);
+
+  useEffect(() => {
+    Promise.resolve(OCRModule?.setScreenOrientation?.(orientation)).catch(() => undefined);
+
+    return () => {
+      Promise.resolve(OCRModule?.setScreenOrientation?.('portrait')).catch(() => undefined);
+    };
+  }, [orientation]);
 
   // -------------------------------------------------------------------------
   // Map screen frame → photo pixel coords
@@ -127,7 +139,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
     // cropImage rotates the bitmap via EXIF before cropping. Swap so our math
     // targets the post-rotation bitmap — this is why it worked on Tab A9 but
     // broke on other devices with different sensor/EXIF alignment.
-    const screenIsPortrait = SCREEN_H > SCREEN_W;
+    const screenIsPortrait = PREVIEW_H > PREVIEW_W;
     const photoIsPortrait = rawH > rawW;
     const photoW = screenIsPortrait === photoIsPortrait ? rawW : rawH;
     const photoH = screenIsPortrait === photoIsPortrait ? rawH : rawW;
@@ -157,7 +169,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
       cropW: Math.round(FRAME_W * scaleX),
       cropH: Math.round(FRAME_H * scaleY),
     };
-  }, [PREVIEW_W, PREVIEW_H, SCREEN_W, SCREEN_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H]);
+  }, [PREVIEW_W, PREVIEW_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H]);
 
   const computeSnapshotCropRect = useCallback((rawW: number, rawH: number) => {
     if (Platform.OS !== 'android') {
@@ -339,17 +351,18 @@ export const FramedCameraScanner: React.FC<Props> = ({
         device={device}
         isActive={true}
         photo={true}
+        outputOrientation="preview"
         resizeMode="cover"
       />
 
       {/* Dimmed overlay */}
       <View style={{
         position: 'absolute', top: 0, left: 0,
-        width: SCREEN_W, height: FRAME_Y, backgroundColor: dim,
+        width: PREVIEW_W, height: FRAME_Y, backgroundColor: dim,
       }} />
       <View style={{
         position: 'absolute', top: FRAME_Y + FRAME_H, left: 0,
-        width: SCREEN_W, height: SCREEN_H - (FRAME_Y + FRAME_H), backgroundColor: dim,
+        width: PREVIEW_W, height: PREVIEW_H - (FRAME_Y + FRAME_H), backgroundColor: dim,
       }} />
       <View style={{
         position: 'absolute', top: FRAME_Y, left: 0,
@@ -357,7 +370,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
       }} />
       <View style={{
         position: 'absolute', top: FRAME_Y, left: FRAME_X + FRAME_W,
-        width: SCREEN_W - (FRAME_X + FRAME_W), height: FRAME_H, backgroundColor: dim,
+        width: PREVIEW_W - (FRAME_X + FRAME_W), height: FRAME_H, backgroundColor: dim,
       }} />
 
       {/* Frame border — color changes based on detection state */}
@@ -371,7 +384,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
       }} />
 
       {/* Live OCR preview above the frame */}
-      <View style={[styles.helpBox, { top: FRAME_Y - 220, width: SCREEN_W }]}>
+      <View style={[styles.helpBox, { top: FRAME_Y - (orientation === 'LandScape' ?  120: 220), width: PREVIEW_W }]}>
         {hasLive ? (
           <View style={styles.livePreview}>
             <Text style={styles.liveLabel}>
@@ -392,7 +405,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
       </View>
 
       {/* Action buttons */}
-      <View style={[styles.actions, { top: FRAME_Y + FRAME_H + 40, width: SCREEN_W }]}>
+      <View style={[styles.actions, { top: FRAME_Y + FRAME_H + 40, width: PREVIEW_W }]}>
         <TouchableOpacity
           style={[styles.button, styles.cancelButton]}
           onPress={onCancel}

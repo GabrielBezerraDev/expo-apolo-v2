@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@config/navigation.protocol';
-import { useThemeMode } from '@hooks/useThemeMode';
-import { AuthNavigator } from './AuthNavigator';
-import { MainTabsNavigator } from './MainTabsNavigator';
+import React, { useState } from "react";
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+} from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@config/navigation.protocol";
+import { useThemeMode } from "@hooks/useThemeMode";
+import { AuthNavigator } from "./AuthNavigator";
+import { MainTabsNavigator } from "./MainTabsNavigator";
+import { FramedCameraScanner } from "@features/scanner";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -12,9 +17,9 @@ export function RootNavigator() {
   const [loggedIn, setLoggedIn] = useState(false);
   const { mode, theme } = useThemeMode();
   const navTheme = {
-    ...(mode === 'dark' ? DarkTheme : DefaultTheme),
+    ...(mode === "dark" ? DarkTheme : DefaultTheme),
     colors: {
-      ...(mode === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      ...(mode === "dark" ? DarkTheme.colors : DefaultTheme.colors),
       background: theme.background,
       card: theme.background,
       text: theme.text,
@@ -31,7 +36,21 @@ export function RootNavigator() {
             {() => <AuthNavigator onLogin={() => setLoggedIn(true)} />}
           </Stack.Screen>
         ) : (
-          <Stack.Screen name="Main" component={MainTabsNavigator} />
+          <>
+            <Stack.Screen name="Main" component={MainTabsNavigator} />
+
+            <Stack.Screen name="Scanner">
+              {({ navigation }) => (
+                <FramedCameraScanner
+                  onCancel={() => navigation.goBack()}
+                  onCapture={(data) => {
+                    console.log("Captured:", data);
+                    navigation.goBack();
+                  }}
+                />
+              )}
+            </Stack.Screen>
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
