@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   NativeModules,
+  LayoutChangeEvent,
 } from 'react-native';
 import {
   Camera,
@@ -16,13 +17,16 @@ import {
   CameraPermissionStatus,
   CameraDevice,
 } from 'react-native-vision-camera';
-import { useFrame } from '@hooks/useFrame';
+import { FramePresetName, useFrame } from '@hooks/useFrame';
 
 const { OCRModule } = NativeModules;
 
 interface Props {
-  onCapture: (croppedImagePath: string, liveData?: LiveOCRResult) => void;
+  onCapture: (result: ScannerCaptureResult) => void;
   onCancel: () => void;
+  preset?: FramePresetName;
+  title?: string;
+  description?: string;
   /** How often to re-run OCR on the preview (ms). Default 600ms. */
   pollIntervalMs?: number;
   /** Require this many consecutive identical reads before showing "stable". Default 2. */
@@ -36,9 +40,18 @@ export interface LiveOCRResult {
   isStable: boolean;
 }
 
+export type ScannerCaptureResult = {
+  imageUri: string;
+  text: string;
+  fields: Record<string, string>;
+  matchedFields: number;
+  isStable: boolean;
+};
+
 export const FramedCameraScanner: React.FC<Props> = ({
   onCapture,
   onCancel,
+  preset,
   pollIntervalMs = 600,
   stableReadsRequired = 2,
 }) => {
@@ -55,6 +68,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
   const [permissionStatus, setPermissionStatus] = useState<CameraPermissionStatus>('not-determined');
   const [isCapturing, setIsCapturing] = useState(false);
   const [liveResult, setLiveResult] = useState<LiveOCRResult | null>(null);
+  const [cameraLayout, setCameraLayout] = useState({ width: 0, height: 0 });
 
   // Refs avoid re-creating the poll loop on every render
   const isPollingRef = useRef(false);
@@ -79,17 +93,35 @@ export const FramedCameraScanner: React.FC<Props> = ({
 
   const hasPermission = permissionStatus === 'granted';
 
-  const { geometry } = useFrame();
+  const { geometry, ratios, setPreset } = useFrame();
   const {
-    width: FRAME_W, height: FRAME_H,
-    x: FRAME_X, y: FRAME_Y,
     screenWidth: SCREEN_W, screenHeight: SCREEN_H,
   } = geometry;
+
+  const PREVIEW_W = cameraLayout.width || SCREEN_W;
+  const PREVIEW_H = cameraLayout.height || SCREEN_H;
+  const FRAME_W = PREVIEW_W * ratios.widthRatio;
+  const FRAME_H = PREVIEW_H * ratios.heightRatio;
+  const FRAME_X = (PREVIEW_W - FRAME_W) / 2;
+  const FRAME_Y = (PREVIEW_H - FRAME_H) / 2;
+
+  const handleCameraLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+
+    setCameraLayout(current => {
+      if (current.width === width && current.height === height) return current;
+      return { width, height };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (preset) setPreset(preset);
+  }, [preset, setPreset]);
 
   // -------------------------------------------------------------------------
   // Map screen frame → photo pixel coords
   // -------------------------------------------------------------------------
-  const computeCropRect = useCallback((rawW: number, rawH: number) => {
+  const computePhotoCropRect = useCallback((rawW: number, rawH: number) => {
     // Normalize photo dims to match screen orientation. vision-camera returns
     // sensor-native dims (landscape on most Android phones), but the native
     // cropImage rotates the bitmap via EXIF before cropping. Swap so our math
@@ -100,7 +132,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
     const photoW = screenIsPortrait === photoIsPortrait ? rawW : rawH;
     const photoH = screenIsPortrait === photoIsPortrait ? rawH : rawW;
 
-    const screenAspect = SCREEN_W / SCREEN_H;
+    const screenAspect = PREVIEW_W / PREVIEW_H;
     const photoAspect = photoW / photoH;
 
 
@@ -117,15 +149,33 @@ export const FramedCameraScanner: React.FC<Props> = ({
       offsetX = 0;
       offsetY = (photoH - visibleH) / 2;
     }
-    const scaleX = visibleW / SCREEN_W;
-    const scaleY = visibleH / SCREEN_H;
+    const scaleX = visibleW / PREVIEW_W;
+    const scaleY = visibleH / PREVIEW_H;
     return {
       cropX: Math.round(offsetX + FRAME_X * scaleX),
       cropY: Math.round(offsetY + FRAME_Y * scaleY),
       cropW: Math.round(FRAME_W * scaleX),
       cropH: Math.round(FRAME_H * scaleY),
     };
-  }, [SCREEN_W, SCREEN_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H]);
+  }, [PREVIEW_W, PREVIEW_H, SCREEN_W, SCREEN_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H]);
+
+  const computeSnapshotCropRect = useCallback((rawW: number, rawH: number) => {
+    if (Platform.OS !== 'android') {
+      return computePhotoCropRect(rawW, rawH);
+    }
+
+    // Android snapshots are screenshots of the preview view, not sensor photos.
+    // Therefore the overlay maps directly to the snapshot bitmap dimensions.
+    const scaleX = rawW / PREVIEW_W;
+    const scaleY = rawH / PREVIEW_H;
+
+    return {
+      cropX: Math.round(FRAME_X * scaleX),
+      cropY: Math.round(FRAME_Y * scaleY),
+      cropW: Math.round(FRAME_W * scaleX),
+      cropH: Math.round(FRAME_H * scaleY),
+    };
+  }, [PREVIEW_W, PREVIEW_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H, computePhotoCropRect]);
 
   // -------------------------------------------------------------------------
   // Live OCR loop — takes snapshots and runs OCR in the background
@@ -146,7 +196,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
         : snapshot.path;
 
       // Crop to frame before OCR — faster and filters out noise outside the frame
-      const { cropX, cropY, cropW, cropH } = computeCropRect(
+      const { cropX, cropY, cropW, cropH } = computeSnapshotCropRect(
         snapshot.width, snapshot.height,
       );
 
@@ -183,7 +233,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
     } finally {
       isProcessingRef.current = false;
     }
-  }, [computeCropRect, stableReadsRequired]);
+  }, [computeSnapshotCropRect, stableReadsRequired]);
 
   // Start/stop the polling loop based on camera readiness
   useEffect(() => {
@@ -221,7 +271,7 @@ export const FramedCameraScanner: React.FC<Props> = ({
         ? `file://${photo.path}`
         : photo.path;
 
-      const { cropX, cropY, cropW, cropH } = computeCropRect(
+      const { cropX, cropY, cropW, cropH } = computePhotoCropRect(
         photo.width, photo.height,
       );
 
@@ -229,16 +279,22 @@ export const FramedCameraScanner: React.FC<Props> = ({
         photoPath, cropX, cropY, cropW, cropH,
       );
 
-      // Pass both the cropped image path AND the last live read
-      // so the parent can use whichever is more reliable
-      onCapture(result.path, latestResultRef.current || undefined);
+      const liveData = latestResultRef.current;
+
+      onCapture({
+        imageUri: result.path,
+        text: liveData?.text?.trim() || '',
+        fields: liveData?.fields || {},
+        matchedFields: liveData?.matchedFields || 0,
+        isStable: liveData?.isStable || false,
+      });
     } catch (err: any) {
       console.error('Capture error:', err);
       Alert.alert('Erro', err?.message || 'Não foi possível capturar a imagem');
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing, onCapture, computeCropRect]);
+  }, [isCapturing, onCapture, computePhotoCropRect]);
 
   // -------------------------------------------------------------------------
   // Render
@@ -279,9 +335,11 @@ export const FramedCameraScanner: React.FC<Props> = ({
       <Camera
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
+        onLayout={handleCameraLayout}
         device={device}
         isActive={true}
         photo={true}
+        resizeMode="cover"
       />
 
       {/* Dimmed overlay */}
