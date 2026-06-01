@@ -12,7 +12,7 @@ export function AppProviders({ children }: PropsWithChildren) {
         <SafeAreaView style={{ flex: 1, backgroundColor: '#ff6200' }} edges={['top','bottom']}>
           <View style={{ flex: 1, backgroundColor: '#000' }}>
             <AppThemeProvider>
-              <ModalProvider>{children}</ModalProvider>
+                <ModalProvider>{children}</ModalProvider>
             </AppThemeProvider>
           </View>
         </SafeAreaView>

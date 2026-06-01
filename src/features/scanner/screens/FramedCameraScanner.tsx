@@ -7,27 +7,27 @@ import { useThemeMode } from "@hooks/useThemeMode";
 import { FramePresetName, FrameProvider, useFrame } from "../providers/FrameProvider";
 import { recognizeTextFromImage } from "../services/ocrService";
 import {
-  CaptureButtonInner,
-  CaptureButtonOuter,
-  FrameBox,
-  FrameCorner,
-  PermissionButton,
-  PermissionButtonText,
-  PermissionPanel,
-  PermissionText,
-  ScannerDescription,
-  ScannerIconButton,
-  ScannerOverlay,
-  ScannerRoot,
-  ScannerTitle,
-  ScannerTopBar,
-} from "./styled";
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  NativeModules,
+  LayoutChangeEvent,
+} from 'react-native';
+import {
+  Camera,
+  useCameraDevices,
+  CameraPermissionStatus,
+  CameraDevice,
+} from 'react-native-vision-camera';
+import { FRAME_PRESETS, FramePresetName, useFrame } from '@hooks/useFrame';
 
-export type ScannerCaptureResult = {
-  imageUri: string;
-  text?: string;
-  fields?: Record<string, string>;
-};
+const { OCRModule } = NativeModules;
+
+type ScannerOrientation = 'landscape' | 'portrait' | 'LandScape' | 'Portrait';
 
 type Props = {
   preset?: FramePresetName;
@@ -37,13 +37,142 @@ type Props = {
   onCapture: (result: ScannerCaptureResult) => void;
 };
 
-export function FramedCameraScanner({ preset = "singleField", title, description, onCancel, onCapture }: Props) {
-  return (
-    <FrameProvider initial={preset}>
-      <FramedCameraScannerContent title={title} description={description} onCancel={onCancel} onCapture={onCapture} />
-    </FrameProvider>
-  );
-}
+export const FramedCameraScanner: React.FC<Props> = ({
+  onCapture,
+  onCancel,
+  preset,
+  orientation = 'landscape',
+  pollIntervalMs = 600,
+  stableReadsRequired = 2,
+}) => {
+  const cameraRef = useRef<Camera>(null);
+  const devices = useCameraDevices();
+  const device = useMemo(() => {
+    if (!devices) return undefined;
+    if (Array.isArray(devices)) {
+      return devices.find((d: CameraDevice) => d.position === 'back');
+    }
+    return devices;
+  }, [devices]);
+
+  const [permissionStatus, setPermissionStatus] = useState<CameraPermissionStatus>('not-determined');
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [liveResult, setLiveResult] = useState<LiveOCRResult | null>(null);
+  const [cameraLayout, setCameraLayout] = useState({ width: 0, height: 0 });
+
+  // Refs avoid re-creating the poll loop on every render
+  const isPollingRef = useRef(false);
+  const isProcessingRef = useRef(false);
+  const consecutiveSameReads = useRef(0);
+  const lastTextRef = useRef<string>('');
+  const latestResultRef = useRef<LiveOCRResult | null>(null);
+
+  const requestPermission = useCallback(async () => {
+    const status = await Camera.requestCameraPermission();
+    setPermissionStatus(status);
+    return status;
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const current = await Camera.getCameraPermissionStatus();
+      setPermissionStatus(current);
+      if (current !== 'denied') await requestPermission();
+    })();
+  }, [requestPermission]);
+
+  const hasPermission = permissionStatus === 'granted';
+
+  const { geometry, ratios, setPreset } = useFrame();
+  const {
+    screenWidth: SCREEN_W, screenHeight: SCREEN_H,
+  } = geometry;
+
+  const PREVIEW_W = cameraLayout.width || SCREEN_W;
+  const PREVIEW_H = cameraLayout.height || SCREEN_H;
+  const FRAME_W = PREVIEW_W * ratios.widthRatio;
+  const FRAME_H = PREVIEW_H * ratios.heightRatio;
+  const FRAME_X = (PREVIEW_W - FRAME_W) / 2;
+  const FRAME_Y = (PREVIEW_H - FRAME_H) / 2;
+
+  const handleCameraLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+
+    setCameraLayout(current => {
+      if (current.width === width && current.height === height) return current;
+      return { width, height };
+    });
+  }, []);
+
+  const nativeOrientation = orientation === 'Portrait' || orientation === 'portrait'
+    ? 'portrait'
+    : 'landscape';
+
+  useEffect(() => {
+    if (!preset) return;
+
+    const orientedPreset = `${preset}${nativeOrientation === 'landscape' ? 'LandScape' : 'Portrait'}` as FramePresetName;
+    setPreset(orientedPreset in FRAME_PRESETS ? orientedPreset : preset);
+  }, [nativeOrientation, preset, setPreset]);
+
+  useEffect(() => {
+    Promise.resolve(OCRModule?.setScreenOrientation?.(nativeOrientation)).catch(() => undefined);
+
+    return () => {
+      Promise.resolve(OCRModule?.setScreenOrientation?.('portrait')).catch(() => undefined);
+    };
+  }, [nativeOrientation]);
+
+  // -------------------------------------------------------------------------
+  // Map screen frame → photo pixel coords
+  // -------------------------------------------------------------------------
+  const computePhotoCropRect = useCallback((rawW: number, rawH: number) => {
+    // Normalize photo dims to match screen orientation. vision-camera returns
+    // sensor-native dims (landscape on most Android phones), but the native
+    // cropImage rotates the bitmap via EXIF before cropping. Swap so our math
+    // targets the post-rotation bitmap — this is why it worked on Tab A9 but
+    // broke on other devices with different sensor/EXIF alignment.
+    const screenIsPortrait = PREVIEW_H > PREVIEW_W;
+    const photoIsPortrait = rawH > rawW;
+    const photoW = screenIsPortrait === photoIsPortrait ? rawW : rawH;
+    const photoH = screenIsPortrait === photoIsPortrait ? rawH : rawW;
+
+    const screenAspect = PREVIEW_W / PREVIEW_H;
+    const photoAspect = photoW / photoH;
+
+
+    let visibleW: number, visibleH: number, offsetX: number, offsetY: number;
+    if (photoAspect > screenAspect) {
+      visibleH = photoH;
+      visibleW = photoH * screenAspect;
+    
+      offsetX = (photoW - visibleW) / 2;
+      offsetY = 0;
+    } else {
+      visibleW = photoW;
+      visibleH = photoW / screenAspect;
+      offsetX = 0;
+      offsetY = (photoH - visibleH) / 2;
+    }
+    const scaleX = visibleW / PREVIEW_W;
+    const scaleY = visibleH / PREVIEW_H;
+    return {
+      cropX: Math.round(offsetX + FRAME_X * scaleX),
+      cropY: Math.round(offsetY + FRAME_Y * scaleY),
+      cropW: Math.round(FRAME_W * scaleX),
+      cropH: Math.round(FRAME_H * scaleY),
+    };
+  }, [PREVIEW_W, PREVIEW_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H]);
+
+  const computeSnapshotCropRect = useCallback((rawW: number, rawH: number) => {
+    if (Platform.OS !== 'android') {
+      return computePhotoCropRect(rawW, rawH);
+    }
+
+    // Android snapshots are screenshots of the preview view, not sensor photos.
+    // Therefore the overlay maps directly to the snapshot bitmap dimensions.
+    const scaleX = rawW / PREVIEW_W;
+    const scaleY = rawH / PREVIEW_H;
 
 function FramedCameraScannerContent({ title = "Escanear etiqueta", description = "Alinhe o campo da etiqueta dentro da moldura.", onCancel, onCapture }: Omit<Props, "preset">) {
   const cameraRef = useRef<CameraView | null>(null);
