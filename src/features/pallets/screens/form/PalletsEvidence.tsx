@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Camera, CheckCircle2, X } from 'lucide-react-native';
 import { Text, View } from 'tamagui';
 import type { RootStackParamList } from '@config/navigation.protocol';
+import { useFrame } from '@features/scanner';
 import { useThemeMode } from '@hooks/useThemeMode';
 import { AppButton } from '@shared/components/AppButton';
 import { AppInput } from '@shared/components/AppInput';
@@ -16,6 +17,7 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function PalletsEvidence() {
   const navigation = useNavigation<Navigation>();
+  const { configureScanner } = useFrame();
   const { theme } = useThemeMode();
   const { width } = useWindowDimensions();
   const {
@@ -30,11 +32,13 @@ export function PalletsEvidence() {
 
   const scanLot = (palletIndex: number) => {
     setScanTarget({ type: 'lot', palletIndex });
+    configureScanner({ preset: 'tinyData', orientation: 'LandScape' });
     navigation.navigate('Scanner');
   };
 
   const scanPhoto = (palletIndex: number, photoIndex: number) => {
     setScanTarget({ type: 'photo', palletIndex, photoIndex });
+    configureScanner({ preset: 'fullLabel', orientation: 'LandScape' });
     navigation.navigate('Scanner');
   };
 

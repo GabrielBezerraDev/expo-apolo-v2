@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -7,8 +7,7 @@ import {
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@config/navigation.protocol';
 import { useThemeMode } from '@hooks/useThemeMode';
-import { FrameProvider } from '@hooks/useFrame';
-import { FramedCameraScanner } from '@features/scanner';
+import { FrameProvider, FramedCameraScanner, useFrame } from '@features/scanner';
 import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPallet';
 import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
 import { PalletProvider, usePallet } from '@features/pallets/providers/PalletProvider';
@@ -55,16 +54,9 @@ function LoggedInStack() {
           <Stack.Screen name="Main" component={MainTabsNavigator} />
           <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
           <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
-          <Stack.Screen name="Scanner"> 
-            {({navigation}) => <FramedCameraScanner
-              onCancel={() => {}}
-              onCapture={() => {}}
-            ></FramedCameraScanner>}
-          </Stack.Screen>
+          <Stack.Screen name="Scanner" component={FramedCameraScanner} />
         </Stack.Navigator>
       </PalletProvider>
     </FrameProvider>
   );
 }
-
-

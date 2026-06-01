@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Alert, ScrollView } from 'react-native';
-import { BaggageClaim, Filter, ScanLine } from 'lucide-react-native';
-import { FramedCameraScanner, ScannerCaptureResult } from '@features/scanner';
+import { BaggageClaim, Filter } from 'lucide-react-native';
 import { OperationCard } from '../../components/OperationCard';
 import { exitOperations } from '../../mocks/palletMock';
 import { ListScreenShell } from '../../components/ListScreenShell';

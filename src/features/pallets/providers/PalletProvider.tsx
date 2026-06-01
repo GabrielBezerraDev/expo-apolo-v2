@@ -1,5 +1,10 @@
 import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from 'react';
 import type { ScannerCaptureResult } from '@features/scanner';
+import { Alert } from 'react-native';
+import { Control, ControllerProps, useForm } from 'react-hook-form';
+import { FormScreenPalletType } from '../screens/form/FormScreenPallet/FormScreenPalletType';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { formScreenPalletSchema } from '../screens/form/FormScreenPallet/FormScreenPalletSchema';
 
 export type EntryPallet = {
   id: string;
@@ -24,6 +29,7 @@ type PalletContextValue = {
   startPalletCapture: () => boolean;
   handleScanCapture: (result: ScannerCaptureResult) => void;
   resetEntry: () => void;
+  controlFormScreenPallet: any
 };
 
 const PalletContext = createContext<PalletContextValue | undefined>(undefined);
@@ -38,6 +44,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
   const canConfirmForm = route.trim().length > 0 && Number.isInteger(parsedQuantity) && parsedQuantity > 0;
   const canConfirmPallets = pallets.length > 0 && pallets.every(item => item.lot.trim() && item.photos.every(Boolean));
 
+  const { control:controlFormScreenPallet } = useForm<FormScreenPalletType>({resolver: zodResolver(formScreenPalletSchema)});
+
   const startPalletCapture = useCallback(() => {
     if (!canConfirmForm) return false;
 
@@ -51,33 +59,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
   }, [canConfirmForm, parsedQuantity]);
 
   const handleScanCapture = useCallback((result: ScannerCaptureResult) => {
-    const target = scanTarget;
-    const value = result.text?.trim() || '';
-
-    setScanTarget(null);
-
-    if (!target) return;
-
-    if (target.type === 'route') {
-      setRoute(value);
-      return;
-    }
-
-    if (target.type === 'lot') {
-      setPallets(current => current.map((item, index) => (
-        index === target.palletIndex ? { ...item, lot: value } : item
-      )));
-      return;
-    }
-
-    setPallets(current => current.map((item, index) => {
-      if (index !== target.palletIndex) return item;
-
-      const photos = [...item.photos];
-      photos[target.photoIndex] = result.imageUri;
-      return { ...item, photos };
-    }));
-  }, [scanTarget]);
+    Alert.alert(result.text);
+  }, []);
 
   const resetEntry = useCallback(() => {
     setRoute('');
@@ -98,6 +81,7 @@ export function PalletProvider({ children }: PropsWithChildren) {
     startPalletCapture,
     handleScanCapture,
     resetEntry,
+    controlFormScreenPallet
   }), [
     route,
     palletQuantity,
@@ -108,6 +92,7 @@ export function PalletProvider({ children }: PropsWithChildren) {
     startPalletCapture,
     handleScanCapture,
     resetEntry,
+    controlFormScreenPallet
   ]);
 
   return <PalletContext.Provider value={value}>{children}</PalletContext.Provider>;

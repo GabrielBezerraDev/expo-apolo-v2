@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Alert, ScrollView } from 'react-native';
-import { PackagePlus, ScanLine, SlidersHorizontal } from 'lucide-react-native';
-import { FramedCameraScanner, ScannerCaptureResult } from '@features/scanner';
+import { SlidersHorizontal } from 'lucide-react-native';
 import { PalletCard } from '../../components/PalletCard';
 import { palletItems } from '../../mocks/palletMock';
 import { ListScreenShell } from '../../components/ListScreenShell';

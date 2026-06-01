@@ -3,7 +3,7 @@
     "name": "ValorlogOcrExpo",
     "slug": "valorlog-ocr-expo",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "assetBundlePatterns": ["**/*"],
@@ -19,6 +19,12 @@
         "expo-camera",
         {
           "cameraPermission": "Permita que o Valorlog use a câmera para escanear etiquetas."
+        }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Permita que o Valorlog use a câmera para escanear etiquetas."
         }
       ]
     ]
