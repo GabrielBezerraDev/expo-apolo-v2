@@ -45,7 +45,7 @@ export function EntryListScreen() {
 
   const handleCapture = (result: ScannerCaptureResult) => {
     const target = scanTarget;
-    const value = result.text?.trim() || `SCAN-${Date.now()}`;
+    const value = result.text?.trim() || ``;
 
     setScanTarget(null);
 
@@ -97,6 +97,7 @@ export function EntryListScreen() {
       <FramedCameraScanner
         onCancel={() => setScanTarget(null)}
         onCapture={handleCapture}
+        preset='tinyData'
       />
     );
   }

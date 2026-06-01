@@ -1,5 +1,7 @@
 package com.valorlogocrexpo.ocr;
 
+import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -68,6 +70,24 @@ public class OCRModule extends ReactContextBaseJavaModule {
   @Override
   public String getName() {
     return MODULE_NAME;
+  }
+
+  @ReactMethod
+  public void setScreenOrientation(String orientation, Promise promise) {
+    Activity activity = getCurrentActivity();
+    if (activity == null) {
+      promise.reject("NO_ACTIVITY", "Current activity is not available");
+      return;
+    }
+
+    int requestedOrientation = "portrait".equals(orientation)
+      ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+      : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+
+    activity.runOnUiThread(() -> {
+      activity.setRequestedOrientation(requestedOrientation);
+      promise.resolve(true);
+    });
   }
 
   @ReactMethod
