@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from "react";
-import { Alert, Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
@@ -12,7 +12,6 @@ import { AppInput } from "@shared/components/AppInput";
 import { typography } from "@shared/typography";
 import { usePallet } from "../../../providers/PalletProvider";
 import { ListScreenShell } from "../../../components/ListScreenShell";
-import { Form } from "react-hook-form";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -25,29 +24,35 @@ export function FormScreenPallet() {
     palletQuantity,
     canConfirmForm,
     setPalletQuantity,
+    setScanTarget,
     startPalletCapture,
     resetEntry,
-    handleScanCapture,
     controlFormScreenPallet,
+    isValidFormScreenPalletValue,
+    setFormScreenPalletValue,
+    getValeusScreenPallet
   } = usePallet();
 
-  useEffect(() => {
-    configureScanner({ onCapture: (data) => handleScanCapture(data) });
-  }, []);
+  const navigator = useNavigation();
 
   const formSubtitle = useMemo(() => {
     if (!route) return "Escaneie o roteiro e informe a quantidade de pallets.";
     return `Roteiro ${route}`;
   }, [route]);
 
-  const scanRoute = () => {
-    navigation.navigate("Scanner");
-  };
+  useEffect(() => {
+    configureScanner({
+      onCapture: (data) => {
+        setFormScreenPalletValue("roadmap", data.text, { shouldValidate: true });
+        navigation.goBack();
+      },
+      onCancel: () => navigator.goBack()
+    });
+  }, []);
 
   const confirm = () => {
-    if (startPalletCapture()) {
+    if (!startPalletCapture()) return;
       navigation.navigate("PalletsEvidence");
-    }
   };
 
   const cancel = () => {
@@ -73,39 +78,37 @@ export function FormScreenPallet() {
             <Text style={[styles.helperText, { color: theme.mutedText }]}>
               {formSubtitle}
             </Text>
-            <Form control={controlFormScreenPallet}>
-              <AppInput
-                controllerReactFormsProps={{
-                  name: "roadmap",
-                  control: controlFormScreenPallet,
-                }}
-                label="Roteiro"
-                value={route}
-                editable={false}
-                placeholder="Escaneie o roteiro"
-                rightIcon={
-                  <Pressable onPress={scanRoute} hitSlop={10}>
-                    <Camera size={20} color={theme.primary} />
-                  </Pressable>
-                }
-              />
-              <AppInput
-                controllerReactFormsProps={{
-                  name: "palletsQuantity",
-                  control: controlFormScreenPallet,
-                }}
-                label="Quan. de pallets"
-                value={palletQuantity}
-                onChangeText={(value) =>
-                  setPalletQuantity(value.replace(/[^0-9]/g, ""))
-                }
-                keyboardType="number-pad"
-                placeholder="Ex: 2"
-              />
-            </Form>
+            <AppInput
+              controllerReactFormsProps={{
+                name: "roadmap",
+                control: controlFormScreenPallet,
+              }}
+              label="Roteiro"
+              value={route}
+              editable={false}
+              placeholder="Escaneie o roteiro"
+              rightIcon={
+                <Pressable onPress={() => navigation.navigate("Scanner")} hitSlop={10}>
+                  <Camera size={20} color={theme.primary} />
+                </Pressable>
+              }
+            />
+            <AppInput
+              controllerReactFormsProps={{
+                name: "palletsQuantity",
+                control: controlFormScreenPallet,
+              }}
+              label="Quan. de pallets"
+              value={palletQuantity}
+              onChangeText={(value) =>
+                setPalletQuantity(value.replace(/[^0-9]/g, ""))
+              }
+              keyboardType="number-pad"
+              placeholder="Ex: 2"
+            />
             <AppButton
               title="CONFIRMAR"
-              disabled={!canConfirmForm}
+              disabled={!isValidFormScreenPalletValue}
               onPress={confirm}
             />
             <AppButton title="CANCELAR" variant="outline" onPress={cancel} />

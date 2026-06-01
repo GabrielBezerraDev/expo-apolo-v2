@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,14 +21,15 @@ export function PalletsEvidence() {
   const { theme } = useThemeMode();
   const { width } = useWindowDimensions();
   const {
-    route,
     pallets,
     canConfirmPallets,
     setScanTarget,
     resetEntry,
+    getValeusScreenPallet,
   } = usePallet();
-  const cardWidth = Math.min(width - 56, 360);
+  const cardWidth = Math.min(width - 32, 560);
   const photoSlotWidth = cardWidth - 32;
+  const palletsQuantity = Array(Number(getValeusScreenPallet('palletsQuantity'))).fill('');
 
   const scanLot = (palletIndex: number) => {
     setScanTarget({ type: 'lot', palletIndex });
@@ -44,11 +45,11 @@ export function PalletsEvidence() {
 
   const closeEntry = () => {
     resetEntry();
-    navigation.popToTop();
+    navigation.goBack();
   };
 
   const finishEntry = () => {
-    Alert.alert('Entrada concluída', `${pallets.length} pallet(s) capturados.`);
+    Alert.alert('Entrada concluída', `${palletsQuantity.length} pallet(s) capturados.`);
     closeEntry();
   };
 
@@ -57,7 +58,7 @@ export function PalletsEvidence() {
       <ScrollView contentContainerStyle={styles.palletsContent} showsVerticalScrollIndicator={false}>
         <View style={styles.palletsHeader}>
           <View>
-            <Text style={[styles.palletsTitle, { color: theme.text }]}>Roteiro: {route}</Text>
+            <Text style={[styles.palletsTitle, { color: theme.text }]}>Roteiro</Text>
             <Text style={[styles.helperText, { color: theme.mutedText }]}>Preencha lote e 4 fotos de cada pallet.</Text>
           </View>
           <Pressable onPress={closeEntry} hitSlop={10}>
@@ -65,26 +66,27 @@ export function PalletsEvidence() {
           </Pressable>
         </View>
 
-        {pallets.map((pallet, palletIndex) => (
-          <View key={pallet.id} style={[styles.palletCard, { width: cardWidth, borderColor: theme.border, backgroundColor: theme.card }]}> 
+        {palletsQuantity.map((pallet, palletIndex) => (
+          <View key={palletIndex} style={[styles.palletCard, { borderColor: theme.border, backgroundColor: theme.card, width: cardWidth }]}> 
             <View style={styles.palletCardHeader}>
-              <Text style={[styles.palletCardTitle, { color: theme.text }]}>Pallet {palletIndex + 1}/{pallets.length}</Text>
-              {pallet.lot && pallet.photos.every(Boolean) ? <CheckCircle2 size={20} color={theme.primary} /> : null}
+              <Text style={[styles.palletCardTitle, { color: theme.text }]}>Pallet {palletIndex + 1}/{palletsQuantity.length}</Text>
+              {/* {pallet.lot && pallet.photos.every(Boolean) ? <CheckCircle2 size={20} color={theme.primary} /> : null} */}
             </View>
             <FlatList
               horizontal
               pagingEnabled
-              data={pallet.photos}
-              keyExtractor={(_, photoIndex) => `${pallet.id}-${photoIndex}`}
+              data={palletsQuantity}
+              keyExtractor={(_, photoIndex) => `${photoIndex}`}
               showsHorizontalScrollIndicator={false}
               style={{ width: photoSlotWidth }}
               renderItem={({ item, index: photoIndex }) => (
                 <Pressable
                   onPress={() => scanPhoto(palletIndex, photoIndex)}
-                  style={[styles.photoSlot, { width: photoSlotWidth, borderColor: theme.border, backgroundColor: theme.background }]}
+                  style={[styles.photoSlot, { borderColor: theme.border, backgroundColor: theme.background, width: photoSlotWidth }]}
                 >
                   {item ? (
-                    <Image source={{ uri: item }} style={styles.photo} resizeMode="cover" />
+                    // <Image source={{ uri: item }} style={styles.photo} resizeMode="cover" />
+                    <Text>fdfd</Text>
                   ) : (
                     <View style={styles.photoEmpty}>
                       <Camera size={30} color={theme.primary} />
@@ -164,7 +166,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 8
   },
   photoCounter: {
     fontSize: 42,
