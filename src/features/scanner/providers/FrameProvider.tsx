@@ -19,6 +19,7 @@ export const FRAME_PRESETS = {
   barcode: { widthRatio: 0.72, heightRatio: 0.1 },
   shortCode: { widthRatio: 0.68, heightRatio: 0.12 },
   singleField: { widthRatio: 0.78, heightRatio: 0.16 },
+  tinyData: { widthRatio: 0.5, heightRatio: 0.07 },
   fullLabel: { widthRatio: 0.86, heightRatio: 0.46 },
   qrCode: { widthRatio: 0.68, heightRatio: 0.34 },
 } as const;
