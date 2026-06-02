@@ -39,8 +39,10 @@ export function FormScreenPallet() {
   const navigator = useNavigation();
 
   const scanRoadmap = useCallback(() => {
-    navigation.navigate('Scanner');
     configureScanner({
+      mode: "scanner",
+      preset: "singleField",
+      orientation: "LandScape",
       onCapture: (data) => {
         setFormScreenPalletValue("roadmap", data.text, {
           shouldValidate: true,
@@ -49,7 +51,8 @@ export function FormScreenPallet() {
       },
       onCancel: () => navigator.goBack(),
     });
-  }, []);
+    navigation.navigate('Scanner');
+  }, [configureScanner, navigation, navigator, setFormScreenPalletValue]);
 
   const formSubtitle = useMemo(() => {
     if (!route) return "Escaneie o roteiro e informe a quantidade de pallets.";

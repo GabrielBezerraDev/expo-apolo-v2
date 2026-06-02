@@ -8,7 +8,6 @@ import React, {
   useState,
 } from "react";
 import { useWindowDimensions } from "react-native";
-import { useNavigation } from '@react-navigation/native';
 
 export type FrameRatios = {
   widthRatio: number;
@@ -43,10 +42,11 @@ export const FRAME_PRESETS = {
   qrCode: { widthRatio: 0.68, heightRatio: 0.34 },
   qrCodeLandScape: { widthRatio: 0.32, heightRatio: 0.5 },
   qrCodePortrait: { widthRatio: 0.68, heightRatio: 0.34 },
-  fullScreen: {widthRatio: 1, heightRatio: 1}
+  fullScreen: { widthRatio: 1, heightRatio: 1 },
 } as const;
 
 export type FramePresetName = keyof typeof FRAME_PRESETS;
+export type ScannerMode = "scanner" | "photo";
 export type ScannerOrientation = "LandScape" | "Portrait";
 
 export type ScannerCaptureResult = {
@@ -58,6 +58,7 @@ export type ScannerCaptureResult = {
 };
 
 type ScannerConfig = {
+  mode: ScannerMode;
   preset: FramePresetName;
   orientation: ScannerOrientation;
   pollIntervalMs: number;
@@ -98,6 +99,7 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
 
   const [ratios, setRatiosState] = useState<FrameRatios>(initialRatios);
   const [scanner, setScanner] = useState<ScannerConfig>({
+    mode: "scanner",
     preset: typeof initial === "string" ? initial : "singleField",
     orientation: "LandScape",
     pollIntervalMs: 600,
@@ -130,7 +132,6 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
 
   const setPreset = useCallback((preset: FramePresetName) => {
     setRatiosState(FRAME_PRESETS[preset]);
-    setRatios(FRAME_PRESETS[preset]);
   }, []);
 
   const configureScanner = useCallback((options: ScannerOptions) => {
@@ -140,6 +141,7 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
       setRatiosState(FRAME_PRESETS[resolvedPreset]);
 
       return {
+        mode: next.mode,
         preset: next.preset,
         orientation: next.orientation,
         pollIntervalMs: next.pollIntervalMs,
@@ -167,6 +169,7 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
     onCaptureRef.current = undefined;
     onCancelRef.current = undefined;
     setScanner({
+      mode: "scanner",
       preset: typeof initial === "string" ? initial : "singleField",
       orientation: "LandScape",
       pollIntervalMs: 600,

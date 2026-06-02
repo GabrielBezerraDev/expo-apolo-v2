@@ -25,7 +25,7 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function PalletsEvidence() {
   const navigation = useNavigation<Navigation>();
-  const { configureScanner, setPreset } = useFrame();
+  const { configureScanner } = useFrame();
   const { theme } = useThemeMode();
   const { width, height } = useWindowDimensions();
   const { route, resetEntry, getValeusScreenPallet } = usePallet();
@@ -51,6 +51,9 @@ export function PalletsEvidence() {
   const scanLot = useCallback(
     (palletIndex: number) => {
       configureScanner({
+        mode: "scanner",
+        preset: "tinyDataLandScape",
+        orientation: "LandScape",
         onCapture: (data) => {
           setPalletsQuantity((prev) =>
             prev.map((pallet, index) => {
@@ -64,17 +67,19 @@ export function PalletsEvidence() {
           );
           navigation.goBack();
         },
+        onCancel: () => navigation.goBack(),
       });
       navigation.navigate("Scanner");
     },
-    [palletsQuantity],
+    [configureScanner, navigation],
   );
 
   const scanPhoto = useCallback(
     (palletIndex: number, photoIndex: number) => {
-      setPreset('tinyData');
-      Alert.alert("teste");
       configureScanner({
+        mode: "photo",
+        preset: "fullScreen",
+        orientation: "LandScape",
         onCapture: (data) => {
           setPalletsQuantity((palletsQuantity) => {
             palletsQuantity[palletIndex].palletsPhotos[photoIndex] =
@@ -83,10 +88,11 @@ export function PalletsEvidence() {
           });
           navigation.goBack();
         },
+        onCancel: () => navigation.goBack(),
       });
       navigation.navigate("Scanner");
     },
-    [palletsQuantity],
+    [configureScanner, navigation],
   );
 
   const closeEntry = () => {

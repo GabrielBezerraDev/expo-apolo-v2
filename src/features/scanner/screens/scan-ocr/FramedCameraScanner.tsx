@@ -14,8 +14,11 @@ import {
 import {
   Camera,
   useCameraDevices,
+} from 'react-native-vision-camera';
+import type {
   CameraPermissionStatus,
   CameraDevice,
+  CameraDeviceFormat,
 } from 'react-native-vision-camera';
 import { useFrame } from '../../providers/FrameProvider';
 
@@ -40,6 +43,17 @@ export const FramedCameraScanner: React.FC = () => {
     }
     return devices;
   }, [devices]);
+  const bestPhotoFormat = useMemo<CameraDeviceFormat | undefined>(() => {
+    const firstFormat = device?.formats?.[0];
+    if (!firstFormat) return undefined;
+
+    return device.formats.reduce((best, format) => {
+      const bestPixels = best.photoWidth * best.photoHeight;
+      const formatPixels = format.photoWidth * format.photoHeight;
+
+      return formatPixels > bestPixels ? format : best;
+    }, firstFormat);
+  }, [device]);
 
   const [permissionStatus, setPermissionStatus] = useState<CameraPermissionStatus>('not-determined');
   const [isCapturing, setIsCapturing] = useState(false);
@@ -77,7 +91,8 @@ export const FramedCameraScanner: React.FC = () => {
     handleScannerCancel,
   } = useFrame();
 
-  const { orientation, pollIntervalMs, stableReadsRequired } = scanner;
+  const { mode, orientation, pollIntervalMs, stableReadsRequired } = scanner;
+  const isPhotoMode = mode === 'photo';
   const isLandscape = orientation === 'LandScape';
   const nativeOrientation = isLandscape ? 'landscape' : 'portrait';
   
@@ -87,8 +102,8 @@ export const FramedCameraScanner: React.FC = () => {
 
   const PREVIEW_W = cameraLayout.width || SCREEN_W;
   const PREVIEW_H = cameraLayout.height || SCREEN_H;
-  const FRAME_W = useMemo(() => PREVIEW_W * ratios.widthRatio, [ratios]);
-  const FRAME_H = useMemo(() => PREVIEW_W * ratios.heightRatio, [ratios]);
+  const FRAME_W = PREVIEW_W * ratios.widthRatio;
+  const FRAME_H = PREVIEW_H * ratios.heightRatio;
   const FRAME_X = (PREVIEW_W - FRAME_W) / 2;
   const FRAME_Y = (PREVIEW_H - FRAME_H) / 2;
 
@@ -108,6 +123,14 @@ export const FramedCameraScanner: React.FC = () => {
       Promise.resolve(OCRModule?.setScreenOrientation?.('portrait')).catch(() => undefined);
     };
   }, [nativeOrientation]);
+
+  useEffect(() => {
+    isPollingRef.current = false;
+    consecutiveSameReads.current = 0;
+    lastTextRef.current = '';
+    latestResultRef.current = null;
+    setLiveResult(null);
+  }, [mode, orientation, ratios]);
 
   // -------------------------------------------------------------------------
   // Map screen frame → photo pixel coords
@@ -228,7 +251,7 @@ export const FramedCameraScanner: React.FC = () => {
 
   // Start/stop the polling loop based on camera readiness
   useEffect(() => {
-    if (!hasPermission || !device || isCapturing) {
+    if (isPhotoMode || !hasPermission || !device || isCapturing) {
       isPollingRef.current = false;
       return;
     }
@@ -242,7 +265,7 @@ export const FramedCameraScanner: React.FC = () => {
       isPollingRef.current = false;
       clearInterval(interval);
     };
-  }, [hasPermission, device, isCapturing, pollIntervalMs, runOCRTick]);
+  }, [isPhotoMode, hasPermission, device, isCapturing, pollIntervalMs, runOCRTick]);
 
   // -------------------------------------------------------------------------
   // Final capture — uses the most recent live result + a high-quality photo
@@ -261,6 +284,17 @@ export const FramedCameraScanner: React.FC = () => {
       const photoPath = Platform.OS === 'android'
         ? `file://${photo.path}`
         : photo.path;
+
+      if (isPhotoMode) {
+        handleScannerCapture({
+          imageUri: photoPath,
+          text: '',
+          fields: {},
+          matchedFields: 0,
+          isStable: true,
+        });
+        return;
+      }
 
       const { cropX, cropY, cropW, cropH } = computePhotoCropRect(
         photo.width, photo.height,
@@ -285,7 +319,7 @@ export const FramedCameraScanner: React.FC = () => {
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing, handleScannerCapture, computePhotoCropRect]);
+  }, [isCapturing, isPhotoMode, handleScannerCapture, computePhotoCropRect]);
 
   // -------------------------------------------------------------------------
   // Render
@@ -330,61 +364,77 @@ export const FramedCameraScanner: React.FC = () => {
         device={device}
         isActive={true}
         photo={true}
+        format={isPhotoMode ? bestPhotoFormat : undefined}
+        photoQualityBalance={isPhotoMode ? 'quality' : 'balanced'}
         outputOrientation="preview"
         resizeMode="cover"
       />
 
-      {/* Dimmed overlay */}
-      <View style={{
-        position: 'absolute', top: 0, left: 0,
-        width: PREVIEW_W, height: FRAME_Y, backgroundColor: dim,
-      }} />
-      <View style={{
-        position: 'absolute', top: FRAME_Y + FRAME_H, left: 0,
-        width: PREVIEW_W, height: PREVIEW_H - (FRAME_Y + FRAME_H), backgroundColor: dim,
-      }} />
-      <View style={{
-        position: 'absolute', top: FRAME_Y, left: 0,
-        width: FRAME_X, height: FRAME_H, backgroundColor: dim,
-      }} />
-      <View style={{
-        position: 'absolute', top: FRAME_Y, left: FRAME_X + FRAME_W,
-        width: PREVIEW_W - (FRAME_X + FRAME_W), height: FRAME_H, backgroundColor: dim,
-      }} />
+      {!isPhotoMode && (
+        <>
+          {/* Dimmed overlay */}
+          <View style={{
+            position: 'absolute', top: 0, left: 0,
+            width: PREVIEW_W, height: FRAME_Y, backgroundColor: dim,
+          }} />
+          <View style={{
+            position: 'absolute', top: FRAME_Y + FRAME_H, left: 0,
+            width: PREVIEW_W, height: PREVIEW_H - (FRAME_Y + FRAME_H), backgroundColor: dim,
+          }} />
+          <View style={{
+            position: 'absolute', top: FRAME_Y, left: 0,
+            width: FRAME_X, height: FRAME_H, backgroundColor: dim,
+          }} />
+          <View style={{
+            position: 'absolute', top: FRAME_Y, left: FRAME_X + FRAME_W,
+            width: PREVIEW_W - (FRAME_X + FRAME_W), height: FRAME_H, backgroundColor: dim,
+          }} />
 
-      {/* Frame border — color changes based on detection state */}
-      <View style={{
-        position: 'absolute',
-        top: FRAME_Y, left: FRAME_X,
-        width: FRAME_W, height: FRAME_H,
-        borderWidth: 3,
-        borderColor: liveResult?.isStable ? '#00ff00' : hasLive ? '#ffcc00' : '#fff',
-        borderRadius: 8,
-      }} />
+          {/* Frame border — color changes based on detection state */}
+          <View style={{
+            position: 'absolute',
+            top: FRAME_Y, left: FRAME_X,
+            width: FRAME_W, height: FRAME_H,
+            borderWidth: 3,
+            borderColor: liveResult?.isStable ? '#00ff00' : hasLive ? '#ffcc00' : '#fff',
+            borderRadius: 8,
+          }} />
 
-      {/* Live OCR preview above the frame */}
-      <View style={[styles.helpBox, { top: FRAME_Y - (isLandscape ? 120 : 220), width: PREVIEW_W }]}>
-        {hasLive ? (
-          <View style={styles.livePreview}>
-            <Text style={styles.liveLabel}>
-              {liveResult!.isStable ? '✓ Estável' : 'Lendo...'}
-            </Text>
-            <Text style={styles.liveText} numberOfLines={2}>
-              {liveResult!.text}
-            </Text>
-            {liveResult!.matchedFields > 0 && (
-              <Text style={styles.liveFields}>
-                {liveResult!.matchedFields} campo(s) detectado(s)
-              </Text>
+          {/* Live OCR preview above the frame */}
+          <View style={[styles.helpBox, { top: FRAME_Y - (isLandscape ? 120 : 220), width: PREVIEW_W }]}> 
+            {hasLive ? (
+              <View style={styles.livePreview}>
+                <Text style={styles.liveLabel}>
+                  {liveResult!.isStable ? '✓ Estável' : 'Lendo...'}
+                </Text>
+                <Text style={styles.liveText} numberOfLines={2}>
+                  {liveResult!.text}
+                </Text>
+                {liveResult!.matchedFields > 0 && (
+                  <Text style={styles.liveFields}>
+                    {liveResult!.matchedFields} campo(s) detectado(s)
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <Text style={styles.helpText}>Alinhe a etiqueta dentro da área</Text>
             )}
           </View>
-        ) : (
-          <Text style={styles.helpText}>Alinhe a etiqueta dentro da área</Text>
-        )}
-      </View>
+        </>
+      )}
+
+      {isPhotoMode && (
+        <View style={[styles.photoHelpBox, { width: PREVIEW_W }]}> 
+          <Text style={styles.helpText}>Enquadre a foto do pallet</Text>
+        </View>
+      )}
 
       {/* Action buttons */}
-      <View style={[styles.actions, { top: FRAME_Y + FRAME_H + 40, width: PREVIEW_W }]}>
+      <View style={[
+        styles.actions,
+        isPhotoMode ? styles.photoActions : { top: FRAME_Y + FRAME_H + 40 },
+        { width: PREVIEW_W },
+      ]}>
         <TouchableOpacity
           style={[styles.button, styles.cancelButton]}
           onPress={handleScannerCancel}
@@ -396,7 +446,7 @@ export const FramedCameraScanner: React.FC = () => {
           style={[
             styles.button,
             styles.captureButton,
-            liveResult?.isStable && styles.captureButtonStable,
+            !isPhotoMode && liveResult?.isStable && styles.captureButtonStable,
           ]}
           onPress={handleCapture}
           disabled={isCapturing}>
@@ -404,7 +454,7 @@ export const FramedCameraScanner: React.FC = () => {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>
-              {liveResult?.isStable ? 'Confirmar' : 'Capturar'}
+              {isPhotoMode ? 'Tirar foto' : liveResult?.isStable ? 'Confirmar' : 'Capturar'}
             </Text>
           )}
         </TouchableOpacity>
@@ -421,6 +471,12 @@ const styles = StyleSheet.create({
   },
   permissionText: { color: '#fff', fontSize: 16, marginBottom: 20 },
   helpBox: { position: 'absolute', alignItems: 'center', paddingHorizontal: 20 },
+  photoHelpBox: {
+    position: 'absolute',
+    top: 28,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
   helpText: {
     color: '#fff', fontSize: 16, fontWeight: '600',
     textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4,
@@ -447,6 +503,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     flexDirection: 'row', justifyContent: 'space-around',
     paddingHorizontal: 40,
+  },
+  photoActions: {
+    bottom: 32,
   },
   button: {
     paddingHorizontal: 24, paddingVertical: 14,

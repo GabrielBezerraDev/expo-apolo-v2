@@ -5,5 +5,6 @@ export type {
   FramePresetName,
   FrameRatios,
   ScannerCaptureResult,
+  ScannerMode,
   ScannerOrientation,
 } from "./providers/FrameProvider";
