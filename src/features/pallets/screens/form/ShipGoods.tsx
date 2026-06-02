@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -55,12 +54,7 @@ export function ShipGoods() {
   };
 
   const finishExit = () => {
-    Alert.alert("Saída concluída", "Mercadoria embarcada e placa registradas.", [
-      {
-        text: "OK",
-        onPress: closeExit,
-      },
-    ]);
+    navigation.navigate("OperationSuccess", { operation: "exit" });
   };
 
   return (
@@ -72,7 +66,7 @@ export function ShipGoods() {
         <View style={styles.header}>
           <View>
             <Text style={[styles.title, { color: theme.text }]}>Roteiro: {route}</Text>
-            <Text style={[styles.helperText, { color: theme.mutedText }]}>Tire uma foto da mercadoria embarcada e uma da placa do caminhão.</Text>
+            <Text style={[styles.helperText, { color: theme.mutedText }]}>Tire uma foto da barcada e uma da placa do caminhão.</Text>
           </View>
           <Pressable onPress={closeExit} hitSlop={10}>
             <X size={24} color={theme.mutedText} />
@@ -108,6 +102,7 @@ export function ShipGoods() {
         />
 
         <AppButton
+          style={{width:'100%', height: height * 0.06}}
           title="FINALIZAR SAÍDA"
           disabled={!canFinishExit}
           onPress={finishExit}
@@ -164,7 +159,7 @@ function PhotoSlot({
           <Camera size={34} color={iconColor} />
           <Text style={[styles.photoTitle, { color: textColor }]}>{title}</Text>
           <Text style={[styles.helperText, { color: mutedTextColor }]}>{helper}</Text>
-          <Text style={[styles.helperText, { color: mutedTextColor }]}>Toque para fotografar</Text>
+          <Text style={[styles.helperText, { color: mutedTextColor }]}>TOQUE PARA FOTOGRAFAR</Text>
         </View>
       )}
     </Pressable>
@@ -189,6 +184,7 @@ const styles = StyleSheet.create({
   },
   helperText: {
     ...typography.bodySmall,
+    fontWeight: '700'
   },
   photoSlot: {
     borderWidth: 1,

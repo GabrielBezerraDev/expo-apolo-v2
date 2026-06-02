@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from "react";
 import {
-  Alert,
   FlatList,
   Image,
   Pressable,
@@ -106,11 +105,7 @@ export function PalletsEvidence() {
       return;
     }
 
-    Alert.alert(
-      "Entrada concluída",
-      `${palletsQuantity.length} palete(s) capturados.`,
-    );
-    closeEntry();
+    navigation.navigate("OperationSuccess", { operation: "entry" });
   };
 
   return (

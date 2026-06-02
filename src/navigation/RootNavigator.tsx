@@ -9,9 +9,11 @@ import { RootStackParamList } from '@config/navigation.protocol';
 import { useThemeMode } from '@hooks/useThemeMode';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPallet';
+import { OperationSuccess } from '@features/pallets/screens/form/OperationSuccess';
 import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
 import { ShipGoods } from '@features/pallets/screens/form/ShipGoods';
 import { PalletProvider } from '@features/pallets/providers/PalletProvider';
+import { PaginationProvider } from '@shared/components/Pagination';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
 
@@ -51,13 +53,16 @@ function LoggedInStack() {
   return (
     <FrameProvider>
       <PalletProvider>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Main" component={MainTabsNavigator} />
-          <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
-          <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
-          <Stack.Screen name="ShipGoods" component={ShipGoods} />
-          <Stack.Screen name="Scanner" component={FramedCameraScanner} />
-        </Stack.Navigator>
+        <PaginationProvider>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Main" component={MainTabsNavigator} />
+            <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
+            <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
+            <Stack.Screen name="ShipGoods" component={ShipGoods} />
+            <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
+            <Stack.Screen name="Scanner" component={FramedCameraScanner} />
+          </Stack.Navigator>
+        </PaginationProvider>
       </PalletProvider>
     </FrameProvider>
   );

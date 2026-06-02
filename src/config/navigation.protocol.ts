@@ -15,4 +15,5 @@ export type RootStackParamList = {
   FormScreenPallet: undefined;
   PalletsEvidence: undefined;
   ShipGoods: undefined;
+  OperationSuccess: { operation: 'entry' | 'exit' };
 };

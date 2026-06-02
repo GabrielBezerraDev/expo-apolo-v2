@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
-import { typography } from "@shared/typography";
+import { isTablet, typography } from "@shared/typography";
 import { useThemeMode } from "@hooks/useThemeMode";
 import EmployeeSvg from "@assets/svg/employee.svg";
 import MessengerSvg from "@assets/svg/Messenger-cuate.svg";
@@ -152,7 +152,7 @@ export function LoginAnimatedHeader() {
           styles.employee,
           {
             opacity: employeeOpacity,
-            transform: [{ translateX: employeeTranslate }, { translateY: -235 }],
+            transform: [{ translateX: employeeTranslate }, { translateY: isTablet ? -235 : -163 }],
           },
         ]}
       >
@@ -167,7 +167,7 @@ export function LoginAnimatedHeader() {
             transform: [
               { translateX: messengerTranslate },
               { scaleX: -1 },
-              { translateY: -220 },
+              { translateY: isTablet ? -220 : -150  },
             ],
           },
         ]}
