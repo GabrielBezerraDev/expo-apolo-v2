@@ -34,11 +34,7 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
-<<<<<<< HEAD
     "react-native-vision-camera": "^4.7.3",
-=======
-    "react-native-vision-camera": "^4.7.2",
->>>>>>> 45cd1c715df9c891981b594bb62af9863957d30d
     "react-native-worklets": "0.5.1",
     "tamagui": "^2.0.0",
     "zod": "^4.4.3"
