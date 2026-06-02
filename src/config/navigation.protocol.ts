@@ -14,4 +14,5 @@ export type RootStackParamList = {
   Scanner: undefined;
   FormScreenPallet: undefined;
   PalletsEvidence: undefined;
+  ShipGoods: undefined;
 };

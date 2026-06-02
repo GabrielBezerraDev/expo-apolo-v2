@@ -13,10 +13,11 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function EntryListScreen() {
   const navigation = useNavigation<Navigation>();
-  const { resetEntry } = usePallet();
+  const { resetEntry, setOperationPallet } = usePallet();
 
   const startEntry = () => {
     resetEntry();
+    setOperationPallet('entry');
     navigation.navigate('FormScreenPallet');
   };
 

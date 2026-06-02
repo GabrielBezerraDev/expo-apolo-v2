@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -10,10 +10,10 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Camera, CheckCircle2, X } from "lucide-react-native";
+import { Camera, X } from "lucide-react-native";
 import { Text, View } from "tamagui";
 import type { RootStackParamList } from "@config/navigation.protocol";
-import { useFrame } from "@features/scanner";
+import { useFrame } from "@features/camera";
 import { useThemeMode } from "@hooks/useThemeMode";
 import { AppButton } from "@shared/components/AppButton";
 import { AppInput } from "@shared/components/AppInput";
@@ -28,7 +28,7 @@ export function PalletsEvidence() {
   const { configureScanner } = useFrame();
   const { theme } = useThemeMode();
   const { width, height } = useWindowDimensions();
-  const { route, resetEntry, getValeusScreenPallet } = usePallet();
+  const { route, resetEntry, getValeusScreenPallet, operationPallet } = usePallet();
   const cardWidth = width - width * 0.1;
   const photoSlotWidth = cardWidth - 32;
   const [palletsQuantity, setPalletsQuantity] = useState(() =>
@@ -68,7 +68,7 @@ export function PalletsEvidence() {
           navigation.goBack();
         },
         onCancel: () => navigation.goBack(),
-        formatTextDataWithRegex: (data) => data.replace(/\D/g, "")
+        formatTextDataWithRegex: (data) => data.replace(/\D/g, ""),
       });
       navigation.navigate("Scanner");
     },
@@ -101,6 +101,11 @@ export function PalletsEvidence() {
   };
 
   const finishEntry = () => {
+    if (operationPallet === "exit") {
+      navigation.navigate("ShipGoods");
+      return;
+    }
+
     Alert.alert(
       "Entrada concluída",
       `${palletsQuantity.length} palete(s) capturados.`,
@@ -210,7 +215,7 @@ export function PalletsEvidence() {
         ))}
 
         <AppButton
-          title="CONFIRMAR"
+          title={operationPallet === "exit" ? "CONTINUAR" : "CONFIRMAR"}
           disabled={!validateForm}
           onPress={finishEntry}
         />

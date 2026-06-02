@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   NavigationContainer,
   DefaultTheme,
   DarkTheme,
 } from '@react-navigation/native';
-import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@config/navigation.protocol';
 import { useThemeMode } from '@hooks/useThemeMode';
-import { FrameProvider, FramedCameraScanner, useFrame } from '@features/scanner';
+import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPallet';
 import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
-import { PalletProvider, usePallet } from '@features/pallets/providers/PalletProvider';
+import { ShipGoods } from '@features/pallets/screens/form/ShipGoods';
+import { PalletProvider } from '@features/pallets/providers/PalletProvider';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
 
@@ -54,6 +55,7 @@ function LoggedInStack() {
           <Stack.Screen name="Main" component={MainTabsNavigator} />
           <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
           <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
+          <Stack.Screen name="ShipGoods" component={ShipGoods} />
           <Stack.Screen name="Scanner" component={FramedCameraScanner} />
         </Stack.Navigator>
       </PalletProvider>

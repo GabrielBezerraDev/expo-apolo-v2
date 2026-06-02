@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
 import { Text, View } from "tamagui";
 import type { RootStackParamList } from "@config/navigation.protocol";
-import { useFrame } from "@features/scanner";
+import { useFrame } from "@features/camera";
 import { useThemeMode } from "@hooks/useThemeMode";
 import { AppButton } from "@shared/components/AppButton";
 import { AppInput } from "@shared/components/AppInput";
