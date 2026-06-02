@@ -34,8 +34,12 @@ export const FRAME_PRESETS = {
   tinyDataLandScape: { widthRatio: 0.2, heightRatio: 0.1 },
   tinyDataPortrait: { widthRatio: 0.5, heightRatio: 0.07 },
   singleField: { widthRatio: 0.78, heightRatio: 0.16 },
+<<<<<<< HEAD
   singleFieldLandScape: { widthRatio: 0.45, heightRatio: 0.18 },
   singleFieldPortrait: { widthRatio: 0.78, heightRatio: 0.16 },
+=======
+  tinyData: { widthRatio: 0.5, heightRatio: 0.07 },
+>>>>>>> 45cd1c715df9c891981b594bb62af9863957d30d
   fullLabel: { widthRatio: 0.86, heightRatio: 0.46 },
   fullLabelLandScape: { widthRatio: 0.55, heightRatio: 0.7 },
   fullLabelPortrait: { widthRatio: 0.86, heightRatio: 0.46 },
