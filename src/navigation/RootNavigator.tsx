@@ -1,8 +1,24 @@
+<<<<<<< HEAD
+import React, { useEffect, useState } from 'react';
+=======
 import React, { useState } from "react";
+>>>>>>> 45cd1c715df9c891981b594bb62af9863957d30d
 import {
   NavigationContainer,
   DefaultTheme,
   DarkTheme,
+<<<<<<< HEAD
+} from '@react-navigation/native';
+import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@config/navigation.protocol';
+import { useThemeMode } from '@hooks/useThemeMode';
+import { FrameProvider, FramedCameraScanner, useFrame } from '@features/scanner';
+import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPallet';
+import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
+import { PalletProvider, usePallet } from '@features/pallets/providers/PalletProvider';
+import { AuthNavigator } from './AuthNavigator';
+import { MainTabsNavigator } from './MainTabsNavigator';
+=======
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@config/navigation.protocol";
@@ -10,6 +26,7 @@ import { useThemeMode } from "@hooks/useThemeMode";
 import { AuthNavigator } from "./AuthNavigator";
 import { MainTabsNavigator } from "./MainTabsNavigator";
 import { FramedCameraScanner } from "@features/scanner";
+>>>>>>> 45cd1c715df9c891981b594bb62af9863957d30d
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,11 +47,17 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer theme={navTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!loggedIn ? (
+      {!loggedIn ? (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Auth">
             {() => <AuthNavigator onLogin={() => setLoggedIn(true)} />}
           </Stack.Screen>
+<<<<<<< HEAD
+        </Stack.Navigator>
+      ) : (
+        <LoggedInStack />
+      )}
+=======
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabsNavigator} />
@@ -53,6 +76,22 @@ export function RootNavigator() {
           </>
         )}
       </Stack.Navigator>
+>>>>>>> 45cd1c715df9c891981b594bb62af9863957d30d
     </NavigationContainer>
+  );
+}
+
+function LoggedInStack() {
+  return (
+    <FrameProvider>
+      <PalletProvider>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Main" component={MainTabsNavigator} />
+          <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
+          <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
+          <Stack.Screen name="Scanner" component={FramedCameraScanner} />
+        </Stack.Navigator>
+      </PalletProvider>
+    </FrameProvider>
   );
 }

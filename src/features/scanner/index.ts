@@ -1,4 +1,10 @@
-export { FramedCameraScanner } from "./screens/FramedCameraScanner";
-export type { ScannerCaptureResult } from "./screens/FramedCameraScanner";
+export { FramedCameraScanner } from "./screens/scan-ocr/FramedCameraScanner";
 export { FrameProvider, FRAME_PRESETS, useFrame } from "./providers/FrameProvider";
-export type { FrameGeometry, FramePresetName, FrameRatios } from "./providers/FrameProvider";
+export type {
+  FrameGeometry,
+  FramePresetName,
+  FrameRatios,
+  ScannerCaptureResult,
+  ScannerMode,
+  ScannerOrientation,
+} from "./providers/FrameProvider";
