@@ -48,6 +48,7 @@ export const FRAME_PRESETS = {
 export type FramePresetName = keyof typeof FRAME_PRESETS;
 export type ScannerMode = "scanner" | "photo";
 export type ScannerOrientation = "LandScape" | "Portrait";
+export type ScannerTextFormatter = (data: string) => string;
 
 export type ScannerCaptureResult = {
   imageUri: string;
@@ -68,6 +69,7 @@ type ScannerConfig = {
 type ScannerOptions = Partial<ScannerConfig> & {
   onCapture?: (result: ScannerCaptureResult) => void;
   onCancel?: () => void;
+  formatTextDataWithRegex?: ScannerTextFormatter;
 };
 
 type FrameContextValue = {
@@ -79,6 +81,7 @@ type FrameContextValue = {
   configureScanner: (options: ScannerOptions) => void;
   handleScannerCapture: (result: ScannerCaptureResult) => void;
   handleScannerCancel: () => void;
+  formatTextDataWithRegex: React.MutableRefObject<ScannerTextFormatter | undefined>;
   resetScanner: () => void;
   reset: () => void;
 };
@@ -91,7 +94,7 @@ type Props = PropsWithChildren<{
 
 export function FrameProvider({ children, initial = "singleField" }: Props) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  
+
   const initialRatios = useMemo<FrameRatios>(() => {
     if (typeof initial === "string") return FRAME_PRESETS[initial];
     return initial;
@@ -105,8 +108,11 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
     pollIntervalMs: 600,
     stableReadsRequired: 2,
   });
-  const onCaptureRef = useRef<((result: ScannerCaptureResult) => void) | undefined>(undefined);
+  const onCaptureRef = useRef<
+    ((result: ScannerCaptureResult) => void) | undefined
+  >(undefined);
   const onCancelRef = useRef<(() => void) | undefined>(undefined);
+  const formatTextDataWithRegex = useRef<ScannerTextFormatter | undefined>(undefined);
 
   const geometry = useMemo<FrameGeometry>(() => {
     const width = screenWidth * ratios.widthRatio;
@@ -129,15 +135,19 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
     });
   }, []);
 
-
   const setPreset = useCallback((preset: FramePresetName) => {
     setRatiosState(FRAME_PRESETS[preset]);
   }, []);
 
   const configureScanner = useCallback((options: ScannerOptions) => {
-    setScanner(current => {
+    formatTextDataWithRegex.current = options.formatTextDataWithRegex;
+
+    setScanner((current) => {
       const next = { ...current, ...options };
-      const resolvedPreset = resolveScannerPreset(next.preset, next.orientation);
+      const resolvedPreset = resolveScannerPreset(
+        next.preset,
+        next.orientation,
+      );
       setRatiosState(FRAME_PRESETS[resolvedPreset]);
 
       return {
@@ -149,8 +159,8 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
       };
     });
 
-    if ("onCapture" in options) onCaptureRef.current = (data) => { if(options.onCapture) options.onCapture(data); };
-    if ("onCancel" in options) onCancelRef.current = () => { if(options.onCancel) options.onCancel(); };
+    if ("onCapture" in options) onCaptureRef.current = options.onCapture;
+    if ("onCancel" in options) onCancelRef.current = options.onCancel;
   }, []);
 
   const handleScannerCapture = useCallback((result: ScannerCaptureResult) => {
@@ -168,6 +178,7 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
   const resetScanner = useCallback(() => {
     onCaptureRef.current = undefined;
     onCancelRef.current = undefined;
+    formatTextDataWithRegex.current = undefined;
     setScanner({
       mode: "scanner",
       preset: typeof initial === "string" ? initial : "singleField",
@@ -190,6 +201,7 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
       handleScannerCancel,
       resetScanner,
       reset,
+      formatTextDataWithRegex,
     }),
     [
       ratios,
@@ -202,10 +214,13 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
       handleScannerCancel,
       resetScanner,
       reset,
-    ]
+      formatTextDataWithRegex,
+    ],
   );
 
-  return <FrameContext.Provider value={value}>{children}</FrameContext.Provider>;
+  return (
+    <FrameContext.Provider value={value}>{children}</FrameContext.Provider>
+  );
 }
 
 export function useFrame() {
@@ -222,8 +237,12 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(value, max));
 }
 
-function resolveScannerPreset(preset: FramePresetName, orientation: ScannerOrientation): FramePresetName {
-  if (preset.endsWith("LandScape") || preset.endsWith("Portrait")) return preset;
+function resolveScannerPreset(
+  preset: FramePresetName,
+  orientation: ScannerOrientation,
+): FramePresetName {
+  if (preset.endsWith("LandScape") || preset.endsWith("Portrait"))
+    return preset;
 
   const orientedPreset = `${preset}${orientation}` as FramePresetName;
   return orientedPreset in FRAME_PRESETS ? orientedPreset : preset;

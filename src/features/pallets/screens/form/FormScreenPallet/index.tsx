@@ -41,7 +41,7 @@ export function FormScreenPallet() {
   const scanRoadmap = useCallback(() => {
     configureScanner({
       mode: "scanner",
-      preset: "singleField",
+      preset: "tinyDataLandScape",
       orientation: "LandScape",
       onCapture: (data) => {
         setFormScreenPalletValue("roadmap", data.text, {
@@ -50,6 +50,7 @@ export function FormScreenPallet() {
         navigation.goBack();
       },
       onCancel: () => navigator.goBack(),
+      formatTextDataWithRegex: (data) => data.replace(/[^a-zA-Z0-9\s]/g, ""),
     });
     navigation.navigate('Scanner');
   }, [configureScanner, navigation, navigator, setFormScreenPalletValue]);

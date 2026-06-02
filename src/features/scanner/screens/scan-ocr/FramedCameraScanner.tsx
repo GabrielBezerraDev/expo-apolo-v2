@@ -89,6 +89,7 @@ export const FramedCameraScanner: React.FC = () => {
     scanner,
     handleScannerCapture,
     handleScannerCancel,
+    formatTextDataWithRegex,
   } = useFrame();
 
   const { mode, orientation, pollIntervalMs, stableReadsRequired } = scanner;
@@ -223,7 +224,10 @@ export const FramedCameraScanner: React.FC = () => {
         multipleAttempts: false,
       });
 
-      const text = ocrResult.text?.trim() || '';
+      const rawText = ocrResult.text?.trim() || '';
+      const text = formatTextDataWithRegex.current
+        ? formatTextDataWithRegex.current(rawText)
+        : rawText;
       const fields = ocrResult.fields || {};
       const matchedFields = ocrResult.matchedFields || 0;
 
@@ -247,7 +251,7 @@ export const FramedCameraScanner: React.FC = () => {
     } finally {
       isProcessingRef.current = false;
     }
-  }, [computeSnapshotCropRect, stableReadsRequired]);
+  }, [computeSnapshotCropRect, formatTextDataWithRegex, stableReadsRequired]);
 
   // Start/stop the polling loop based on camera readiness
   useEffect(() => {

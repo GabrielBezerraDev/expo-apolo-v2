@@ -68,6 +68,7 @@ export function PalletsEvidence() {
           navigation.goBack();
         },
         onCancel: () => navigation.goBack(),
+        formatTextDataWithRegex: (data) => data.replace(/\D/g, "")
       });
       navigation.navigate("Scanner");
     },
@@ -119,7 +120,7 @@ export function PalletsEvidence() {
               Roteiro: {route}
             </Text>
             <Text style={[styles.helperText, { color: theme.mutedText }]}>
-              Preencha lote e 4 fotos de cada pallet.
+              Preencha lote e 4 fotos de cada palete.
             </Text>
           </View>
           <Pressable onPress={closeEntry} hitSlop={10}>
