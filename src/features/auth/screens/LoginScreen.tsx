@@ -1,9 +1,9 @@
 import React from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Pressable, StyleSheet } from "react-native";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react-native";
-import { styled, Text, View } from "tamagui";
+import { styled, Text, useWindowDimensions, View } from "tamagui";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@config/navigation.protocol";
 import { useThemeMode } from "@hooks/useThemeMode";
@@ -26,11 +26,12 @@ const Screen = styled(View, {
   paddingBottom: 18,
 });
 const TopActions = styled(View, { alignItems: "flex-end", paddingTop:20 });
-const Form = styled(View, { gap: 16 });
+const Form = styled(View, { gap: 16, flex: 4, alignItems: 'center', justifyContent: 'center', width: '100%' });
 const Inline = styled(View, {
   flexDirection: "row",
   justifyContent: "space-between",
   alignItems: "center",
+  width: '100%'
 });
 const Remember = styled(Pressable, {
   flexDirection: "row",
@@ -71,9 +72,12 @@ const Version = styled(Text, {
 
 export function LoginScreen({ onSuccess }: Props) {
   const { theme } = useThemeMode();
+  const { height } = useWindowDimensions();
   const {
     control,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -84,6 +88,7 @@ export function LoginScreen({ onSuccess }: Props) {
   const submit = () => {
     onSuccess?.();
   };
+  const remember = watch("remember");
 
   return (
     <Screen>
@@ -92,50 +97,43 @@ export function LoginScreen({ onSuccess }: Props) {
       </TopActions>
       <LoginAnimatedHeader />
       <Form>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field }) => (
-            <AppInput
-              label="E-mail"
-              placeholder="operador@valorlog.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={field.value}
-              onChangeText={field.onChange}
-              error={errors.email?.message}
-            />
-          )}
+        <AppInput<LoginFormData>
+          controllerReactFormsProps={{
+            control,
+            name: "email",
+          }}
+          label="E-mail"
+          placeholder="operador@valorlog.com"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          error={errors.email?.message}
         />
-        <Controller
-          control={control}
-          name="password"
-          render={({ field }) => (
-            <AppInput
-              label="Senha"
-              placeholder="Digite sua senha"
-              isPassword
-              value={field.value}
-              onChangeText={field.onChange}
-              error={errors.password?.message}
-            />
-          )}
+        <AppInput<LoginFormData>
+          controllerReactFormsProps={{
+            control,
+            name: "password",
+          }}
+          label="Senha"
+          placeholder="Digite sua senha"
+          isPassword
+          error={errors.password?.message}
         />
-        <Controller
-          control={control}
-          name="remember"
-          render={({ field }) => (
-            <Inline>
-              <Remember onPress={() => field.onChange(!field.value)}>
-                <Checkbox checked={field.value}>
-                  {field.value ? <Check size={14} color={theme.white} /> : null}
-                </Checkbox>
-                <SmallText>Lembrar de mim</SmallText>
-              </Remember>
-              <LinkText>Esqueci minha senha</LinkText>
-            </Inline>
-          )}
-        />
+        <Inline>
+          <Remember
+            onPress={() =>
+              setValue("remember", !remember, {
+                shouldDirty: true,
+                shouldTouch: true,
+              })
+            }
+          >
+            <Checkbox checked={remember}>
+              {remember ? <Check size={14} color={theme.white} /> : null}
+            </Checkbox>
+            <SmallText>Lembrar de mim</SmallText>
+          </Remember>
+          <LinkText>Esqueci minha senha</LinkText>
+        </Inline>
         <AppButton
           title="ENTRAR"
           loading={isSubmitting}
@@ -156,7 +154,7 @@ export function LoginScreen({ onSuccess }: Props) {
         }}
       >
         <Version>Versão Atual: 1.0.0</Version>
-        <View style={[{ flexDirection: "row", alignItems: "center" }]}> 
+        <View style={[{ flexDirection: "row", alignItems: "center", paddingHorizontal: height * 0.0001 }]}> 
           <Text style={[styles.powered, { color: theme.mutedText, fontWeight: "bold" }]}> 
             powered by
           </Text>

@@ -9,6 +9,7 @@ import {
   ControllerRenderProps,
   FieldValues,
 } from "react-hook-form";
+import { useWindowDimensions } from "tamagui";
 
 type AppInputControllerProps<T extends FieldValues> = Omit<
   ControllerProps<T>,
@@ -40,7 +41,7 @@ export function AppInput<T extends FieldValues>({
 
   const renderInput = (field?: ControllerRenderProps<T>) => {
     const isControlledByReactHookForm = Boolean(field);
-
+    const { height } = useWindowDimensions();
     return (
       <Wrapper>
         {label ? <Label>{label}</Label> : null}
@@ -51,7 +52,7 @@ export function AppInput<T extends FieldValues>({
           <StyledInput
             placeholderTextColor={theme.mutedText}
             secureTextEntry={hidden}
-            style={{ color: theme.text }}
+            style={{ color: theme.text, height: height * 0.07 }}
             {...props}
             value={
               isControlledByReactHookForm

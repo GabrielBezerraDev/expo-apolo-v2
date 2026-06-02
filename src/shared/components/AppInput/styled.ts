@@ -14,6 +14,7 @@ export const InputFrame = styled(View, {
   flexDirection: "row",
   alignItems: "center",
   paddingHorizontal: 14,
+  width: '100%',
   gap: 10,
   variants: {
     hasError: {
