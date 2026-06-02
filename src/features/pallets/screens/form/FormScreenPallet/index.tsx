@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { Alert, Pressable, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
@@ -12,6 +12,7 @@ import { AppInput } from "@shared/components/AppInput";
 import { typography } from "@shared/typography";
 import { usePallet } from "../../../providers/PalletProvider";
 import { ListScreenShell } from "../../../components/ListScreenShell";
+import { FormScreenPalletType } from './FormScreenPalletType';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,29 +31,34 @@ export function FormScreenPallet() {
     controlFormScreenPallet,
     isValidFormScreenPalletValue,
     setFormScreenPalletValue,
-    getValeusScreenPallet
+    getValeusScreenPallet,
   } = usePallet();
 
+
+
   const navigator = useNavigation();
+
+  const scanRoadmap = useCallback(() => {
+    navigation.navigate('Scanner');
+    configureScanner({
+      onCapture: (data) => {
+        setFormScreenPalletValue("roadmap", data.text, {
+          shouldValidate: true,
+        });
+        navigation.goBack();
+      },
+      onCancel: () => navigator.goBack(),
+    });
+  }, []);
 
   const formSubtitle = useMemo(() => {
     if (!route) return "Escaneie o roteiro e informe a quantidade de pallets.";
     return `Roteiro ${route}`;
   }, [route]);
 
-  useEffect(() => {
-    configureScanner({
-      onCapture: (data) => {
-        setFormScreenPalletValue("roadmap", data.text, { shouldValidate: true });
-        navigation.goBack();
-      },
-      onCancel: () => navigator.goBack()
-    });
-  }, []);
-
   const confirm = () => {
     if (!startPalletCapture()) return;
-      navigation.navigate("PalletsEvidence");
+    navigation.navigate("PalletsEvidence");
   };
 
   const cancel = () => {
@@ -78,22 +84,23 @@ export function FormScreenPallet() {
             <Text style={[styles.helperText, { color: theme.mutedText }]}>
               {formSubtitle}
             </Text>
-            <AppInput
+            <AppInput<FormScreenPalletType>
               controllerReactFormsProps={{
                 name: "roadmap",
                 control: controlFormScreenPallet,
+                
               }}
               label="Roteiro"
               value={route}
               editable={false}
               placeholder="Escaneie o roteiro"
               rightIcon={
-                <Pressable onPress={() => navigation.navigate("Scanner")} hitSlop={10}>
+                <Pressable onPress={scanRoadmap} hitSlop={10}>
                   <Camera size={20} color={theme.primary} />
                 </Pressable>
               }
             />
-            <AppInput
+            <AppInput<FormScreenPalletType>
               controllerReactFormsProps={{
                 name: "palletsQuantity",
                 control: controlFormScreenPallet,

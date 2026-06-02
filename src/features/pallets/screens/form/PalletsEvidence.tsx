@@ -1,65 +1,120 @@
-import React, { useEffect } from 'react';
-import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Camera, CheckCircle2, X } from 'lucide-react-native';
-import { Text, View } from 'tamagui';
-import type { RootStackParamList } from '@config/navigation.protocol';
-import { useFrame } from '@features/scanner';
-import { useThemeMode } from '@hooks/useThemeMode';
-import { AppButton } from '@shared/components/AppButton';
-import { AppInput } from '@shared/components/AppInput';
-import { typography } from '@shared/typography';
-import { usePallet } from '../../providers/PalletProvider';
-import { ListScreenShell } from '../../components/ListScreenShell';
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Camera, CheckCircle2, X } from "lucide-react-native";
+import { Text, View } from "tamagui";
+import type { RootStackParamList } from "@config/navigation.protocol";
+import { useFrame } from "@features/scanner";
+import { useThemeMode } from "@hooks/useThemeMode";
+import { AppButton } from "@shared/components/AppButton";
+import { AppInput } from "@shared/components/AppInput";
+import { typography } from "@shared/typography";
+import { usePallet } from "../../providers/PalletProvider";
+import { ListScreenShell } from "../../components/ListScreenShell";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function PalletsEvidence() {
   const navigation = useNavigation<Navigation>();
-  const { configureScanner } = useFrame();
+  const { configureScanner, setPreset } = useFrame();
   const { theme } = useThemeMode();
-  const { width } = useWindowDimensions();
-  const {
-    pallets,
-    canConfirmPallets,
-    setScanTarget,
-    resetEntry,
-    getValeusScreenPallet,
-  } = usePallet();
-  const cardWidth = Math.min(width - 32, 560);
+  const { width, height } = useWindowDimensions();
+  const { route, resetEntry, getValeusScreenPallet } = usePallet();
+  const cardWidth = width - width * 0.1;
   const photoSlotWidth = cardWidth - 32;
-  const palletsQuantity = Array(Number(getValeusScreenPallet('palletsQuantity'))).fill('');
+  const [palletsQuantity, setPalletsQuantity] = useState(() =>
+    Array.from(
+      { length: Number(getValeusScreenPallet("palletsQuantity")) },
+      () => ({
+        palletsPhotos: ["", "", "", ""],
+        batch: "",
+      }),
+    ),
+  );
+  
 
-  const scanLot = (palletIndex: number) => {
-    setScanTarget({ type: 'lot', palletIndex });
-    configureScanner({ preset: 'tinyData', orientation: 'LandScape' });
-    navigation.navigate('Scanner');
-  };
+  const validateForm =
+    palletsQuantity.length > 0 &&
+    palletsQuantity.every(
+      (pallet) => Boolean(pallet.batch) && pallet.palletsPhotos.every(Boolean),
+    );
 
-  const scanPhoto = (palletIndex: number, photoIndex: number) => {
-    setScanTarget({ type: 'photo', palletIndex, photoIndex });
-    configureScanner({ preset: 'fullLabel', orientation: 'LandScape' });
-    navigation.navigate('Scanner');
-  };
+  const scanLot = useCallback(
+    (palletIndex: number) => {
+      configureScanner({
+        onCapture: (data) => {
+          setPalletsQuantity((prev) =>
+            prev.map((pallet, index) => {
+              if (index !== palletIndex) return pallet;
+
+              return {
+                ...pallet,
+                batch: data.text,
+              };
+            }),
+          );
+          navigation.goBack();
+        },
+      });
+      navigation.navigate("Scanner");
+    },
+    [palletsQuantity],
+  );
+
+  const scanPhoto = useCallback(
+    (palletIndex: number, photoIndex: number) => {
+      setPreset('tinyData');
+      Alert.alert("teste");
+      configureScanner({
+        onCapture: (data) => {
+          setPalletsQuantity((palletsQuantity) => {
+            palletsQuantity[palletIndex].palletsPhotos[photoIndex] =
+              data.imageUri;
+            return [...palletsQuantity];
+          });
+          navigation.goBack();
+        },
+      });
+      navigation.navigate("Scanner");
+    },
+    [palletsQuantity],
+  );
 
   const closeEntry = () => {
     resetEntry();
-    navigation.goBack();
   };
 
   const finishEntry = () => {
-    Alert.alert('Entrada concluída', `${palletsQuantity.length} pallet(s) capturados.`);
+    Alert.alert(
+      "Entrada concluída",
+      `${palletsQuantity.length} palete(s) capturados.`,
+    );
     closeEntry();
   };
 
   return (
-    <ListScreenShell title="Captura de pallets">
-      <ScrollView contentContainerStyle={styles.palletsContent} showsVerticalScrollIndicator={false}>
+    <ListScreenShell title="Captura de paletes">
+      <ScrollView
+        contentContainerStyle={styles.palletsContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.palletsHeader}>
           <View>
-            <Text style={[styles.palletsTitle, { color: theme.text }]}>Roteiro</Text>
-            <Text style={[styles.helperText, { color: theme.mutedText }]}>Preencha lote e 4 fotos de cada pallet.</Text>
+            <Text style={[styles.palletsTitle, { color: theme.text }]}>
+              Roteiro: {route}
+            </Text>
+            <Text style={[styles.helperText, { color: theme.mutedText }]}>
+              Preencha lote e 4 fotos de cada pallet.
+            </Text>
           </View>
           <Pressable onPress={closeEntry} hitSlop={10}>
             <X size={24} color={theme.mutedText} />
@@ -67,31 +122,67 @@ export function PalletsEvidence() {
         </View>
 
         {palletsQuantity.map((pallet, palletIndex) => (
-          <View key={palletIndex} style={[styles.palletCard, { borderColor: theme.border, backgroundColor: theme.card, width: cardWidth }]}> 
+          <View
+            key={palletIndex}
+            style={[
+              styles.palletCard,
+              {
+                borderColor: theme.border,
+                backgroundColor: theme.card,
+                width: cardWidth,
+                height: height * 0.5,
+              },
+            ]}
+          >
             <View style={styles.palletCardHeader}>
-              <Text style={[styles.palletCardTitle, { color: theme.text }]}>Pallet {palletIndex + 1}/{palletsQuantity.length}</Text>
-              {/* {pallet.lot && pallet.photos.every(Boolean) ? <CheckCircle2 size={20} color={theme.primary} /> : null} */}
+              <Text style={[styles.palletCardTitle, { color: theme.text }]}>
+                Pallet {palletIndex + 1}/{palletsQuantity.length}
+              </Text>
             </View>
             <FlatList
               horizontal
               pagingEnabled
-              data={palletsQuantity}
+              data={pallet.palletsPhotos}
               keyExtractor={(_, photoIndex) => `${photoIndex}`}
               showsHorizontalScrollIndicator={false}
-              style={{ width: photoSlotWidth }}
+              style={{ width: photoSlotWidth, height: height * 0.5 }}
               renderItem={({ item, index: photoIndex }) => (
                 <Pressable
                   onPress={() => scanPhoto(palletIndex, photoIndex)}
-                  style={[styles.photoSlot, { borderColor: theme.border, backgroundColor: theme.background, width: photoSlotWidth }]}
+                  style={[
+                    styles.photoSlot,
+                    {
+                      borderColor: theme.border,
+                      backgroundColor: theme.background,
+                      width: photoSlotWidth,
+                      height: height * 0.5,
+                    },
+                  ]}
                 >
                   {item ? (
-                    // <Image source={{ uri: item }} style={styles.photo} resizeMode="cover" />
-                    <Text>fdfd</Text>
+                    <Image
+                      source={{ uri: item }}
+                      style={styles.photo}
+                      resizeMode="cover"
+                    />
                   ) : (
-                    <View style={styles.photoEmpty}>
+                    <View
+                      style={[
+                        styles.photoEmpty,
+                        { paddingBottom: height * 0.1 },
+                      ]}
+                    >
                       <Camera size={30} color={theme.primary} />
-                      <Text style={[styles.photoCounter, { color: theme.text }]}>{photoIndex + 1}/4</Text>
-                      <Text style={[styles.helperText, { color: theme.mutedText }]}>Toque para fotografar</Text>
+                      <Text
+                        style={[styles.photoCounter, { color: theme.text }]}
+                      >
+                        {photoIndex + 1}/4
+                      </Text>
+                      <Text
+                        style={[styles.helperText, { color: theme.mutedText }]}
+                      >
+                        Toque para fotografar
+                      </Text>
                     </View>
                   )}
                 </Pressable>
@@ -99,7 +190,7 @@ export function PalletsEvidence() {
             />
             <AppInput
               label="Escanear lote"
-              value={pallet.lot}
+              value={pallet.batch}
               editable={false}
               placeholder="Escaneie o lote"
               rightIcon={
@@ -111,28 +202,31 @@ export function PalletsEvidence() {
           </View>
         ))}
 
-        <AppButton title="CONFIRMAR" disabled={!canConfirmPallets} onPress={finishEntry} />
+        <AppButton
+          title="CONFIRMAR"
+          disabled={!validateForm}
+          onPress={finishEntry}
+        />
       </ScrollView>
     </ListScreenShell>
   );
 }
-
 
 const styles = StyleSheet.create({
   helperText: {
     ...typography.bodySmall,
   },
   palletsContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 16,
     paddingVertical: 18,
     paddingBottom: 36,
   },
   palletsHeader: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   palletsTitle: {
     ...typography.headingSmall,
@@ -144,32 +238,32 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   palletCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   palletCardTitle: {
     ...typography.bodyLarge,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   photoSlot: {
     height: 210,
     borderWidth: 1,
     borderRadius: 14,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   photo: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   photoEmpty: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   photoCounter: {
     fontSize: 42,
-    fontWeight: '900',
+    fontWeight: "900",
   },
 });

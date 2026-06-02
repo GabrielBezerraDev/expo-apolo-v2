@@ -39,7 +39,10 @@ type PalletContextValue = {
   isValidFormScreenPalletValue: boolean;
   setFormScreenPalletValue: UseFormSetValue<FormScreenPalletType>;
   getValeusScreenPallet: UseFormGetValues<FormScreenPalletType>;
+  operationPallet: OperationPallet;
 };
+
+type OperationPallet = 'entry' | 'exit';
 
 const PalletContext = createContext<PalletContextValue | undefined>(undefined);
 
@@ -48,7 +51,7 @@ export function PalletProvider({ children }: PropsWithChildren) {
   const [palletQuantity, setPalletQuantity] = useState("");
   const [pallets, setPallets] = useState<EntryPallet[]>([]);
   const [scanTarget, setScanTarget] = useState<EntryScanTarget | null>(null);
-
+  const [operationPallet, setOperationPallet] =  useState<OperationPallet>('entry');
   const parsedQuantity = Number(palletQuantity);
   const canConfirmForm =
     route.trim().length > 0 &&
@@ -126,7 +129,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
       controlFormScreenPallet,
       setFormScreenPalletValue,
       isValidFormScreenPalletValue,
-      getValeusScreenPallet
+      getValeusScreenPallet,
+      operationPallet
     }),
     [
       route,
@@ -141,7 +145,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
       controlFormScreenPallet,
       setFormScreenPalletValue,
       isValidFormScreenPalletValue,
-      getValeusScreenPallet
+      getValeusScreenPallet,
+      operationPallet
     ],
   );
 

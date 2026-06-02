@@ -76,17 +76,19 @@ export const FramedCameraScanner: React.FC = () => {
     handleScannerCapture,
     handleScannerCancel,
   } = useFrame();
+
   const { orientation, pollIntervalMs, stableReadsRequired } = scanner;
   const isLandscape = orientation === 'LandScape';
   const nativeOrientation = isLandscape ? 'landscape' : 'portrait';
+  
   const {
     screenWidth: SCREEN_W, screenHeight: SCREEN_H,
   } = geometry;
 
   const PREVIEW_W = cameraLayout.width || SCREEN_W;
   const PREVIEW_H = cameraLayout.height || SCREEN_H;
-  const FRAME_W = PREVIEW_W * ratios.widthRatio;
-  const FRAME_H = PREVIEW_H * ratios.heightRatio;
+  const FRAME_W = useMemo(() => PREVIEW_W * ratios.widthRatio, [ratios]);
+  const FRAME_H = useMemo(() => PREVIEW_W * ratios.heightRatio, [ratios]);
   const FRAME_X = (PREVIEW_W - FRAME_W) / 2;
   const FRAME_Y = (PREVIEW_H - FRAME_H) / 2;
 

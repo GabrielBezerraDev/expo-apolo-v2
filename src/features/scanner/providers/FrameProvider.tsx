@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { useWindowDimensions } from "react-native";
+import { useNavigation } from '@react-navigation/native';
 
 export type FrameRatios = {
   widthRatio: number;
@@ -42,6 +43,7 @@ export const FRAME_PRESETS = {
   qrCode: { widthRatio: 0.68, heightRatio: 0.34 },
   qrCodeLandScape: { widthRatio: 0.32, heightRatio: 0.5 },
   qrCodePortrait: { widthRatio: 0.68, heightRatio: 0.34 },
+  fullScreen: {widthRatio: 1, heightRatio: 1}
 } as const;
 
 export type FramePresetName = keyof typeof FRAME_PRESETS;
@@ -88,7 +90,7 @@ type Props = PropsWithChildren<{
 
 export function FrameProvider({ children, initial = "singleField" }: Props) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-
+  
   const initialRatios = useMemo<FrameRatios>(() => {
     if (typeof initial === "string") return FRAME_PRESETS[initial];
     return initial;
@@ -125,8 +127,10 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
     });
   }, []);
 
+
   const setPreset = useCallback((preset: FramePresetName) => {
     setRatiosState(FRAME_PRESETS[preset]);
+    setRatios(FRAME_PRESETS[preset]);
   }, []);
 
   const configureScanner = useCallback((options: ScannerOptions) => {
@@ -143,8 +147,8 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
       };
     });
 
-    if ("onCapture" in options) onCaptureRef.current = options.onCapture;
-    if ("onCancel" in options) onCancelRef.current = options.onCancel;
+    if ("onCapture" in options) onCaptureRef.current = (data) => { if(options.onCapture) options.onCapture(data); };
+    if ("onCancel" in options) onCancelRef.current = () => { if(options.onCancel) options.onCancel(); };
   }, []);
 
   const handleScannerCapture = useCallback((result: ScannerCaptureResult) => {
