@@ -6,6 +6,7 @@ import { useThemeMode } from "@hooks/useThemeMode";
 import { AppHeaderDrawer } from "./AppHeaderDrawer";
 import { ThemeToggle } from "../ThemeToggle";
 import { Actions, Left, Logo, Root, Subtitle, Title } from "./styled";
+import { fontScale } from "@shared/typography";
 
 type Props = {
   title: string;
@@ -52,7 +53,7 @@ export function AppHeader({ title, subtitle, onBack, onMenu }: Props) {
         <Actions>
           <ThemeToggle />
           <Pressable onPress={handleMenuPress} hitSlop={10}>
-            <Menu size={24} color={theme.text} />
+            <Menu size={24 * fontScale} color={theme.text} />
           </Pressable>
         </Actions>
       </Root>

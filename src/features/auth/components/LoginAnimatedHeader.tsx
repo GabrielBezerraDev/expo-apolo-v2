@@ -14,7 +14,7 @@ import { useThemeMode } from "@hooks/useThemeMode";
 import EmployeeSvg from "@assets/svg/employee.svg";
 import MessengerSvg from "@assets/svg/Messenger-cuate.svg";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export function ShinyConecthus() {
@@ -102,7 +102,7 @@ export function LoginAnimatedHeader() {
         useNativeDriver: true,
       }),
       Animated.timing(employeeTranslate, {
-        toValue: -20,
+        toValue: -50,
         duration: 700,
         delay: 1200,
         useNativeDriver: true,
@@ -152,11 +152,11 @@ export function LoginAnimatedHeader() {
           styles.employee,
           {
             opacity: employeeOpacity,
-            transform: [{ translateX: employeeTranslate }, { translateY: -25 }],
+            transform: [{ translateX: employeeTranslate }, { translateY: -235 }],
           },
         ]}
       >
-        <EmployeeSvg width={width * 0.44} height={250} />
+        <EmployeeSvg width={width * 0.50} height={height * 0.50} />
       </Animated.View>
 
       <Animated.View
@@ -167,12 +167,12 @@ export function LoginAnimatedHeader() {
             transform: [
               { translateX: messengerTranslate },
               { scaleX: -1 },
-              { translateY: -40 },
+              { translateY: -220 },
             ],
           },
         ]}
       >
-        <MessengerSvg width={width * 0.49} height={252} />
+        <MessengerSvg width={width * 0.45} height={height * 0.45} />
       </Animated.View>
 
       <View style={styles.titleBlock} pointerEvents="none">

@@ -135,6 +135,7 @@ export function LoginScreen({ onSuccess }: Props) {
           <LinkText>Esqueci minha senha</LinkText>
         </Inline>
         <AppButton
+          style={{width:'100%', height: height * 0.06}}
           title="ENTRAR"
           loading={isSubmitting}
           onPress={handleSubmit(submit)}

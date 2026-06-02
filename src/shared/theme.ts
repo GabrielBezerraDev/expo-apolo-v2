@@ -14,7 +14,7 @@ export const lightTheme = {
   greenLight: '#2ed133',
   warning: '#f9a825',
   white: '#ffffff',
-  grey: '#5f5e5e',
+  grey: '#BEBCCC',
   black: '#000000',
   bege: '#F5F5DC'
 };
@@ -35,7 +35,7 @@ export const darkTheme = {
   greenLight: '#2ed133',
   warning: '#ffca28',
   white: '#ffffff',
-  grey: '#5f5e5e',
+  grey: '#BEBCCC',
   black: '#000000',
   bege: '#F5F5DC'
 };

@@ -17,7 +17,7 @@ import { useFrame } from "@features/camera";
 import { useThemeMode } from "@hooks/useThemeMode";
 import { AppButton } from "@shared/components/AppButton";
 import { AppInput } from "@shared/components/AppInput";
-import { typography } from "@shared/typography";
+import { fontScale, typography } from "@shared/typography";
 import { usePallet } from "../../providers/PalletProvider";
 import { ListScreenShell } from "../../components/ListScreenShell";
 
@@ -193,7 +193,7 @@ export function PalletsEvidence() {
                       <Text
                         style={[styles.helperText, { color: theme.mutedText }]}
                       >
-                        Toque para fotografar
+                        TOQUE PARA FOTOGRAFAR
                       </Text>
                     </View>
                   )}
@@ -207,7 +207,7 @@ export function PalletsEvidence() {
               placeholder="Escaneie o lote"
               rightIcon={
                 <Pressable onPress={() => scanLot(palletIndex)} hitSlop={10}>
-                  <Camera size={20} color={theme.primary} />
+                  <Camera size={20 * fontScale} color={theme.primary} />
                 </Pressable>
               }
             />
@@ -215,6 +215,8 @@ export function PalletsEvidence() {
         ))}
 
         <AppButton
+              style={{width:'100%', height: height * 0.06}}
+
           title={operationPallet === "exit" ? "CONTINUAR" : "CONFIRMAR"}
           disabled={!validateForm}
           onPress={finishEntry}
@@ -227,6 +229,7 @@ export function PalletsEvidence() {
 const styles = StyleSheet.create({
   helperText: {
     ...typography.bodySmall,
+    fontWeight: '800'
   },
   palletsContent: {
     alignItems: "center",
