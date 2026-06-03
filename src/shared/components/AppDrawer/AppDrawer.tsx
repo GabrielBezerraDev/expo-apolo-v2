@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet } from "react-native";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { X } from "lucide-react-native";
 import { useThemeMode } from "@hooks/useThemeMode";
+import { useAuthSession } from "@navigation/AuthSessionContext";
 import {
   DrawerCloseButton,
   DrawerHeader,
@@ -18,8 +19,9 @@ type Props = {
   onClose: () => void;
 };
 
-export function AppHeaderDrawer({ visible, onClose }: Props) {
+export function AppDrawer({ visible, onClose }: Props) {
   const { theme } = useThemeMode();
+  const { logout } = useAuthSession();
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -31,6 +33,15 @@ export function AppHeaderDrawer({ visible, onClose }: Props) {
   const closeDrawer = () => {
     progress.value = withTiming(0, { duration: 180 }, finished => {
       if (finished) runOnJS(onClose)();
+    });
+  };
+
+  const handleLogout = () => {
+    progress.value = withTiming(0, { duration: 180 }, finished => {
+      if (finished) {
+        runOnJS(onClose)();
+        runOnJS(logout)();
+      }
     });
   };
 
@@ -64,7 +75,7 @@ export function AppHeaderDrawer({ visible, onClose }: Props) {
             <DrawerItem>
               <DrawerItemText>Configurações</DrawerItemText>
             </DrawerItem>
-            <DrawerItem>
+            <DrawerItem onPress={handleLogout}>
               <DrawerItemText>Sair</DrawerItemText>
             </DrawerItem>
           </DrawerPanel>

@@ -3,13 +3,13 @@ import { Alert, Pressable, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
-import { Text, View } from "tamagui";
+import { Text, useWindowDimensions, View } from "tamagui";
 import type { RootStackParamList } from "@config/navigation.protocol";
-import { useFrame } from "@features/scanner";
+import { useFrame } from "@features/camera";
 import { useThemeMode } from "@hooks/useThemeMode";
 import { AppButton } from "@shared/components/AppButton";
 import { AppInput } from "@shared/components/AppInput";
-import { typography } from "@shared/typography";
+import { fontScale, typography } from "@shared/typography";
 import { usePallet } from "../../../providers/PalletProvider";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { FormScreenPalletType } from './FormScreenPalletType';
@@ -37,7 +37,7 @@ export function FormScreenPallet() {
 
 
   const navigator = useNavigation();
-
+  const { height } = useWindowDimensions();
   const scanRoadmap = useCallback(() => {
     configureScanner({
       mode: "scanner",
@@ -100,7 +100,7 @@ export function FormScreenPallet() {
               placeholder="Escaneie o roteiro"
               rightIcon={
                 <Pressable onPress={scanRoadmap} hitSlop={10}>
-                  <Camera size={20} color={theme.primary} />
+                  <Camera size={20 * fontScale} color={theme.primary} />
                 </Pressable>
               }
             />
@@ -118,6 +118,7 @@ export function FormScreenPallet() {
               placeholder="Ex: 2"
             />
             <AppButton
+              style={{width:'100%', height: height * 0.06}}
               title="CONFIRMAR"
               disabled={!isValidFormScreenPalletValue}
               onPress={confirm}

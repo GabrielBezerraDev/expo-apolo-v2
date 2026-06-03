@@ -10,10 +10,11 @@ export const InputFrame = styled(View, {
   minHeight: 52,
   borderRadius: 14,
   borderWidth: 1,
-  backgroundColor: "$background",
+  backgroundColor: "$gray100",
   flexDirection: "row",
   alignItems: "center",
   paddingHorizontal: 14,
+  width: '100%',
   gap: 10,
   variants: {
     hasError: {

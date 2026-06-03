@@ -7,6 +7,7 @@ import { ExitListScreen } from "@features/pallets/screens/list/ExitListScreen";
 import { PalletListScreen } from "@features/pallets/screens/list/PalletListScreen";
 import { useThemeMode } from "@hooks/useThemeMode";
 import { OutlinedTabIcon } from "@shared/components/OutlinedTabIcon";
+import { typography } from "@shared/typography";
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
 
@@ -29,7 +30,7 @@ export function MainTabsNavigator() {
           paddingTop: 8,
           paddingBottom: 10,
         },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
+        tabBarLabelStyle: { ...typography.bodySmall, fontWeight: "700" },
       }}
     >
       <Tab.Screen
