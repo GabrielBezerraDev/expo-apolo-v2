@@ -10,7 +10,7 @@ import { exitOperations } from '../../mocks/palletMock';
 import { ListScreenShell } from '../../components/ListScreenShell';
 import { usePallet } from '../../providers/PalletProvider';
 import { View } from 'tamagui';
-import { WrapperPagination } from '@shared/components/Pagination/WrapperPagination';
+import { WrapperPagination } from '@shared/components/Pagination';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 

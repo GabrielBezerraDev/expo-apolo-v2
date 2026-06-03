@@ -6,11 +6,11 @@ import { usePallet } from "@features/pallets/providers/PalletProvider";
 import {
   PaginationComponent,
   usePagination,
+  WrapperPagination,
 } from "@shared/components/Pagination";
 import { PalletCard } from "../../components/PalletCard";
 import { palletItems } from "../../mocks/palletMock";
 import { ListScreenShell } from "../../components/ListScreenShell";
-import { WrapperPagination } from "@shared/components/Pagination/WrapperPagination";
 
 export function PalletListScreen() {
   const { setOperationPallet } = usePallet();

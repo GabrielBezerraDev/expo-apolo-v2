@@ -9,7 +9,7 @@ import { usePallet } from "../../providers/PalletProvider";
 import { OperationCard } from "../../components/OperationCard";
 import { entryOperations } from "../../mocks/palletMock";
 import { ListScreenShell } from "../../components/ListScreenShell";
-import { WrapperPagination } from "@shared/components/Pagination/WrapperPagination";
+import { WrapperPagination } from "@shared/components/Pagination";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 

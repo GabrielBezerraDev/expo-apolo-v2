@@ -2,7 +2,6 @@ import React from 'react';
 import { ActivityIndicator, PressableProps } from 'react-native';
 import { useThemeMode } from '@hooks/useThemeMode';
 import { ButtonRoot, ButtonText } from './styled';
-import { ButtonProps } from 'tamagui';
 
 
 type AppButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
