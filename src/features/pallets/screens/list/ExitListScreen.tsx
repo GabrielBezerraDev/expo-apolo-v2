@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { PropsWithChildren, useCallback } from 'react';
 import { Alert, ScrollView } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,8 +9,11 @@ import { OperationCard } from '../../components/OperationCard';
 import { exitOperations } from '../../mocks/palletMock';
 import { ListScreenShell } from '../../components/ListScreenShell';
 import { usePallet } from '../../providers/PalletProvider';
+import { View } from 'tamagui';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
+
+
 
 export function ExitListScreen() {
   const navigation = useNavigation<Navigation>();
@@ -40,7 +43,6 @@ export function ExitListScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
         {exitOperations.map(item => <OperationCard key={item.id} item={item} />)}
       </ScrollView>
-      <PaginationComponent />
     </ListScreenShell>
   );
 }

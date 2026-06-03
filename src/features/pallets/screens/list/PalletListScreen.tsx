@@ -29,7 +29,6 @@ export function PalletListScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
         {listedPalletItems.map((item,index) => <PalletCard key={index} item={item} />)}
       </ScrollView>
-      <PaginationComponent />
     </ListScreenShell>
   );
 }

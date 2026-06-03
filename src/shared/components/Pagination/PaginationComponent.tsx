@@ -26,6 +26,7 @@ type PaginationIconButtonProps = {
 };
 
 export function PaginationComponent({ itemLabel = "Paletes" }: PaginationComponentProps) {
+  
   const {
     nextPage,
     sendToLastPage,
@@ -35,6 +36,7 @@ export function PaginationComponent({ itemLabel = "Paletes" }: PaginationCompone
     lastPage,
     totalItems,
   } = usePagination();
+
   const paginationTranslateY = useRef(new Animated.Value(100)).current;
   const { width } = useWindowDimensions();
 
@@ -57,7 +59,7 @@ export function PaginationComponent({ itemLabel = "Paletes" }: PaginationCompone
 
   return (
     <Animated.View style={{ transform: [{ translateY: paginationTranslateY }] }}>
-      <View style={styles.wrapper}>
+      <View style={[styles.wrapper, {width: width}]}>
         <View style={[styles.totalItemsSlot, { flexShrink: 1, marginRight: 8 }]}> 
           <View
             style={[
@@ -128,7 +130,6 @@ const styles = StyleSheet.create({
     shadowColor: "#000000",
     shadowOpacity: 1,
     shadowRadius: 10,
-    width: "100%",
     zIndex: 10,
   },
   totalItemsSlot: {

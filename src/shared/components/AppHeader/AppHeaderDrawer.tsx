@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet } from "react-native";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { X } from "lucide-react-native";
 import { useThemeMode } from "@hooks/useThemeMode";
+import { useNavigation } from "@react-navigation/native";
 import {
   DrawerCloseButton,
   DrawerHeader,
@@ -20,8 +21,8 @@ type Props = {
 
 export function AppHeaderDrawer({ visible, onClose }: Props) {
   const { theme } = useThemeMode();
+  const navigation = useNavigation();
   const progress = useSharedValue(0);
-
   useEffect(() => {
     if (visible) {
       progress.value = withTiming(1, { duration: 240 });
@@ -65,7 +66,9 @@ export function AppHeaderDrawer({ visible, onClose }: Props) {
               <DrawerItemText>Configurações</DrawerItemText>
             </DrawerItem>
             <DrawerItem>
-              <DrawerItemText>Sair</DrawerItemText>
+              <Pressable onPress={() => navigation.navigate('Auth')}>
+                <DrawerItemText>Sair</DrawerItemText>
+              </Pressable>
             </DrawerItem>
           </DrawerPanel>
         </Animated.View>

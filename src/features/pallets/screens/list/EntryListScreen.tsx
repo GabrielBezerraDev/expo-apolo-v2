@@ -40,7 +40,7 @@ export function EntryListScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 14, paddingVertical: 20 }} showsVerticalScrollIndicator={false}>
         {entryOperations.map(item => <OperationCard key={item.id} item={item} />)}
       </ScrollView>
-      <PaginationComponent />
+      {/* <PaginationComponent /> */}
     </ListScreenShell>
   );
 }
