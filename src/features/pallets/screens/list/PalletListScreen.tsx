@@ -1,12 +1,16 @@
-import React, { useCallback } from 'react';
-import { ScrollView } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { SlidersHorizontal } from 'lucide-react-native';
-import { usePallet } from '@features/pallets/providers/PalletProvider';
-import { PaginationComponent, usePagination } from '@shared/components/Pagination';
-import { PalletCard } from '../../components/PalletCard';
-import { palletItems } from '../../mocks/palletMock';
-import { ListScreenShell } from '../../components/ListScreenShell';
+import React, { useCallback } from "react";
+import { ScrollView } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { SlidersHorizontal } from "lucide-react-native";
+import { usePallet } from "@features/pallets/providers/PalletProvider";
+import {
+  PaginationComponent,
+  usePagination,
+} from "@shared/components/Pagination";
+import { PalletCard } from "../../components/PalletCard";
+import { palletItems } from "../../mocks/palletMock";
+import { ListScreenShell } from "../../components/ListScreenShell";
+import { WrapperPagination } from "@shared/components/Pagination/WrapperPagination";
 
 export function PalletListScreen() {
   const { setOperationPallet } = usePallet();
@@ -15,7 +19,11 @@ export function PalletListScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setPaginationMeta({ currentPage: 1, lastPage: 1, totalItems: listedPalletItems.length });
+      setPaginationMeta({
+        currentPage: 1,
+        lastPage: 1,
+        totalItems: listedPalletItems.length,
+      });
     }, [listedPalletItems.length, setPaginationMeta]),
   );
 
@@ -23,12 +31,25 @@ export function PalletListScreen() {
     <ListScreenShell
       title="Paletes"
       floatActions={[
-        { Icon: SlidersHorizontal, label: 'Filtros', onPress: () => setOperationPallet('exit')}
+        {
+          Icon: SlidersHorizontal,
+          label: "Filtros",
+          onPress: () => setOperationPallet("exit"),
+        },
       ]}
     >
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
-        {listedPalletItems.map((item,index) => <PalletCard key={index} item={item} />)}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {listedPalletItems.map((item, index) => (
+          <PalletCard key={index} item={item} />
+        ))}
       </ScrollView>
+      <WrapperPagination>
+        <PaginationComponent />
+      </WrapperPagination>
     </ListScreenShell>
   );
 }

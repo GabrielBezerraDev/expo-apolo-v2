@@ -10,6 +10,7 @@ import { exitOperations } from '../../mocks/palletMock';
 import { ListScreenShell } from '../../components/ListScreenShell';
 import { usePallet } from '../../providers/PalletProvider';
 import { View } from 'tamagui';
+import { WrapperPagination } from '@shared/components/Pagination/WrapperPagination';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -43,6 +44,9 @@ export function ExitListScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
         {exitOperations.map(item => <OperationCard key={item.id} item={item} />)}
       </ScrollView>
+         <WrapperPagination>
+              <PaginationComponent />
+            </WrapperPagination>
     </ListScreenShell>
   );
 }
