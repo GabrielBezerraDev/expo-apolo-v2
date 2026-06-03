@@ -1,13 +1,11 @@
 import React, {
   createContext,
-  PropsWithChildren,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
-import type { ScannerCaptureResult } from "@features/scanner";
+import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
 import { Control, UseFormGetValues, UseFormSetValue, useForm } from "react-hook-form";
 import { FormScreenPalletType } from "../screens/form/FormScreenPallet/FormScreenPalletType";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +21,11 @@ export type EntryScanTarget =
   | { type: "route" }
   | { type: "lot"; palletIndex: number }
   | { type: "photo"; palletIndex: number; photoIndex: number };
+
+export type ShipGoodsPhotos = {
+  truck: string | null;
+  licensePlate: string | null;
+};
 
 type PalletContextValue = {
   route: string;
@@ -40,11 +43,19 @@ type PalletContextValue = {
   setFormScreenPalletValue: UseFormSetValue<FormScreenPalletType>;
   getValeusScreenPallet: UseFormGetValues<FormScreenPalletType>;
   operationPallet: OperationPallet;
+  setOperationPallet: Dispatch<SetStateAction<OperationPallet>>;
+  shipGoodsPhotos: ShipGoodsPhotos;
+  setShipGoodsPhotos: Dispatch<SetStateAction<ShipGoodsPhotos>>;
 };
 
-type OperationPallet = 'entry' | 'exit';
+export type OperationPallet = 'entry' | 'exit';
 
 const PalletContext = createContext<PalletContextValue | undefined>(undefined);
+
+const initialShipGoodsPhotos: ShipGoodsPhotos = {
+  truck: null,
+  licensePlate: null,
+};
 
 export function PalletProvider({ children }: PropsWithChildren) {
   const [route, setRoute] = useState("");
@@ -52,6 +63,7 @@ export function PalletProvider({ children }: PropsWithChildren) {
   const [pallets, setPallets] = useState<EntryPallet[]>([]);
   const [scanTarget, setScanTarget] = useState<EntryScanTarget | null>(null);
   const [operationPallet, setOperationPallet] =  useState<OperationPallet>('entry');
+  const [shipGoodsPhotos, setShipGoodsPhotos] = useState<ShipGoodsPhotos>(initialShipGoodsPhotos);
   const parsedQuantity = Number(palletQuantity);
   const canConfirmForm =
     route.trim().length > 0 &&
@@ -111,7 +123,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
     setPalletQuantity("");
     setPallets([]);
     setScanTarget(null);
-    // resetFormScreenPallet({ roadmap: '', palletsQuantity: '' });
+    setShipGoodsPhotos(initialShipGoodsPhotos);
+    resetFormScreenPallet({ roadmap: "", palletsQuantity: "" });
   }, [resetFormScreenPallet]);
 
   const value = useMemo<PalletContextValue>(
@@ -130,7 +143,10 @@ export function PalletProvider({ children }: PropsWithChildren) {
       setFormScreenPalletValue,
       isValidFormScreenPalletValue,
       getValeusScreenPallet,
-      operationPallet
+      operationPallet,
+      setOperationPallet,
+      shipGoodsPhotos,
+      setShipGoodsPhotos,
     }),
     [
       route,
@@ -146,7 +162,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
       setFormScreenPalletValue,
       isValidFormScreenPalletValue,
       getValeusScreenPallet,
-      operationPallet
+      operationPallet,
+      shipGoodsPhotos,
     ],
   );
 

@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
-  Alert,
   FlatList,
   Image,
   Pressable,
@@ -10,14 +9,14 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Camera, CheckCircle2, X } from "lucide-react-native";
+import { Camera, X } from "lucide-react-native";
 import { Text, View } from "tamagui";
 import type { RootStackParamList } from "@config/navigation.protocol";
-import { useFrame } from "@features/scanner";
+import { useFrame } from "@features/camera";
 import { useThemeMode } from "@hooks/useThemeMode";
 import { AppButton } from "@shared/components/AppButton";
 import { AppInput } from "@shared/components/AppInput";
-import { typography } from "@shared/typography";
+import { fontScale, typography } from "@shared/typography";
 import { usePallet } from "../../providers/PalletProvider";
 import { ListScreenShell } from "../../components/ListScreenShell";
 
@@ -28,7 +27,7 @@ export function PalletsEvidence() {
   const { configureScanner } = useFrame();
   const { theme } = useThemeMode();
   const { width, height } = useWindowDimensions();
-  const { route, resetEntry, getValeusScreenPallet } = usePallet();
+  const { route, resetEntry, getValeusScreenPallet, operationPallet } = usePallet();
   const cardWidth = width - width * 0.1;
   const photoSlotWidth = cardWidth - 32;
   const [palletsQuantity, setPalletsQuantity] = useState(() =>
@@ -68,7 +67,7 @@ export function PalletsEvidence() {
           navigation.goBack();
         },
         onCancel: () => navigation.goBack(),
-        formatTextDataWithRegex: (data) => data.replace(/\D/g, "")
+        formatTextDataWithRegex: (data) => data.replace(/\D/g, ""),
       });
       navigation.navigate("Scanner");
     },
@@ -101,11 +100,12 @@ export function PalletsEvidence() {
   };
 
   const finishEntry = () => {
-    Alert.alert(
-      "Entrada concluída",
-      `${palletsQuantity.length} palete(s) capturados.`,
-    );
-    closeEntry();
+    if (operationPallet === "exit") {
+      navigation.navigate("ShipGoods");
+      return;
+    }
+
+    navigation.navigate("OperationSuccess", { operation: "entry" });
   };
 
   return (
@@ -188,7 +188,7 @@ export function PalletsEvidence() {
                       <Text
                         style={[styles.helperText, { color: theme.mutedText }]}
                       >
-                        Toque para fotografar
+                        TOQUE PARA FOTOGRAFAR
                       </Text>
                     </View>
                   )}
@@ -202,7 +202,7 @@ export function PalletsEvidence() {
               placeholder="Escaneie o lote"
               rightIcon={
                 <Pressable onPress={() => scanLot(palletIndex)} hitSlop={10}>
-                  <Camera size={20} color={theme.primary} />
+                  <Camera size={20 * fontScale} color={theme.primary} />
                 </Pressable>
               }
             />
@@ -210,7 +210,9 @@ export function PalletsEvidence() {
         ))}
 
         <AppButton
-          title="CONFIRMAR"
+              style={{width:'100%', height: height * 0.06}}
+
+          title={operationPallet === "exit" ? "CONTINUAR" : "CONFIRMAR"}
           disabled={!validateForm}
           onPress={finishEntry}
         />
@@ -222,6 +224,7 @@ export function PalletsEvidence() {
 const styles = StyleSheet.create({
   helperText: {
     ...typography.bodySmall,
+    fontWeight: '800'
   },
   palletsContent: {
     alignItems: "center",
