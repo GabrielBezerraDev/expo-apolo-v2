@@ -3,7 +3,7 @@ import { Image, Pressable } from "react-native";
 import { ArrowLeft, Menu } from "lucide-react-native";
 import { View } from "tamagui";
 import { useThemeMode } from "@hooks/useThemeMode";
-import { AppHeaderDrawer } from "./AppHeaderDrawer";
+import { AppDrawer } from "../AppDrawer";
 import { ThemeToggle } from "../ThemeToggle";
 import { Actions, Left, Logo, Root, Subtitle, Title } from "./styled";
 import { fontScale } from "@shared/typography";
@@ -58,7 +58,7 @@ export function AppHeader({ title, subtitle, onBack, onMenu }: Props) {
         </Actions>
       </Root>
 
-      <AppHeaderDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
+      <AppDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
     </>
   );
 }
