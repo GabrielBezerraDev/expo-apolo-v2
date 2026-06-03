@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -14,6 +14,7 @@ import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence'
 import { ShipGoods } from '@features/pallets/screens/form/ShipGoods';
 import { PalletProvider } from '@features/pallets/providers/PalletProvider';
 import { PaginationProvider } from '@shared/components/Pagination';
+import { AuthSessionProvider } from './AuthSessionContext';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
 
@@ -22,6 +23,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const [loggedIn, setLoggedIn] = useState(false);
   const { mode, theme } = useThemeMode();
+  const login = useCallback(() => setLoggedIn(true), []);
+  const logout = useCallback(() => setLoggedIn(false), []);
   const navTheme = {
     ...(mode === "dark" ? DarkTheme : DefaultTheme),
     colors: {
@@ -35,17 +38,19 @@ export function RootNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>
-      {!loggedIn ? (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Auth">
-            {() => <AuthNavigator onLogin={() => setLoggedIn(true)} />}
-          </Stack.Screen>
-        </Stack.Navigator>
-      ) : (
-        <LoggedInStack />
-      )}
-    </NavigationContainer>
+    <AuthSessionProvider login={login} logout={logout}>
+      <NavigationContainer theme={navTheme}>
+        {!loggedIn ? (
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Auth">
+              {() => <AuthNavigator onLogin={login} />}
+            </Stack.Screen>
+          </Stack.Navigator>
+        ) : (
+          <LoggedInStack />
+        )}
+      </NavigationContainer>
+    </AuthSessionProvider>
   );
 }
 
