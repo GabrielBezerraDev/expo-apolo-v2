@@ -4,13 +4,13 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BaggageClaim, Filter } from 'lucide-react-native';
 import type { RootStackParamList } from '@navigation/navigation.protocol';
-import { PaginationComponent, usePagination } from '@shared/components/Pagination';
+import { PaginationComponent, usePagination } from '@shared/components/Navigation/Pagination';
 import { FilterChips } from '@shared/components/Filters';
 import { OperationCard } from '../../components/OperationCard';
 import { exitOperations } from '../../mocks/palletMock';
 import { ListScreenShell } from '../../components/ListScreenShell';
 import { usePallet } from '../../providers/PalletProvider';
-import { WrapperPagination } from '@shared/components/Pagination';
+import { WrapperPagination } from '@shared/components/Navigation/Pagination';
 import { useOperationListFilters } from '../../hooks/useOperationListFilters';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;

@@ -10,7 +10,7 @@ import {
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import { isTablet, typography } from "@shared/typography";
-import { useThemeMode } from "@shared/components/ThemeToggle";
+import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import EmployeeSvg from "@assets/svg/employee.svg";
 import MessengerSvg from "@assets/svg/Messenger-cuate.svg";
 

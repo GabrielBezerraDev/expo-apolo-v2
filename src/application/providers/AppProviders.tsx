@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { OcrFrameProvider } from "@features/camera";
-import { ModalProvider } from "@shared/components/Modal";
+import { ModalProvider } from "@shared/components/Display/Modal";
 import { AppThemeProvider } from "./ThemeProvider";
 
 export function AppProviders({ children }: PropsWithChildren) {

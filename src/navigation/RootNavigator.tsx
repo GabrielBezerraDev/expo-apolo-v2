@@ -6,14 +6,14 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@navigation/navigation.protocol';
-import { useThemeMode } from '@shared/components/ThemeToggle';
+import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPallet';
 import { OperationSuccess } from '@features/pallets/screens/form/OperationSuccess';
 import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
 import { ShipGoods } from '@features/pallets/screens/form/ShipGoods';
 import { PalletProvider } from '@features/pallets/providers/PalletProvider';
-import { PaginationProvider } from '@shared/components/Pagination';
+import { PaginationProvider } from '@shared/components/Navigation/Pagination';
 import { AuthSessionProvider } from './AuthSessionContext';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';

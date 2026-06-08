@@ -1,6 +1,6 @@
 export { FilterChips } from "./FilterChips";
 export { FilterModalContent } from "./FilterModalContent";
-export { useFilterController } from "./useFilterController";
+export { useFilterController } from "./hooks/useFilterController";
 export type {
   DateFilterDefinition,
   DateFilterMode,
@@ -17,4 +17,4 @@ export type {
   SelectFilterValue,
   TextFilterDefinition,
   TextFilterValue,
-} from "./types";
+} from "./shared/types";

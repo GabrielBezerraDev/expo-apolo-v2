@@ -6,7 +6,7 @@ import {
   PaginationComponent,
   usePagination,
   WrapperPagination,
-} from "@shared/components/Pagination";
+} from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
 import { PalletCard } from "../../components/PalletCard";
 import { palletItems } from "../../mocks/palletMock";
