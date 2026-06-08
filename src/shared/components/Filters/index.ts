@@ -1,20 +1,26 @@
+export { DateFilterField } from "./DateFilterField";
 export { FilterChips } from "./FilterChips";
+export { FilterConfigPicker } from "./FilterConfigPicker";
+export { FilterFieldRenderer } from "./FilterFieldRenderer";
 export { FilterModalContent } from "./FilterModalContent";
+export { NumberRangeFilterField } from "./NumberRangeFilterField";
+export { SelectFilterField } from "./SelectFilterField";
+export { TextFilterField } from "./TextFilterField";
 export { useFilterController } from "./hooks/useFilterController";
 export type {
-  DateFilterDefinition,
+  DateFilterConfig,
   DateFilterMode,
   DateFilterValue,
   FilterChip,
-  FilterDefinition,
+  FilterConfig,
   FilterOption,
   FilterOptionValue,
   FilterValue,
   FilterValues,
-  NumberRangeFilterDefinition,
+  NumberRangeFilterConfig,
   NumberRangeFilterValue,
-  SelectFilterDefinition,
+  SelectFilterConfig,
   SelectFilterValue,
-  TextFilterDefinition,
+  TextFilterConfig,
   TextFilterValue,
 } from "./shared/types";

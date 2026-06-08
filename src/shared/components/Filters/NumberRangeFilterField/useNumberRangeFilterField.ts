@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { NumberRangeFilterDefinition, NumberRangeFilterValue } from "../shared/types";
+import { NumberRangeFilterConfig, NumberRangeFilterValue } from "../shared/types";
 
 type UseNumberRangeFilterFieldParams = {
-  definition: NumberRangeFilterDefinition<any>;
+  config: NumberRangeFilterConfig<any>;
   value?: NumberRangeFilterValue;
   onChange: (value: NumberRangeFilterValue | undefined) => void;
 };
 
-export function useNumberRangeFilterField({ definition, onChange, value }: UseNumberRangeFilterFieldParams) {
+export function useNumberRangeFilterField({ config, onChange, value }: UseNumberRangeFilterFieldParams) {
   const [startValue, setStartValue] = useState(value?.startValue ?? "");
   const [endValue, setEndValue] = useState(value?.endValue ?? "");
   const [error, setError] = useState("");
@@ -50,12 +50,12 @@ export function useNumberRangeFilterField({ definition, onChange, value }: UseNu
   };
 
   return {
-    endLabel: definition.endLabel ?? "Até",
+    endLabel: config.endLabel ?? "Até",
     endValue,
     error,
     handleEndChange,
     handleStartChange,
-    startLabel: definition.startLabel ?? "De",
+    startLabel: config.startLabel ?? "De",
     startValue,
   };
 }

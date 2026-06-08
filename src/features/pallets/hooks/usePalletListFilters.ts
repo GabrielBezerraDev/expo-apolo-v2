@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FilterDefinition, useFilterController } from "@shared/components/Filters";
+import { FilterConfig, useFilterController } from "@shared/components/Filters";
 import { PalletItem } from "../mocks/palletMock";
 
 type UsePalletListFiltersParams = {
@@ -17,7 +17,7 @@ export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersP
     [data],
   );
 
-  const definitions = useMemo<FilterDefinition<PalletItem>[]>(
+  const configs = useMemo<FilterConfig<PalletItem>[]>(
     () => [
       {
         key: "dateTime",
@@ -62,8 +62,8 @@ export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersP
   );
 
   return useFilterController({
+    configs,
     data,
-    definitions,
     modalHeightPercent: 72,
     modalTitle,
   });

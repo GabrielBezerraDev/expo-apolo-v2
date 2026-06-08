@@ -2,7 +2,7 @@ import React from "react";
 import { Image, Pressable } from "react-native";
 import { ArrowLeft, Menu } from "lucide-react-native";
 import { View } from "tamagui";
-import { AppDrawer } from "../AppDrawer";
+import { AppDrawer } from "@shared/components/Navigation/AppDrawer";
 import { ThemeToggle } from "@shared/components/Actions/ThemeToggle";
 import { Actions, Left, Logo, Root, Subtitle, Title } from "./styled";
 import { fontScale } from "@shared/typography";

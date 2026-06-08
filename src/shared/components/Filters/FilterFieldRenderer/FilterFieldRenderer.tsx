@@ -1,14 +1,14 @@
 import React from "react";
 import {
-  DateFilterDefinition,
+  DateFilterConfig,
   DateFilterValue,
-  FilterDefinition,
+  FilterConfig,
   FilterValue,
-  NumberRangeFilterDefinition,
+  NumberRangeFilterConfig,
   NumberRangeFilterValue,
-  SelectFilterDefinition,
+  SelectFilterConfig,
   SelectFilterValue,
-  TextFilterDefinition,
+  TextFilterConfig,
   TextFilterValue,
 } from "../shared/types";
 import { DateFilterField } from "../DateFilterField";
@@ -17,17 +17,17 @@ import { SelectFilterField } from "../SelectFilterField";
 import { TextFilterField } from "../TextFilterField";
 
 type Props = {
-  definition: FilterDefinition<any>;
+  config: FilterConfig<any>;
   resetKey?: number;
   value?: FilterValue;
   onChange: (value: FilterValue | undefined) => void;
 };
 
-export function FilterFieldRenderer({ definition, onChange, resetKey, value }: Props) {
-  if (definition.type === "date") {
+export function FilterFieldRenderer({ config, onChange, resetKey, value }: Props) {
+  if (config.type === "date") {
     return (
       <DateFilterField
-        definition={definition as DateFilterDefinition<any>}
+        config={config as DateFilterConfig<any>}
         resetKey={resetKey}
         value={value as DateFilterValue | undefined}
         onChange={onChange}
@@ -35,20 +35,20 @@ export function FilterFieldRenderer({ definition, onChange, resetKey, value }: P
     );
   }
 
-  if (definition.type === "numberRange") {
+  if (config.type === "numberRange") {
     return (
       <NumberRangeFilterField
-        definition={definition as NumberRangeFilterDefinition<any>}
+        config={config as NumberRangeFilterConfig<any>}
         value={value as NumberRangeFilterValue | undefined}
         onChange={onChange}
       />
     );
   }
 
-  if (definition.type === "select") {
+  if (config.type === "select") {
     return (
       <SelectFilterField
-        definition={definition as SelectFilterDefinition<any>}
+        config={config as SelectFilterConfig<any>}
         value={value as SelectFilterValue | undefined}
         onChange={onChange}
       />
@@ -57,7 +57,7 @@ export function FilterFieldRenderer({ definition, onChange, resetKey, value }: P
 
   return (
     <TextFilterField
-      definition={definition as TextFilterDefinition<any>}
+      config={config as TextFilterConfig<any>}
       value={value as TextFilterValue | undefined}
       onChange={onChange}
     />

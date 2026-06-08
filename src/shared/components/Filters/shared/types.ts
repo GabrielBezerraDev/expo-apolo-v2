@@ -24,15 +24,15 @@ export type TextFilterValue = string;
 export type FilterValue = DateFilterValue | NumberRangeFilterValue | SelectFilterValue | TextFilterValue;
 export type FilterValues = Record<string, FilterValue | undefined>;
 
-type BaseFilterDefinition<TItem> = {
+type BaseFilterConfig<TItem> = {
   key: string;
   label: string;
   getItemValue?: (item: TItem) => unknown;
-  chipLabel?: (value: FilterValue, definition: FilterDefinition<TItem>) => string;
+  chipLabel?: (value: FilterValue, config: FilterConfig<TItem>) => string;
   filter?: (item: TItem, value: FilterValue, values: FilterValues) => boolean;
 };
 
-export type DateFilterDefinition<TItem = unknown> = BaseFilterDefinition<TItem> & {
+export type DateFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
   type: "date";
   mode?: DateFilterMode;
   startLabel?: string;
@@ -40,29 +40,29 @@ export type DateFilterDefinition<TItem = unknown> = BaseFilterDefinition<TItem> 
   maxDate?: Date;
 };
 
-export type NumberRangeFilterDefinition<TItem = unknown> = BaseFilterDefinition<TItem> & {
+export type NumberRangeFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
   type: "numberRange";
   startLabel?: string;
   endLabel?: string;
 };
 
-export type SelectFilterDefinition<TItem = unknown> = BaseFilterDefinition<TItem> & {
+export type SelectFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
   type: "select";
   options: FilterOption[];
   multiple?: boolean;
   placeholder?: string;
 };
 
-export type TextFilterDefinition<TItem = unknown> = BaseFilterDefinition<TItem> & {
+export type TextFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
   type: "text";
   placeholder?: string;
 };
 
-export type FilterDefinition<TItem = unknown> =
-  | DateFilterDefinition<TItem>
-  | NumberRangeFilterDefinition<TItem>
-  | SelectFilterDefinition<TItem>
-  | TextFilterDefinition<TItem>;
+export type FilterConfig<TItem = unknown> =
+  | DateFilterConfig<TItem>
+  | NumberRangeFilterConfig<TItem>
+  | SelectFilterConfig<TItem>
+  | TextFilterConfig<TItem>;
 
 export type FilterChip = {
   key: string;

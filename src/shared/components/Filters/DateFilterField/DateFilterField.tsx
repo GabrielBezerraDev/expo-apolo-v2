@@ -1,17 +1,17 @@
 import React from "react";
 import { DateInput } from "@shared/components/Forms/DateInput";
-import { DateFilterDefinition, DateFilterValue } from "../shared/types";
+import { DateFilterConfig, DateFilterValue } from "../shared/types";
 import { FilterErrorText, FilterFieldRoot, FilterHelpText } from "../shared/styled";
 import { useDateFilterField } from "./useDateFilterField";
 
 type Props = {
-  definition: DateFilterDefinition<any>;
+  config: DateFilterConfig<any>;
   resetKey?: number;
   value?: DateFilterValue;
   onChange: (value: DateFilterValue | undefined) => void;
 };
 
-export function DateFilterField({ definition, onChange, resetKey, value }: Props) {
+export function DateFilterField({ config, onChange, resetKey, value }: Props) {
   const {
     endLabel,
     endDate,
@@ -25,7 +25,7 @@ export function DateFilterField({ definition, onChange, resetKey, value }: Props
     startDate,
     startLabel,
     startMaximumDate,
-  } = useDateFilterField({ definition, onChange, resetKey, value });
+  } = useDateFilterField({ config, onChange, resetKey, value });
 
   return (
     <FilterFieldRoot>
@@ -33,7 +33,7 @@ export function DateFilterField({ definition, onChange, resetKey, value }: Props
 
       {mode === "single" ? (
         <DateInput
-          label={definition.label}
+          label={config.label}
           value={singleDate}
           onChange={handleSingleChange}
           maximumDate={maxDate}

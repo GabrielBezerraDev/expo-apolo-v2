@@ -1,16 +1,16 @@
 import React from "react";
 import { AppInput } from "@shared/components/Forms/AppInput";
-import { NumberRangeFilterDefinition, NumberRangeFilterValue } from "../shared/types";
+import { NumberRangeFilterConfig, NumberRangeFilterValue } from "../shared/types";
 import { FilterErrorText, FilterFieldRoot } from "../shared/styled";
 import { useNumberRangeFilterField } from "./useNumberRangeFilterField";
 
 type Props = {
-  definition: NumberRangeFilterDefinition<any>;
+  config: NumberRangeFilterConfig<any>;
   value?: NumberRangeFilterValue;
   onChange: (value: NumberRangeFilterValue | undefined) => void;
 };
 
-export function NumberRangeFilterField({ definition, onChange, value }: Props) {
+export function NumberRangeFilterField({ config, onChange, value }: Props) {
   const {
     endLabel,
     endValue,
@@ -19,7 +19,7 @@ export function NumberRangeFilterField({ definition, onChange, value }: Props) {
     handleStartChange,
     startLabel,
     startValue,
-  } = useNumberRangeFilterField({ definition, onChange, value });
+  } = useNumberRangeFilterField({ config, onChange, value });
 
   return (
     <FilterFieldRoot>

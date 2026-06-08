@@ -1,19 +1,19 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useModal } from "@shared/components/Display/Modal";
 import { FilterModalContent } from "../FilterModalContent";
-import { FilterDefinition, FilterValues } from "../shared/types";
+import { FilterConfig, FilterValues } from "../shared/types";
 import { buildFilterChips, cleanFilterValues, filterData } from "../shared/utils";
 
 type UseFilterControllerParams<TItem> = {
   data: TItem[];
-  definitions: FilterDefinition<TItem>[];
+  configs: FilterConfig<TItem>[];
   modalTitle: string;
   modalHeightPercent?: number;
 };
 
 export function useFilterController<TItem>({
+  configs,
   data,
-  definitions,
   modalHeightPercent = 68,
   modalTitle,
 }: UseFilterControllerParams<TItem>) {
@@ -33,19 +33,19 @@ export function useFilterController<TItem>({
   }, []);
 
   const chips = useMemo(
-    () => buildFilterChips(definitions, values, removeFilter),
-    [definitions, removeFilter, values],
+    () => buildFilterChips(configs, values, removeFilter),
+    [configs, removeFilter, values],
   );
 
   const filteredData = useMemo(
-    () => filterData(data, definitions, values),
-    [data, definitions, values],
+    () => filterData(data, configs, values),
+    [data, configs, values],
   );
 
   const openFilterModal = useCallback(() => {
     openModal(
       <FilterModalContent
-        definitions={definitions}
+        configs={configs}
         initialValues={values}
         onApply={nextValues => setValues(cleanFilterValues(nextValues))}
       />,
@@ -57,7 +57,7 @@ export function useFilterController<TItem>({
         minHeight:0
       },
     );
-  }, [definitions, modalHeightPercent, modalTitle, openModal, values]);
+  }, [configs, modalHeightPercent, modalTitle, openModal, values]);
 
   return {
     chips,

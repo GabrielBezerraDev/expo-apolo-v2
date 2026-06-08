@@ -1,8 +1,8 @@
 import React from "react";
 import { AppButton } from "@shared/components/Forms/AppButton";
-import { FilterDefinition, FilterValues } from "../shared/types";
+import { FilterConfig, FilterValues } from "../shared/types";
 import { FilterChips } from "../FilterChips";
-import { FilterDefinitionPicker } from "../FilterDefinitionPicker";
+import { FilterConfigPicker } from "../FilterConfigPicker";
 import { FilterFieldRenderer } from "../FilterFieldRenderer";
 import {
   FilterButtonRow,
@@ -13,41 +13,41 @@ import {
 import { useFilterModalContent } from "./useFilterModalContent";
 
 type Props = {
-  definitions: FilterDefinition<any>[];
+  configs: FilterConfig<any>[];
   initialValues?: FilterValues;
   onApply: (values: FilterValues) => void;
 };
 
-export function FilterModalContent({ definitions, initialValues, onApply }: Props) {
+export function FilterModalContent({ configs, initialValues, onApply }: Props) {
   const {
     applyFilters,
     chips,
     clearAll,
     draftValues,
     resetKey,
-    selectedDefinition,
+    selectedConfig,
     selectedKey,
     setFilterValue,
     setSelectedKey,
-  } = useFilterModalContent({ definitions, initialValues, onApply });
+  } = useFilterModalContent({ configs, initialValues, onApply });
 
-  if (!selectedDefinition) {
+  if (!selectedConfig) {
     return <FilterHelpText>Nenhum filtro configurado.</FilterHelpText>;
   }
 
   return (
     <FilterModalRoot>
-      <FilterDefinitionPicker
-        definitions={definitions}
+      <FilterConfigPicker
+        configs={configs}
         selectedKey={selectedKey}
         onSelect={setSelectedKey}
       />
 
       <FilterFieldRenderer
-        definition={selectedDefinition}
+        config={selectedConfig}
         resetKey={resetKey}
-        value={draftValues[selectedDefinition.key]}
-        onChange={value => setFilterValue(selectedDefinition.key, value)}
+        value={draftValues[selectedConfig.key]}
+        onChange={value => setFilterValue(selectedConfig.key, value)}
       />
 
       <FilterChips chips={chips} />

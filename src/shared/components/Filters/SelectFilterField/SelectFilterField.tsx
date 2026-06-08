@@ -1,5 +1,5 @@
 import React from "react";
-import { SelectFilterDefinition, SelectFilterValue } from "../shared/types";
+import { SelectFilterConfig, SelectFilterValue } from "../shared/types";
 import {
   FilterFieldRoot,
   FilterHelpText,
@@ -17,12 +17,12 @@ import {
 import { useSelectFilterField } from "./useSelectFilterField";
 
 type Props = {
-  definition: SelectFilterDefinition<any>;
+  config: SelectFilterConfig<any>;
   value?: SelectFilterValue;
   onChange: (value: SelectFilterValue | undefined) => void;
 };
 
-export function SelectFilterField({ definition, onChange, value }: Props) {
+export function SelectFilterField({ config, onChange, value }: Props) {
   const {
     handleRemove,
     handleSelect,
@@ -31,7 +31,7 @@ export function SelectFilterField({ definition, onChange, value }: Props) {
     selectedLabel,
     selectedOptions,
     toggleOpen,
-  } = useSelectFilterField({ definition, onChange, value });
+  } = useSelectFilterField({ config, onChange, value });
 
   return (
     <FilterFieldRoot>
@@ -41,7 +41,7 @@ export function SelectFilterField({ definition, onChange, value }: Props) {
 
       {open ? (
         <FilterOptionList>
-          {definition.options.map(option => (
+          {config.options.map(option => (
             <FilterOptionButton
               key={String(option.value)}
               selected={isSelected(option.value)}
@@ -53,7 +53,7 @@ export function SelectFilterField({ definition, onChange, value }: Props) {
         </FilterOptionList>
       ) : null}
 
-      {definition.multiple ? (
+      {config.multiple ? (
         <SelectedOptionsRoot>
           {selectedOptions.length > 0 ? (
             selectedOptions.map(option => (

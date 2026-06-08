@@ -1,23 +1,23 @@
 import React from "react";
 import { AppInput } from "@shared/components/Forms/AppInput";
-import { TextFilterDefinition, TextFilterValue } from "../shared/types";
+import { TextFilterConfig, TextFilterValue } from "../shared/types";
 import { useTextFilterField } from "./useTextFilterField";
 
 type Props = {
-  definition: TextFilterDefinition<any>;
+  config: TextFilterConfig<any>;
   value?: TextFilterValue;
   onChange: (value: TextFilterValue | undefined) => void;
 };
 
-export function TextFilterField({ definition, onChange, value }: Props) {
+export function TextFilterField({ config, onChange, value }: Props) {
   const { handleChangeText } = useTextFilterField({ onChange });
 
   return (
     <AppInput
-      label={definition.label}
+      label={config.label}
       value={value ?? ""}
       onChangeText={handleChangeText}
-      placeholder={definition.placeholder ?? "Digite para filtrar"}
+      placeholder={config.placeholder ?? "Digite para filtrar"}
     />
   );
 }

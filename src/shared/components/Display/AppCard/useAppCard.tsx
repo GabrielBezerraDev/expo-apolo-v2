@@ -1,6 +1,6 @@
 import React from "react";
 import { Text } from "tamagui";
-import { useModal } from "../../Feedback/Modalcomponents/Feedback/Modal";
+import { useModal } from "@shared/components/Display/Modal";
 
 export interface AppCardFooterConfig {
   title: string;

@@ -1,7 +1,7 @@
 import {
   DateFilterValue,
   FilterChip,
-  FilterDefinition,
+  FilterConfig,
   FilterOption,
   FilterValue,
   FilterValues,
@@ -33,19 +33,19 @@ export function cleanFilterValues(values: FilterValues) {
 }
 
 export function buildFilterChips(
-  definitions: FilterDefinition<any>[],
+  configs: FilterConfig<any>[],
   values: FilterValues,
   onRemove: (key: string) => void,
 ): FilterChip[] {
-  return definitions.flatMap(definition => {
-    const value = values[definition.key];
+  return configs.flatMap(config => {
+    const value = values[config.key];
     if (!hasFilterValue(value)) return [];
 
     return [
       {
-        key: definition.key,
-        label: getFilterChipLabel(definition, value as FilterValue),
-        onRemove: () => onRemove(definition.key),
+        key: config.key,
+        label: getFilterChipLabel(config, value as FilterValue),
+        onRemove: () => onRemove(config.key),
       },
     ];
   });
@@ -53,29 +53,29 @@ export function buildFilterChips(
 
 export function filterData<TItem>(
   data: TItem[],
-  definitions: FilterDefinition<TItem>[],
+  configs: FilterConfig<TItem>[],
   values: FilterValues,
 ) {
-  const activeDefinitions = definitions.filter(definition => hasFilterValue(values[definition.key]));
-  if (activeDefinitions.length === 0) return data;
+  const activeConfigs = configs.filter(config => hasFilterValue(values[config.key]));
+  if (activeConfigs.length === 0) return data;
 
   return data.filter(item =>
-    activeDefinitions.every(definition => {
-      const value = values[definition.key];
+    activeConfigs.every(config => {
+      const value = values[config.key];
       if (!value) return true;
-      if (definition.filter) return definition.filter(item, value, values);
+      if (config.filter) return config.filter(item, value, values);
 
-      const itemValue = definition.getItemValue?.(item);
+      const itemValue = config.getItemValue?.(item);
 
-      if (definition.type === "date") {
+      if (config.type === "date") {
         return matchesDateFilter(itemValue, value as DateFilterValue);
       }
 
-      if (definition.type === "numberRange") {
+      if (config.type === "numberRange") {
         return matchesNumberRangeFilter(itemValue, value as NumberRangeFilterValue);
       }
 
-      if (definition.type === "select") {
+      if (config.type === "select") {
         return matchesSelectFilter(itemValue, value as SelectFilterValue);
       }
 
@@ -150,31 +150,31 @@ export function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function getFilterChipLabel(definition: FilterDefinition<any>, value: FilterValue) {
-  if (definition.chipLabel) return definition.chipLabel(value, definition);
+function getFilterChipLabel(config: FilterConfig<any>, value: FilterValue) {
+  if (config.chipLabel) return config.chipLabel(value, config);
 
-  if (definition.type === "date") {
+  if (config.type === "date") {
     const dateValue = value as DateFilterValue;
-    if (definition.mode === "single") return `${definition.label}: ${formatDateForChip(dateValue.date)}`;
-    return `${definition.label}: ${formatDateForChip(dateValue.startDate)} até ${formatDateForChip(dateValue.endDate)}`;
+    if (config.mode === "single") return `${config.label}: ${formatDateForChip(dateValue.date)}`;
+    return `${config.label}: ${formatDateForChip(dateValue.startDate)} até ${formatDateForChip(dateValue.endDate)}`;
   }
 
-  if (definition.type === "numberRange") {
+  if (config.type === "numberRange") {
     const rangeValue = value as NumberRangeFilterValue;
     if (rangeValue.startValue && rangeValue.endValue) {
-      return `${definition.label}: ${rangeValue.startValue} até ${rangeValue.endValue}`;
+      return `${config.label}: ${rangeValue.startValue} até ${rangeValue.endValue}`;
     }
-    if (rangeValue.startValue) return `${definition.label}: a partir de ${rangeValue.startValue}`;
-    return `${definition.label}: até ${rangeValue.endValue}`;
+    if (rangeValue.startValue) return `${config.label}: a partir de ${rangeValue.startValue}`;
+    return `${config.label}: até ${rangeValue.endValue}`;
   }
 
-  if (definition.type === "select") {
+  if (config.type === "select") {
     const selectedValues = Array.isArray(value) ? value : [value as string | number];
-    const labels = selectedValues.map(selectedValue => findOptionLabel(definition.options, selectedValue));
-    return `${definition.label}: ${labels.join(", ")}`;
+    const labels = selectedValues.map(selectedValue => findOptionLabel(config.options, selectedValue));
+    return `${config.label}: ${labels.join(", ")}`;
   }
 
-  return `${definition.label}: ${String(value)}`;
+  return `${config.label}: ${String(value)}`;
 }
 
 function findOptionLabel(options: FilterOption[], value: string | number) {

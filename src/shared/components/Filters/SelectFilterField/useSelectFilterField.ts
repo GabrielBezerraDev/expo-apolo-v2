@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
-import { FilterOptionValue, SelectFilterDefinition, SelectFilterValue } from "../shared/types";
+import { FilterOptionValue, SelectFilterConfig, SelectFilterValue } from "../shared/types";
 
 type UseSelectFilterFieldParams = {
-  definition: SelectFilterDefinition<any>;
+  config: SelectFilterConfig<any>;
   value?: SelectFilterValue;
   onChange: (value: SelectFilterValue | undefined) => void;
 };
 
-export function useSelectFilterField({ definition, onChange, value }: UseSelectFilterFieldParams) {
+export function useSelectFilterField({ config, onChange, value }: UseSelectFilterFieldParams) {
   const [open, setOpen] = useState(false);
   const selectedValues = useMemo(() => {
     if (value == null) return [];
@@ -15,20 +15,20 @@ export function useSelectFilterField({ definition, onChange, value }: UseSelectF
   }, [value]);
 
   const selectedOptions = useMemo(
-    () => definition.options.filter(option => selectedValues.includes(option.value)),
-    [definition.options, selectedValues],
+    () => config.options.filter(option => selectedValues.includes(option.value)),
+    [config.options, selectedValues],
   );
 
   const selectedLabel = useMemo(() => {
-    if (selectedOptions.length === 0) return definition.placeholder ?? "Selecione";
-    if (definition.multiple) return `${selectedOptions.length} selecionado(s)`;
-    return selectedOptions[0]?.label ?? definition.placeholder ?? "Selecione";
-  }, [definition.multiple, definition.placeholder, selectedOptions]);
+    if (selectedOptions.length === 0) return config.placeholder ?? "Selecione";
+    if (config.multiple) return `${selectedOptions.length} selecionado(s)`;
+    return selectedOptions[0]?.label ?? config.placeholder ?? "Selecione";
+  }, [config.multiple, config.placeholder, selectedOptions]);
 
   const toggleOpen = () => setOpen(current => !current);
 
   const handleSelect = (optionValue: FilterOptionValue) => {
-    if (!definition.multiple) {
+    if (!config.multiple) {
       onChange(optionValue);
       setOpen(false);
       return;

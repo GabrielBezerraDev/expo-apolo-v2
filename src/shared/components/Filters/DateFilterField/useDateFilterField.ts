@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { DateFilterDefinition, DateFilterValue } from "../shared/types";
+import { DateFilterConfig, DateFilterValue } from "../shared/types";
 import { dateToISODate, parseItemDate, startOfDay } from "../shared/utils";
 
 type UseDateFilterFieldParams = {
-  definition: DateFilterDefinition<any>;
+  config: DateFilterConfig<any>;
   resetKey?: number;
   value?: DateFilterValue;
   onChange: (value: DateFilterValue | undefined) => void;
 };
 
-export function useDateFilterField({ definition, onChange, resetKey = 0, value }: UseDateFilterFieldParams) {
-  const mode = definition.mode ?? "range";
-  const maxDate = useMemo(() => startOfDay(definition.maxDate ?? new Date()), [definition.maxDate]);
+export function useDateFilterField({ config, onChange, resetKey = 0, value }: UseDateFilterFieldParams) {
+  const mode = config.mode ?? "range";
+  const maxDate = useMemo(() => startOfDay(config.maxDate ?? new Date()), [config.maxDate]);
   const [singleDate, setSingleDate] = useState(() => getDateFromISO(value?.date));
   const [startDate, setStartDate] = useState(() => getDateFromISO(value?.startDate));
   const [endDate, setEndDate] = useState(() => getDateFromISO(value?.endDate));
@@ -103,7 +103,7 @@ export function useDateFilterField({ definition, onChange, resetKey = 0, value }
   const startMaximumDate = endDate && endDate < maxDate ? endDate : maxDate;
 
   return {
-    endLabel: definition.endLabel ?? "Data final",
+    endLabel: config.endLabel ?? "Data final",
     endDate,
     error,
     handleEndChange,
@@ -113,7 +113,7 @@ export function useDateFilterField({ definition, onChange, resetKey = 0, value }
     mode,
     singleDate,
     startDate,
-    startLabel: definition.startLabel ?? "Data inicial",
+    startLabel: config.startLabel ?? "Data inicial",
     startMaximumDate,
   };
 }

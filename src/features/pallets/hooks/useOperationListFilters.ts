@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FilterDefinition, useFilterController } from "@shared/components/Filters";
+import { FilterConfig, useFilterController } from "@shared/components/Filters";
 import { OperationItem } from "../mocks/palletMock";
 
 type UseOperationListFiltersParams = {
@@ -17,7 +17,7 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
     [data],
   );
 
-  const definitions = useMemo<FilterDefinition<OperationItem>[]>(
+  const configs = useMemo<FilterConfig<OperationItem>[]>(
     () => [
       {
         key: "doneAt",
@@ -55,8 +55,8 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
   );
 
   return useFilterController({
+    configs,
     data,
-    definitions,
     modalTitle,
   });
 }

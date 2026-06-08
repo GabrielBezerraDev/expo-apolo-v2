@@ -1,32 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
 import { useModal } from "@shared/components/Display/Modal";
-import { FilterDefinition, FilterValue, FilterValues } from "../shared/types";
+import { FilterConfig, FilterValue, FilterValues } from "../shared/types";
 import { buildFilterChips, cleanFilterValues } from "../shared/utils";
 
 type UseFilterModalContentParams = {
-  definitions: FilterDefinition<any>[];
+  configs: FilterConfig<any>[];
   initialValues?: FilterValues;
   onApply: (values: FilterValues) => void;
 };
 
 export function useFilterModalContent({
-  definitions,
+  configs,
   initialValues = {},
   onApply,
 }: UseFilterModalContentParams) {
   const { closeAllModals } = useModal();
   const [draftValues, setDraftValues] = useState<FilterValues>(initialValues);
   const [resetKey, setResetKey] = useState(0);
-  const [selectedKey, setSelectedKey] = useState(getInitialSelectedKey(definitions, initialValues));
+  const [selectedKey, setSelectedKey] = useState(getInitialSelectedKey(configs, initialValues));
 
   useEffect(() => {
     setDraftValues(initialValues);
-    setSelectedKey(getInitialSelectedKey(definitions, initialValues));
-  }, [definitions, initialValues]);
+    setSelectedKey(getInitialSelectedKey(configs, initialValues));
+  }, [configs, initialValues]);
 
-  const selectedDefinition = useMemo(
-    () => definitions.find(definition => definition.key === selectedKey) ?? definitions[0],
-    [definitions, selectedKey],
+  const selectedConfig = useMemo(
+    () => configs.find(config => config.key === selectedKey) ?? configs[0],
+    [configs, selectedKey],
   );
 
   const setFilterValue = (key: string, value: FilterValue | undefined) => {
@@ -53,8 +53,8 @@ export function useFilterModalContent({
   };
 
   const chips = useMemo(
-    () => buildFilterChips(definitions, draftValues, removeFilter),
-    [definitions, draftValues],
+    () => buildFilterChips(configs, draftValues, removeFilter),
+    [configs, draftValues],
   );
 
   const clearAll = () => {
@@ -73,14 +73,14 @@ export function useFilterModalContent({
     clearAll,
     draftValues,
     resetKey,
-    selectedDefinition,
+    selectedConfig,
     selectedKey,
     setFilterValue,
     setSelectedKey,
   };
 }
 
-function getInitialSelectedKey(definitions: FilterDefinition<any>[], values: FilterValues) {
-  const activeDefinition = definitions.find(definition => values[definition.key] != null);
-  return activeDefinition?.key ?? definitions[0]?.key ?? "";
+function getInitialSelectedKey(configs: FilterConfig<any>[], values: FilterValues) {
+  const activeConfig = configs.find(config => values[config.key] != null);
+  return activeConfig?.key ?? configs[0]?.key ?? "";
 }
