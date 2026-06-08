@@ -5,8 +5,8 @@ import {
   DarkTheme,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@config/navigation.protocol';
-import { useThemeMode } from '@hooks/useThemeMode';
+import { RootStackParamList } from '@navigation/navigation.protocol';
+import { useThemeMode } from '@shared/components/ThemeToggle';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPallet';
 import { OperationSuccess } from '@features/pallets/screens/form/OperationSuccess';

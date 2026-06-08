@@ -1,9 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Modal, Pressable, StyleSheet } from "react-native";
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { X } from "lucide-react-native";
-import { useThemeMode } from "@hooks/useThemeMode";
-import { useAuthSession } from "@navigation/AuthSessionContext";
 import {
   DrawerCloseButton,
   DrawerHeader,
@@ -13,6 +11,7 @@ import {
   DrawerSubtitle,
   DrawerTitle,
 } from "./styled";
+import { useAppDrawer } from "./useAppDrawer";
 
 type Props = {
   visible: boolean;
@@ -20,38 +19,7 @@ type Props = {
 };
 
 export function AppDrawer({ visible, onClose }: Props) {
-  const { theme } = useThemeMode();
-  const { logout } = useAuthSession();
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    if (visible) {
-      progress.value = withTiming(1, { duration: 240 });
-    }
-  }, [progress, visible]);
-
-  const closeDrawer = () => {
-    progress.value = withTiming(0, { duration: 180 }, finished => {
-      if (finished) runOnJS(onClose)();
-    });
-  };
-
-  const handleLogout = () => {
-    progress.value = withTiming(0, { duration: 180 }, finished => {
-      if (finished) {
-        runOnJS(onClose)();
-        runOnJS(logout)();
-      }
-    });
-  };
-
-  const backdropStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-  }));
-
-  const panelStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: 320 * (1 - progress.value) }],
-  }));
+  const { backdropStyle, closeDrawer, handleLogout, panelStyle, theme } = useAppDrawer({ onClose, visible });
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={closeDrawer}>

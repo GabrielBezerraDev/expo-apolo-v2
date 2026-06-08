@@ -4,8 +4,8 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View } from "tamagui";
 import EntryPallets from "@assets/svg/EntryPallets.svg";
 import ExitPallets from "@assets/svg/ExitPallets.svg";
-import type { RootStackParamList } from "@config/navigation.protocol";
-import { useThemeMode } from "@hooks/useThemeMode";
+import type { RootStackParamList } from "@navigation/navigation.protocol";
+import { useThemeMode } from "@shared/components/ThemeToggle";
 import { typography } from "@shared/typography";
 import { usePallet } from "../../providers/PalletProvider";
 

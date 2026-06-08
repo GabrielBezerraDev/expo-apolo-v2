@@ -1,5 +1,5 @@
-import { createContext, useContext } from 'react';
-import { AppTheme, ThemeMode, lightTheme } from '@shared/theme';
+import { createContext, useContext } from "react";
+import { AppTheme, lightTheme, ThemeMode } from "@shared/theme";
 
 export type ThemeModeContextValue = {
   mode: ThemeMode;
@@ -8,7 +8,7 @@ export type ThemeModeContextValue = {
 };
 
 export const ThemeModeContext = createContext<ThemeModeContextValue>({
-  mode: 'light',
+  mode: "light",
   theme: lightTheme,
   toggleTheme: () => undefined,
 });

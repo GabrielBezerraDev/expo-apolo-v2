@@ -1,30 +1,35 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { ScrollView } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { SlidersHorizontal } from "lucide-react-native";
-import { usePallet } from "@features/pallets/providers/PalletProvider";
 import {
   PaginationComponent,
   usePagination,
   WrapperPagination,
 } from "@shared/components/Pagination";
+import { FilterChips } from "@shared/components/Filters";
 import { PalletCard } from "../../components/PalletCard";
 import { palletItems } from "../../mocks/palletMock";
 import { ListScreenShell } from "../../components/ListScreenShell";
+import { usePalletListFilters } from "../../hooks/usePalletListFilters";
 
 export function PalletListScreen() {
-  const { setOperationPallet } = usePallet();
   const { setPaginationMeta } = usePagination();
-  const listedPalletItems = [...palletItems, ...palletItems];
+  const listedPalletItems = useMemo(() => [...palletItems, ...palletItems], []);
+  const {
+    chips,
+    filteredData: filteredPalletItems,
+    openFilterModal,
+  } = usePalletListFilters({ data: listedPalletItems, modalTitle: "Filtrar paletes" });
 
   useFocusEffect(
     useCallback(() => {
       setPaginationMeta({
         currentPage: 1,
         lastPage: 1,
-        totalItems: listedPalletItems.length,
+        totalItems: filteredPalletItems.length,
       });
-    }, [listedPalletItems.length, setPaginationMeta]),
+    }, [filteredPalletItems.length, setPaginationMeta]),
   );
 
   return (
@@ -34,16 +39,17 @@ export function PalletListScreen() {
         {
           Icon: SlidersHorizontal,
           label: "Filtros",
-          onPress: () => setOperationPallet("exit"),
+          onPress: openFilterModal,
         },
       ]}
     >
+      <FilterChips chips={chips} />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {listedPalletItems.map((item, index) => (
+        {filteredPalletItems.map((item, index) => (
           <PalletCard key={index} item={item} />
         ))}
       </ScrollView>

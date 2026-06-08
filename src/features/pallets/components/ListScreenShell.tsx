@@ -2,7 +2,6 @@ import React, { PropsWithChildren } from "react";
 import { styled, View } from "tamagui";
 import { AppHeader } from "@shared/components/AppHeader";
 import { FloatButton, FloatButtonAction } from "@shared/components/FloatButton";
-import { PaginationComponent } from "@shared/components/Pagination";
 
 type Props = PropsWithChildren<{
   title: string;

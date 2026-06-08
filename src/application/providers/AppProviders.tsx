@@ -2,9 +2,9 @@ import React, { PropsWithChildren } from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { OcrFrameProvider } from "@features/camera";
 import { ModalProvider } from "@shared/components/Modal";
 import { AppThemeProvider } from "./ThemeProvider";
-import { FrameProvider } from "@hooks/useFrame";
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
@@ -16,9 +16,9 @@ export function AppProviders({ children }: PropsWithChildren) {
         >
           <View style={{ flex: 1, backgroundColor: "#000" }}>
             <AppThemeProvider>
-              <FrameProvider>
+              <OcrFrameProvider>
                 <ModalProvider>{children}</ModalProvider>
-              </FrameProvider>
+              </OcrFrameProvider>
             </AppThemeProvider>
           </View>
         </SafeAreaView>
