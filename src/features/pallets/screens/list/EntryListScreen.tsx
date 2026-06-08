@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback } from "react";
 import { ScrollView } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -22,7 +22,6 @@ export function EntryListScreen() {
   const {
     chips,
     openFilterModal,
-    appliedFilters
   } = useOperationListFilters({ data: entryOperations, modalTitle: "Filtrar entradas" });
 
   useFocusEffect(
@@ -40,10 +39,6 @@ export function EntryListScreen() {
     setOperationPallet("entry");
     navigation.navigate("FormScreenPallet");
   };
-
-  useEffect(() => {
-    console.log("FILTROS", appliedFilters);
-  }, [appliedFilters])
 
   return (
     <ListScreenShell

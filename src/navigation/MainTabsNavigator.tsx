@@ -67,7 +67,7 @@ export function MainTabsNavigator() {
         name="PalletList"
         component={PalletListScreen}
         options={{
-          title: "Pallets",
+          title: "Paletes",
           tabBarIcon: ({ color, focused }) => (
             <OutlinedTabIcon
               Icon={Package}

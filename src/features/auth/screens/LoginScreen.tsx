@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Pressable, StyleSheet } from "react-native";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,17 +6,18 @@ import { Check } from "lucide-react-native";
 import { styled, Text, useWindowDimensions, View } from "tamagui";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@navigation/navigation.protocol";
+import { useAuthSession } from "@navigation/AuthSessionContext";
 import { useThemeMode, ThemeToggle } from "@shared/components/Actions/ThemeToggle";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { typography } from "@shared/typography";
+import { useLoginMutation } from "../hooks/useLoginMutation";
 import { loginSchema } from "../schemas/loginSchema";
+import { normalizeAuthTokens } from "../types/authTypes";
 import { LoginFormData } from "../types/loginTypes";
 import { LoginAnimatedHeader, ShinyConecthus } from "../components/LoginAnimatedHeader";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "Login"> & {
-  onSuccess?: () => void;
-};
+type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 const Screen = styled(View, {
   flex: 1,
@@ -61,6 +62,12 @@ const LinkText = styled(Text, {
   color: "$primary",
   fontWeight: "700",
 });
+const AuthErrorText = styled(Text, {
+  ...typography.bodySmall,
+  color: "$error",
+  textAlign: "center",
+  width: "100%",
+});
 const Version = styled(Text, {
   ...typography.bodySmall,
   color: "$mutedText",
@@ -69,7 +76,10 @@ const Version = styled(Text, {
   fontWeight: "bold",
 });
 
-export function LoginScreen({ onSuccess }: Props) {
+export function LoginScreen(_props: Props) {
+  const [loginError, setLoginError] = useState("");
+  const { login } = useAuthSession();
+  const loginMutation = useLoginMutation();
   const { theme } = useThemeMode();
   const { height } = useWindowDimensions();
   const {
@@ -84,8 +94,19 @@ export function LoginScreen({ onSuccess }: Props) {
     mode: "onChange",
   });
 
-  const submit = () => {
-    onSuccess?.();
+  const submit = async (data: LoginFormData) => {
+    setLoginError("");
+
+    try {
+      const response = await loginMutation.mutateAsync({
+        email: data.email.trim(),
+        password: data.password,
+      });
+
+      await login(normalizeAuthTokens(response));
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "Não foi possível entrar.");
+    }
   };
   const remember = watch("remember");
 
@@ -117,6 +138,7 @@ export function LoginScreen({ onSuccess }: Props) {
           isPassword
           error={errors.password?.message}
         />
+        {loginError ? <AuthErrorText>{loginError}</AuthErrorText> : null}
         <Inline>
           <Remember
             onPress={() =>
@@ -136,7 +158,7 @@ export function LoginScreen({ onSuccess }: Props) {
         <AppButton
           style={{width:'100%', height: height * 0.06}}
           title="ENTRAR"
-          loading={isSubmitting}
+          loading={isSubmitting || loginMutation.isPending}
           onPress={handleSubmit(submit)}
         />
       </Form>

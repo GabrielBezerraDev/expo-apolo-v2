@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { OcrFrameProvider } from "@features/camera";
 import { ModalProvider } from "@shared/components/Display/Modal";
+import { AppQueryProvider } from "./QueryProvider";
 import { AppThemeProvider } from "./ThemeProvider";
 
 export function AppProviders({ children }: PropsWithChildren) {
@@ -16,9 +17,11 @@ export function AppProviders({ children }: PropsWithChildren) {
         >
           <View style={{ flex: 1, backgroundColor: "#000" }}>
             <AppThemeProvider>
-              <OcrFrameProvider>
-                <ModalProvider>{children}</ModalProvider>
-              </OcrFrameProvider>
+              <AppQueryProvider>
+                <OcrFrameProvider>
+                  <ModalProvider>{children}</ModalProvider>
+                </OcrFrameProvider>
+              </AppQueryProvider>
             </AppThemeProvider>
           </View>
         </SafeAreaView>

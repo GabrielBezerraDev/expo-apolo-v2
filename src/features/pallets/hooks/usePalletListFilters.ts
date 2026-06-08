@@ -1,32 +1,37 @@
 import { useMemo } from "react";
 import { FilterConfig, useFilterController } from "@shared/components/Filters";
-import { PalletItem } from "../mocks/palletMock";
+import { QualityReport } from "../types/qualityReport";
 
 type UsePalletListFiltersParams = {
-  data: PalletItem[];
+  reports: QualityReport[];
   modalTitle: string;
 };
 
-export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersParams) {
-  const stageOptions = useMemo(
-    () => uniqueOptions(data.map(item => item.stage)),
-    [data],
-  );
+const stageOptions = [
+  { label: "WIP", value: "WIP" },
+  { label: "Qualidade", value: "PACKAGING" },
+  { label: "Expedição", value: "STORAGE" },
+  { label: "Finalizado", value: "FINISHED" },
+  { label: "Retorno Produção", value: "PACKAGING_FOR_REVIEW" },
+  { label: "Retorno Apontamento", value: "WIP_FOR_REVIEW" },
+];
+
+export function usePalletListFilters({ modalTitle, reports }: UsePalletListFiltersParams) {
   const lineOptions = useMemo(
-    () => uniqueOptions(data.map(item => item.line)),
-    [data],
+    () => uniqueLineOptions(reports),
+    [reports],
   );
 
   const configs = useMemo<FilterConfig[]>(
     () => [
       {
-        key: "dateTime",
+        key: "dateFilter",
         label: "Data",
         type: "date",
         mode: "range",
       },
       {
-        key: "stage",
+        key: "currentStage",
         label: "Estágio",
         type: "select",
         multiple: true,
@@ -42,18 +47,12 @@ export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersP
         placeholder: "Selecione a linha",
       },
       {
-        key: "batch",
-        label: "Batch",
-        type: "text",
-        placeholder: "Digite o batch",
-      },
-      {
-        key: "quantity",
+        key: "rangeFilter",
         label: "Quantidade",
         type: "numberRange",
       },
     ],
-    [lineOptions, stageOptions],
+    [lineOptions],
   );
 
   return useFilterController({
@@ -63,6 +62,15 @@ export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersP
   });
 }
 
-function uniqueOptions(values: string[]) {
-  return Array.from(new Set(values)).map(value => ({ label: value, value }));
+function uniqueLineOptions(reports: QualityReport[]) {
+  const lineMap = new Map<number, string>();
+
+  reports.forEach(report => {
+    const lineId = report.pallet?.lineId;
+    if (!lineId) return;
+
+    lineMap.set(lineId, report.pallet.lineName ?? `Linha ${lineId}`);
+  });
+
+  return Array.from(lineMap.entries()).map(([value, label]) => ({ label, value }));
 }
