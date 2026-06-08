@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { FilterOptionValue, SelectFilterConfig, SelectFilterValue } from "../shared/types";
 
 type UseSelectFilterFieldParams = {
-  config: SelectFilterConfig<any>;
+  config: SelectFilterConfig;
   value?: SelectFilterValue;
   onChange: (value: SelectFilterValue | undefined) => void;
 };

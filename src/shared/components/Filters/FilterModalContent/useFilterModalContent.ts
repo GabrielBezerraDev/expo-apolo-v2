@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useModal } from "@shared/components/Display/Modal";
 import { FilterConfig, FilterValue, FilterValues } from "../shared/types";
 import { buildFilterChips, cleanFilterValues } from "../shared/utils";
 
 type UseFilterModalContentParams = {
-  configs: FilterConfig<any>[];
+  configs: FilterConfig[];
   initialValues?: FilterValues;
   onApply: (values: FilterValues) => void;
 };
@@ -16,11 +16,13 @@ export function useFilterModalContent({
 }: UseFilterModalContentParams) {
   const { closeAllModals } = useModal();
   const [draftValues, setDraftValues] = useState<FilterValues>(initialValues);
+  const [invalidFilterKeys, setInvalidFilterKeys] = useState<Record<string, boolean>>({});
   const [resetKey, setResetKey] = useState(0);
   const [selectedKey, setSelectedKey] = useState(getInitialSelectedKey(configs, initialValues));
 
   useEffect(() => {
     setDraftValues(initialValues);
+    setInvalidFilterKeys({});
     setSelectedKey(getInitialSelectedKey(configs, initialValues));
   }, [configs, initialValues]);
 
@@ -35,6 +37,7 @@ export function useFilterModalContent({
 
       if (value == null) {
         delete nextValues[key];
+        setFilterValidity(key, true);
         return nextValues;
       }
 
@@ -43,12 +46,28 @@ export function useFilterModalContent({
     });
   };
 
+  const setFilterValidity = useCallback((key: string, isValid: boolean) => {
+    setInvalidFilterKeys(current => {
+      if (isValid) {
+        if (!current[key]) return current;
+
+        const nextKeys = { ...current };
+        delete nextKeys[key];
+        return nextKeys;
+      }
+
+      if (current[key]) return current;
+      return { ...current, [key]: true };
+    });
+  }, []);
+
   const removeFilter = (key: string) => {
     setDraftValues(current => {
       const nextValues = { ...current };
       delete nextValues[key];
       return nextValues;
     });
+    setFilterValidity(key, true);
     setResetKey(current => current + 1);
   };
 
@@ -57,18 +76,30 @@ export function useFilterModalContent({
     [configs, draftValues],
   );
 
+  const cleanedDraftValues = useMemo(() => cleanFilterValues(draftValues), [draftValues]);
+  const canApplyFilters = Object.keys(invalidFilterKeys).length === 0;
+  const canClearFilters = Object.keys(cleanedDraftValues).length > 0 || Object.keys(invalidFilterKeys).length > 0;
+
   const clearAll = () => {
+    if (!canClearFilters) return;
+
     setDraftValues({});
+    setInvalidFilterKeys({});
     setResetKey(current => current + 1);
+    onApply({});
   };
 
   const applyFilters = () => {
-    onApply(cleanFilterValues(draftValues));
+    if (!canApplyFilters) return;
+
+    onApply(cleanedDraftValues);
     closeAllModals();
   };
 
   return {
     applyFilters,
+    canApplyFilters,
+    canClearFilters,
     chips,
     clearAll,
     draftValues,
@@ -76,11 +107,12 @@ export function useFilterModalContent({
     selectedConfig,
     selectedKey,
     setFilterValue,
+    setFilterValidity,
     setSelectedKey,
   };
 }
 
-function getInitialSelectedKey(configs: FilterConfig<any>[], values: FilterValues) {
+function getInitialSelectedKey(configs: FilterConfig[], values: FilterValues) {
   const activeConfig = configs.find(config => values[config.key] != null);
   return activeConfig?.key ?? configs[0]?.key ?? "";
 }

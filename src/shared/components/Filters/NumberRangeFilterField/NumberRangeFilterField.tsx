@@ -5,12 +5,14 @@ import { FilterErrorText, FilterFieldRoot } from "../shared/styled";
 import { useNumberRangeFilterField } from "./useNumberRangeFilterField";
 
 type Props = {
-  config: NumberRangeFilterConfig<any>;
+  config: NumberRangeFilterConfig;
+  onValidityChange?: (isValid: boolean) => void;
+  resetKey?: number;
   value?: NumberRangeFilterValue;
   onChange: (value: NumberRangeFilterValue | undefined) => void;
 };
 
-export function NumberRangeFilterField({ config, onChange, value }: Props) {
+export function NumberRangeFilterField({ config, onChange, onValidityChange, resetKey, value }: Props) {
   const {
     endLabel,
     endValue,
@@ -19,7 +21,7 @@ export function NumberRangeFilterField({ config, onChange, value }: Props) {
     handleStartChange,
     startLabel,
     startValue,
-  } = useNumberRangeFilterField({ config, onChange, value });
+  } = useNumberRangeFilterField({ config, onChange, onValidityChange, resetKey, value });
 
   return (
     <FilterFieldRoot>

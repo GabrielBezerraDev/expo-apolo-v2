@@ -78,10 +78,12 @@ export const FilterButtonSlot = styled(View, {
 
 export const FilterChipScroll = styled(ScrollView, {
   maxHeight: 58,
+  width: "100%",
 });
 
 export const FilterChipList = styled(View, {
   flexDirection: "row",
+  flexWrap: "nowrap",
   gap: 8,
   paddingVertical: 6,
 });

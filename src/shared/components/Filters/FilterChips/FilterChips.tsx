@@ -17,7 +17,7 @@ export function FilterChips({ chips }: Props) {
   if (chips.length === 0) return null;
 
   return (
-    <FilterChipScroll horizontal showsHorizontalScrollIndicator={false}>
+    <FilterChipScroll horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}>
       <FilterChipList>
         {chips.map(chip => (
           <FilterChipRoot key={chip.key}>

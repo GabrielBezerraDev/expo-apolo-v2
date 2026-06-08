@@ -2,26 +2,26 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useModal } from "@shared/components/Display/Modal";
 import { FilterModalContent } from "../FilterModalContent";
 import { FilterConfig, FilterValues } from "../shared/types";
-import { buildFilterChips, cleanFilterValues, filterData } from "../shared/utils";
+import { buildFilterChips, cleanFilterValues } from "../shared/utils";
 
-type UseFilterControllerParams<TItem> = {
-  data: TItem[];
-  configs: FilterConfig<TItem>[];
+type UseFilterControllerParams = {
+  configs: FilterConfig[];
+  initialValues?: FilterValues;
   modalTitle: string;
   modalHeightPercent?: number;
 };
 
-export function useFilterController<TItem>({
+export function useFilterController({
   configs,
-  data,
+  initialValues = {},
   modalHeightPercent = 68,
   modalTitle,
-}: UseFilterControllerParams<TItem>) {
+}: UseFilterControllerParams) {
   const { openModal } = useModal();
-  const [values, setValues] = useState<FilterValues>({});
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>(initialValues);
 
   const removeFilter = useCallback((key: string) => {
-    setValues(current => {
+    setAppliedFilters(current => {
       const nextValues = { ...current };
       delete nextValues[key];
       return nextValues;
@@ -29,25 +29,20 @@ export function useFilterController<TItem>({
   }, []);
 
   const clearFilters = useCallback(() => {
-    setValues({});
+    setAppliedFilters({});
   }, []);
 
   const chips = useMemo(
-    () => buildFilterChips(configs, values, removeFilter),
-    [configs, removeFilter, values],
-  );
-
-  const filteredData = useMemo(
-    () => filterData(data, configs, values),
-    [data, configs, values],
+    () => buildFilterChips(configs, appliedFilters, removeFilter),
+    [appliedFilters, configs, removeFilter],
   );
 
   const openFilterModal = useCallback(() => {
     openModal(
       <FilterModalContent
         configs={configs}
-        initialValues={values}
-        onApply={nextValues => setValues(cleanFilterValues(nextValues))}
+        initialValues={appliedFilters}
+        onApply={nextValues => setAppliedFilters(cleanFilterValues(nextValues))}
       />,
       {
         title: modalTitle,
@@ -57,15 +52,15 @@ export function useFilterController<TItem>({
         minHeight:0
       },
     );
-  }, [configs, modalHeightPercent, modalTitle, openModal, values]);
+  }, [appliedFilters, configs, modalHeightPercent, modalTitle, openModal]);
 
   return {
+    appliedFilters,
     chips,
     clearFilters,
-    filteredData,
     hasFilters: chips.length > 0,
     openFilterModal,
     removeFilter,
-    values,
+    setAppliedFilters,
   };
 }

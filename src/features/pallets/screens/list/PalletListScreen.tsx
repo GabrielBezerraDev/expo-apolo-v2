@@ -18,7 +18,6 @@ export function PalletListScreen() {
   const listedPalletItems = useMemo(() => [...palletItems, ...palletItems], []);
   const {
     chips,
-    filteredData: filteredPalletItems,
     openFilterModal,
   } = usePalletListFilters({ data: listedPalletItems, modalTitle: "Filtrar paletes" });
 
@@ -27,9 +26,9 @@ export function PalletListScreen() {
       setPaginationMeta({
         currentPage: 1,
         lastPage: 1,
-        totalItems: filteredPalletItems.length,
+        totalItems: listedPalletItems.length,
       });
-    }, [filteredPalletItems.length, setPaginationMeta]),
+    }, [listedPalletItems.length, setPaginationMeta]),
   );
 
   return (
@@ -49,7 +48,7 @@ export function PalletListScreen() {
         contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {filteredPalletItems.map((item, index) => (
+        {listedPalletItems.map((item, index) => (
           <PalletCard key={index} item={item} />
         ))}
       </ScrollView>

@@ -17,7 +17,7 @@ import {
 import { useSelectFilterField } from "./useSelectFilterField";
 
 type Props = {
-  config: SelectFilterConfig<any>;
+  config: SelectFilterConfig;
   value?: SelectFilterValue;
   onChange: (value: SelectFilterValue | undefined) => void;
 };

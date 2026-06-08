@@ -41,7 +41,7 @@ export const DateInputValue = styled(Text, {
   variants: {
     placeholder: {
       true: { color: "$mutedText" },
-      false: { color: "$text" },
+      false: { color: "$black" },
     },
   } as const,
 });

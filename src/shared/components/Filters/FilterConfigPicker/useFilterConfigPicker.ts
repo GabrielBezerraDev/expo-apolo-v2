@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { FilterConfig } from "../shared/types";
 
 type UseFilterConfigPickerParams = {
-  configs: FilterConfig<any>[];
+  configs: FilterConfig[];
   selectedKey: string;
   onSelect: (key: string) => void;
 };

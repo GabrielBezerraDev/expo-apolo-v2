@@ -64,7 +64,7 @@ export function DateInput({
 
       {visible ? (
         <DateTimePicker
-          value={pickerValue}
+          value={pickerValue}     
           mode="date"
           minimumDate={minimumDate}
           maximumDate={maximumDate}

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { ScrollView } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -21,8 +21,8 @@ export function EntryListScreen() {
   const { setPaginationMeta } = usePagination();
   const {
     chips,
-    filteredData: filteredOperations,
-    openFilterModal
+    openFilterModal,
+    appliedFilters
   } = useOperationListFilters({ data: entryOperations, modalTitle: "Filtrar entradas" });
 
   useFocusEffect(
@@ -30,9 +30,9 @@ export function EntryListScreen() {
       setPaginationMeta({
         currentPage: 1,
         lastPage: 1,
-        totalItems: filteredOperations.length,
+        totalItems: entryOperations.length,
       });
-    }, [filteredOperations.length, setPaginationMeta]),
+    }, [setPaginationMeta]),
   );
 
   const startEntry = () => {
@@ -40,6 +40,10 @@ export function EntryListScreen() {
     setOperationPallet("entry");
     navigation.navigate("FormScreenPallet");
   };
+
+  useEffect(() => {
+    console.log("FILTROS", appliedFilters);
+  }, [appliedFilters])
 
   return (
     <ListScreenShell
@@ -59,7 +63,7 @@ export function EntryListScreen() {
         contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {filteredOperations.map((item) => (
+        {entryOperations.map((item) => (
           <OperationCard key={item.id} item={item} />
         ))}
       </ScrollView>

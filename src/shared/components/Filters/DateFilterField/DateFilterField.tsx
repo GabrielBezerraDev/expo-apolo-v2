@@ -5,13 +5,14 @@ import { FilterErrorText, FilterFieldRoot, FilterHelpText } from "../shared/styl
 import { useDateFilterField } from "./useDateFilterField";
 
 type Props = {
-  config: DateFilterConfig<any>;
+  config: DateFilterConfig;
+  onValidityChange?: (isValid: boolean) => void;
   resetKey?: number;
   value?: DateFilterValue;
   onChange: (value: DateFilterValue | undefined) => void;
 };
 
-export function DateFilterField({ config, onChange, resetKey, value }: Props) {
+export function DateFilterField({ config, onChange, onValidityChange, resetKey, value }: Props) {
   const {
     endLabel,
     endDate,
@@ -25,7 +26,7 @@ export function DateFilterField({ config, onChange, resetKey, value }: Props) {
     startDate,
     startLabel,
     startMaximumDate,
-  } = useDateFilterField({ config, onChange, resetKey, value });
+  } = useDateFilterField({ config, onChange, onValidityChange, resetKey, value });
 
   return (
     <FilterFieldRoot>

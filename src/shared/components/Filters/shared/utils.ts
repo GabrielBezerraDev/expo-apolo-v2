@@ -6,7 +6,6 @@ import {
   FilterValue,
   FilterValues,
   NumberRangeFilterValue,
-  SelectFilterValue,
 } from "./types";
 
 export function hasFilterValue(value: FilterValue | undefined) {
@@ -33,7 +32,7 @@ export function cleanFilterValues(values: FilterValues) {
 }
 
 export function buildFilterChips(
-  configs: FilterConfig<any>[],
+  configs: FilterConfig[],
   values: FilterValues,
   onRemove: (key: string) => void,
 ): FilterChip[] {
@@ -49,39 +48,6 @@ export function buildFilterChips(
       },
     ];
   });
-}
-
-export function filterData<TItem>(
-  data: TItem[],
-  configs: FilterConfig<TItem>[],
-  values: FilterValues,
-) {
-  const activeConfigs = configs.filter(config => hasFilterValue(values[config.key]));
-  if (activeConfigs.length === 0) return data;
-
-  return data.filter(item =>
-    activeConfigs.every(config => {
-      const value = values[config.key];
-      if (!value) return true;
-      if (config.filter) return config.filter(item, value, values);
-
-      const itemValue = config.getItemValue?.(item);
-
-      if (config.type === "date") {
-        return matchesDateFilter(itemValue, value as DateFilterValue);
-      }
-
-      if (config.type === "numberRange") {
-        return matchesNumberRangeFilter(itemValue, value as NumberRangeFilterValue);
-      }
-
-      if (config.type === "select") {
-        return matchesSelectFilter(itemValue, value as SelectFilterValue);
-      }
-
-      return matchesTextFilter(itemValue, value as string);
-    }),
-  );
 }
 
 export function maskDateInput(text: string) {
@@ -150,7 +116,7 @@ export function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function getFilterChipLabel(config: FilterConfig<any>, value: FilterValue) {
+function getFilterChipLabel(config: FilterConfig, value: FilterValue) {
   if (config.chipLabel) return config.chipLabel(value, config);
 
   if (config.type === "date") {
@@ -179,44 +145,4 @@ function getFilterChipLabel(config: FilterConfig<any>, value: FilterValue) {
 
 function findOptionLabel(options: FilterOption[], value: string | number) {
   return options.find(option => option.value === value)?.label ?? String(value);
-}
-
-function matchesDateFilter(itemValue: unknown, filterValue: DateFilterValue) {
-  const itemDate = parseItemDate(itemValue);
-  if (!itemDate) return false;
-
-  if (filterValue.date) {
-    const selectedDate = parseItemDate(filterValue.date);
-    return Boolean(selectedDate && itemDate.getTime() === selectedDate.getTime());
-  }
-
-  const startDate = filterValue.startDate ? parseItemDate(filterValue.startDate) : null;
-  const endDate = filterValue.endDate ? parseItemDate(filterValue.endDate) : null;
-
-  if (startDate && itemDate < startDate) return false;
-  if (endDate && itemDate > endDate) return false;
-  return true;
-}
-
-function matchesNumberRangeFilter(itemValue: unknown, filterValue: NumberRangeFilterValue) {
-  const numericValue = Number(itemValue);
-  if (Number.isNaN(numericValue)) return false;
-
-  const startValue = Number(filterValue.startValue);
-  const endValue = Number(filterValue.endValue);
-
-  if (filterValue.startValue && numericValue < startValue) return false;
-  if (filterValue.endValue && numericValue > endValue) return false;
-  return true;
-}
-
-function matchesSelectFilter(itemValue: unknown, filterValue: SelectFilterValue) {
-  const values = Array.isArray(filterValue) ? filterValue : [filterValue];
-  return values.map(String).includes(String(itemValue));
-}
-
-function matchesTextFilter(itemValue: unknown, filterValue: string) {
-  return String(itemValue ?? "")
-    .toLowerCase()
-    .includes(filterValue.trim().toLowerCase());
 }

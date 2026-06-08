@@ -17,17 +17,19 @@ import { SelectFilterField } from "../SelectFilterField";
 import { TextFilterField } from "../TextFilterField";
 
 type Props = {
-  config: FilterConfig<any>;
+  config: FilterConfig;
+  onValidityChange?: (isValid: boolean) => void;
   resetKey?: number;
   value?: FilterValue;
   onChange: (value: FilterValue | undefined) => void;
 };
 
-export function FilterFieldRenderer({ config, onChange, resetKey, value }: Props) {
+export function FilterFieldRenderer({ config, onChange, onValidityChange, resetKey, value }: Props) {
   if (config.type === "date") {
     return (
       <DateFilterField
-        config={config as DateFilterConfig<any>}
+        config={config as DateFilterConfig}
+        onValidityChange={onValidityChange}
         resetKey={resetKey}
         value={value as DateFilterValue | undefined}
         onChange={onChange}
@@ -38,7 +40,9 @@ export function FilterFieldRenderer({ config, onChange, resetKey, value }: Props
   if (config.type === "numberRange") {
     return (
       <NumberRangeFilterField
-        config={config as NumberRangeFilterConfig<any>}
+        config={config as NumberRangeFilterConfig}
+        onValidityChange={onValidityChange}
+        resetKey={resetKey}
         value={value as NumberRangeFilterValue | undefined}
         onChange={onChange}
       />
@@ -48,7 +52,7 @@ export function FilterFieldRenderer({ config, onChange, resetKey, value }: Props
   if (config.type === "select") {
     return (
       <SelectFilterField
-        config={config as SelectFilterConfig<any>}
+        config={config as SelectFilterConfig}
         value={value as SelectFilterValue | undefined}
         onChange={onChange}
       />
@@ -57,7 +61,7 @@ export function FilterFieldRenderer({ config, onChange, resetKey, value }: Props
 
   return (
     <TextFilterField
-      config={config as TextFilterConfig<any>}
+      config={config as TextFilterConfig}
       value={value as TextFilterValue | undefined}
       onChange={onChange}
     />

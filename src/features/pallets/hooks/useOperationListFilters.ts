@@ -17,14 +17,13 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
     [data],
   );
 
-  const configs = useMemo<FilterConfig<OperationItem>[]>(
+  const configs = useMemo<FilterConfig[]>(
     () => [
       {
         key: "doneAt",
         label: "Data",
         type: "date",
         mode: "range",
-        getItemValue: item => item.doneAt,
       },
       {
         key: "status",
@@ -33,7 +32,6 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
         multiple: true,
         options: statusOptions,
         placeholder: "Selecione o status",
-        getItemValue: item => item.status,
       },
       {
         key: "client",
@@ -42,13 +40,11 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
         multiple: true,
         options: clientOptions,
         placeholder: "Selecione o cliente",
-        getItemValue: item => item.client,
       },
       {
         key: "totalPallets",
         label: "Total de pallets",
         type: "numberRange",
-        getItemValue: item => item.totalPallets,
       },
     ],
     [clientOptions, statusOptions],
@@ -56,7 +52,6 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
 
   return useFilterController({
     configs,
-    data,
     modalTitle,
   });
 }

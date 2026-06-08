@@ -13,7 +13,7 @@ import {
 import { useFilterModalContent } from "./useFilterModalContent";
 
 type Props = {
-  configs: FilterConfig<any>[];
+  configs: FilterConfig[];
   initialValues?: FilterValues;
   onApply: (values: FilterValues) => void;
 };
@@ -21,6 +21,8 @@ type Props = {
 export function FilterModalContent({ configs, initialValues, onApply }: Props) {
   const {
     applyFilters,
+    canApplyFilters,
+    canClearFilters,
     chips,
     clearAll,
     draftValues,
@@ -28,8 +30,18 @@ export function FilterModalContent({ configs, initialValues, onApply }: Props) {
     selectedConfig,
     selectedKey,
     setFilterValue,
+    setFilterValidity,
     setSelectedKey,
   } = useFilterModalContent({ configs, initialValues, onApply });
+
+  const handleSelectedFilterValidityChange = React.useCallback(
+    (isValid: boolean) => {
+      if (!selectedConfig) return;
+
+      setFilterValidity(selectedConfig.key, isValid);
+    },
+    [selectedConfig, setFilterValidity],
+  );
 
   if (!selectedConfig) {
     return <FilterHelpText>Nenhum filtro configurado.</FilterHelpText>;
@@ -48,16 +60,17 @@ export function FilterModalContent({ configs, initialValues, onApply }: Props) {
         resetKey={resetKey}
         value={draftValues[selectedConfig.key]}
         onChange={value => setFilterValue(selectedConfig.key, value)}
+        onValidityChange={handleSelectedFilterValidityChange}
       />
 
       <FilterChips chips={chips} />
 
       <FilterButtonRow>
         <FilterButtonSlot>
-          <AppButton title="Limpar" variant="outline" onPress={clearAll} />
+          <AppButton title="Limpar" variant="outline" disabled={!canClearFilters} onPress={clearAll} />
         </FilterButtonSlot>
         <FilterButtonSlot>
-          <AppButton title="Filtrar" onPress={applyFilters} />
+          <AppButton title="Filtrar" disabled={!canApplyFilters} onPress={applyFilters} />
         </FilterButtonSlot>
       </FilterButtonRow>
     </FilterModalRoot>

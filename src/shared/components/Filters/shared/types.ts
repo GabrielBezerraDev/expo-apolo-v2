@@ -24,15 +24,13 @@ export type TextFilterValue = string;
 export type FilterValue = DateFilterValue | NumberRangeFilterValue | SelectFilterValue | TextFilterValue;
 export type FilterValues = Record<string, FilterValue | undefined>;
 
-type BaseFilterConfig<TItem> = {
+type BaseFilterConfig = {
   key: string;
   label: string;
-  getItemValue?: (item: TItem) => unknown;
-  chipLabel?: (value: FilterValue, config: FilterConfig<TItem>) => string;
-  filter?: (item: TItem, value: FilterValue, values: FilterValues) => boolean;
+  chipLabel?: (value: FilterValue, config: FilterConfig) => string;
 };
 
-export type DateFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
+export type DateFilterConfig = BaseFilterConfig & {
   type: "date";
   mode?: DateFilterMode;
   startLabel?: string;
@@ -40,29 +38,29 @@ export type DateFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
   maxDate?: Date;
 };
 
-export type NumberRangeFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
+export type NumberRangeFilterConfig = BaseFilterConfig & {
   type: "numberRange";
   startLabel?: string;
   endLabel?: string;
 };
 
-export type SelectFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
+export type SelectFilterConfig = BaseFilterConfig & {
   type: "select";
   options: FilterOption[];
   multiple?: boolean;
   placeholder?: string;
 };
 
-export type TextFilterConfig<TItem = unknown> = BaseFilterConfig<TItem> & {
+export type TextFilterConfig = BaseFilterConfig & {
   type: "text";
   placeholder?: string;
 };
 
-export type FilterConfig<TItem = unknown> =
-  | DateFilterConfig<TItem>
-  | NumberRangeFilterConfig<TItem>
-  | SelectFilterConfig<TItem>
-  | TextFilterConfig<TItem>;
+export type FilterConfig =
+  | DateFilterConfig
+  | NumberRangeFilterConfig
+  | SelectFilterConfig
+  | TextFilterConfig;
 
 export type FilterChip = {
   key: string;

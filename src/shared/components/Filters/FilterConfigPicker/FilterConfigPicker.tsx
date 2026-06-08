@@ -11,7 +11,7 @@ import {
 import { useFilterConfigPicker } from "./useFilterConfigPicker";
 
 type Props = {
-  configs: FilterConfig<any>[];
+  configs: FilterConfig[];
   selectedKey: string;
   onSelect: (key: string) => void;
 };

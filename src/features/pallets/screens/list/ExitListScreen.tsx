@@ -23,14 +23,13 @@ export function ExitListScreen() {
   const { setPaginationMeta } = usePagination();
   const {
     chips,
-    filteredData: filteredOperations,
     openFilterModal,
   } = useOperationListFilters({ data: exitOperations, modalTitle: 'Filtrar saídas' });
 
   useFocusEffect(
     useCallback(() => {
-      setPaginationMeta({ currentPage: 1, lastPage: 1, totalItems: filteredOperations.length });
-    }, [filteredOperations.length, setPaginationMeta]),
+      setPaginationMeta({ currentPage: 1, lastPage: 1, totalItems: exitOperations.length });
+    }, [setPaginationMeta]),
   );
 
   const startExit = () => {
@@ -49,7 +48,7 @@ export function ExitListScreen() {
     >
       <FilterChips chips={chips} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 14, paddingVertical:20 }} showsVerticalScrollIndicator={false}>
-        {filteredOperations.map(item => <OperationCard key={item.id} item={item} />)}
+        {exitOperations.map(item => <OperationCard key={item.id} item={item} />)}
       </ScrollView>
          <WrapperPagination>
               <PaginationComponent />

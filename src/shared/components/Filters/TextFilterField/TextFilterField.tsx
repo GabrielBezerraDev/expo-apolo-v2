@@ -4,7 +4,7 @@ import { TextFilterConfig, TextFilterValue } from "../shared/types";
 import { useTextFilterField } from "./useTextFilterField";
 
 type Props = {
-  config: TextFilterConfig<any>;
+  config: TextFilterConfig;
   value?: TextFilterValue;
   onChange: (value: TextFilterValue | undefined) => void;
 };

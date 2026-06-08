@@ -17,14 +17,13 @@ export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersP
     [data],
   );
 
-  const configs = useMemo<FilterConfig<PalletItem>[]>(
+  const configs = useMemo<FilterConfig[]>(
     () => [
       {
         key: "dateTime",
         label: "Data",
         type: "date",
         mode: "range",
-        getItemValue: item => item.dateTime,
       },
       {
         key: "stage",
@@ -33,7 +32,6 @@ export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersP
         multiple: true,
         options: stageOptions,
         placeholder: "Selecione o estágio",
-        getItemValue: item => item.stage,
       },
       {
         key: "line",
@@ -42,20 +40,17 @@ export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersP
         multiple: true,
         options: lineOptions,
         placeholder: "Selecione a linha",
-        getItemValue: item => item.line,
       },
       {
         key: "batch",
         label: "Batch",
         type: "text",
         placeholder: "Digite o batch",
-        getItemValue: item => item.batch,
       },
       {
         key: "quantity",
         label: "Quantidade",
         type: "numberRange",
-        getItemValue: item => item.quantity,
       },
     ],
     [lineOptions, stageOptions],
@@ -63,7 +58,6 @@ export function usePalletListFilters({ data, modalTitle }: UsePalletListFiltersP
 
   return useFilterController({
     configs,
-    data,
     modalHeightPercent: 72,
     modalTitle,
   });
