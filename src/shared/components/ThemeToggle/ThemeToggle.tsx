@@ -1,15 +1,14 @@
 import React from "react";
-import { Moon, Sun } from "lucide-react-native";
-import { useThemeMode } from "@hooks/useThemeMode";
 import { ToggleButton } from "./styled";
+import { useThemeToggle } from "./useThemeToggle";
 import { fontScale } from "@shared/typography";
 
 export function ThemeToggle() {
-  const { mode, theme, toggleTheme } = useThemeMode();
+  const { Icon, theme, toggleTheme } = useThemeToggle();
 
   return (
     <ToggleButton onPress={toggleTheme} hitSlop={10}>
-      {mode === "dark" ? <Sun size={20 * fontScale} color={theme.primary} /> : <Moon size={20 * fontScale} color={theme.primary} />}
+      <Icon size={20 * fontScale} color={theme.primary} />
     </ToggleButton>
   );
 }

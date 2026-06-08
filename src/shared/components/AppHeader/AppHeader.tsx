@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { Image, Pressable } from "react-native";
 import { ArrowLeft, Menu } from "lucide-react-native";
 import { View } from "tamagui";
-import { useThemeMode } from "@hooks/useThemeMode";
 import { AppDrawer } from "../AppDrawer";
 import { ThemeToggle } from "../ThemeToggle";
 import { Actions, Left, Logo, Root, Subtitle, Title } from "./styled";
 import { fontScale } from "@shared/typography";
+import { useAppHeader } from "./useAppHeader";
 
 type Props = {
   title: string;
@@ -16,17 +16,7 @@ type Props = {
 };
 
 export function AppHeader({ title, subtitle, onBack, onMenu }: Props) {
-  const { theme } = useThemeMode();
-  const [drawerVisible, setDrawerVisible] = useState(false);
-
-  const handleMenuPress = () => {
-    if (onMenu) {
-      onMenu();
-      return;
-    }
-
-    setDrawerVisible(true);
-  };
+  const { closeDrawer, drawerVisible, handleMenuPress, theme } = useAppHeader({ onMenu });
 
   return (
     <>
@@ -58,7 +48,7 @@ export function AppHeader({ title, subtitle, onBack, onMenu }: Props) {
         </Actions>
       </Root>
 
-      <AppDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
+      <AppDrawer visible={drawerVisible} onClose={closeDrawer} />
     </>
   );
 }

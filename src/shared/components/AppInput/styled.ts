@@ -30,4 +30,5 @@ export const InputFrame = styled(View, {
 
 export const StyledInput = styled(TextInput, { flex: 1, ...typography.bodyLarge, padding: 0 });
 
+
 export const ErrorText = styled(Text, { ...typography.bodySmall, color: "$error" });

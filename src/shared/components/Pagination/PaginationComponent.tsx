@@ -1,10 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import {
   Animated,
   Pressable,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import {
@@ -13,7 +12,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react-native";
-import { usePagination } from "./PaginationProvider";
+import { usePaginationComponent } from "./usePaginationComponent";
 
 type PaginationComponentProps = {
   itemLabel?: string;
@@ -26,39 +25,22 @@ type PaginationIconButtonProps = {
 };
 
 export function PaginationComponent({ itemLabel = "Paletes" }: PaginationComponentProps) {
-  
   const {
+    arrowsGap,
+    buttonSize,
+    fontSize,
+    isNarrow,
+    labelText,
     nextPage,
-    sendToLastPage,
+    paginationStyle,
     previousPage,
     sendToFirstPage,
-    currentPage,
-    lastPage,
-    totalItems,
-  } = usePagination();
-
-  const paginationTranslateY = useRef(new Animated.Value(100)).current;
-  const { width } = useWindowDimensions();
-
-  const isNarrow = width < 420;
-  const isVeryNarrow = width < 340;
-  const buttonSize = isVeryNarrow ? 22 : isNarrow ? 26 : 30;
-  const fontSize = isVeryNarrow ? 11 : isNarrow ? 12 : 14;
-  const arrowsGap = isVeryNarrow ? 4 : isNarrow ? 6 : 10;
-  const labelText = isNarrow
-    ? `${currentPage}/${lastPage} • ${totalItems} ${itemLabel}`
-    : `Página ${currentPage} de ${lastPage} | Total de ${itemLabel}: ${totalItems}`;
-
-  useEffect(() => {
-    Animated.timing(paginationTranslateY, {
-      toValue: 0,
-      duration: 2000,
-      useNativeDriver: true,
-    }).start();
-  }, [paginationTranslateY]);
+    sendToLastPage,
+    width,
+  } = usePaginationComponent(itemLabel);
 
   return (
-    <Animated.View style={{ transform: [{ translateY: paginationTranslateY }] }}>
+    <Animated.View style={paginationStyle}>
       <View style={[styles.wrapper, {width: width}]}>
         <View style={[styles.totalItemsSlot, { flexShrink: 1, marginRight: 8 }]}> 
           <View
