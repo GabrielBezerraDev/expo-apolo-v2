@@ -1,16 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { StyleSheet } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Plus } from "lucide-react-native";
-import { useThemeMode } from "@hooks/useThemeMode";
 import { ActionLabel, ActionRow, CircleButton, FloatButtonRoot } from "./styled";
-
-export type FloatButtonAction = {
-  Icon: React.ComponentType<any>;
-  label?: string;
-  onPress: () => void;
-  disabled?: boolean;
-};
+import { useFloatActionButton, useFloatButton } from "./useFloatButton";
+import { useFloatActionAnimation, useFloatButtonAnimation } from "./useFloatButtonAnimation";
+import { FloatButtonAction } from "./types";
 
 type Props = {
   actions: FloatButtonAction[];
@@ -26,34 +21,9 @@ type ActionButtonProps = {
   onActionPress: () => void;
 };
 
-const BUTTON_SPACING = 68;
-
 function ActionButton({ action, index, isOpen, total, onActionPress }: ActionButtonProps) {
-  const { theme } = useThemeMode();
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    const openingDelay = index * 35;
-    const closingDelay = (total - index - 1) * 25;
-
-    progress.value = withDelay(
-      isOpen ? openingDelay : closingDelay,
-      withSpring(isOpen ? 1 : 0, { damping: 104, stiffness: 1500 })
-    );
-  }, [index, isOpen, progress, total]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    bottom: BUTTON_SPACING * (index + 1) * progress.value,
-    opacity: progress.value,
-    transform: [{ scale: 0.65 + progress.value * 0.35 }],
-  }));
-
-  const handlePress = () => {
-    if (action.disabled) return;
-
-    action.onPress();
-    onActionPress();
-  };
+  const { handlePress, theme } = useFloatActionButton({ action, onActionPress });
+  const { animatedStyle } = useFloatActionAnimation({ index, isOpen, total });
 
   return (
     <Animated.View pointerEvents={isOpen ? "auto" : "none"} style={[styles.action, animatedStyle]}>
@@ -68,19 +38,10 @@ function ActionButton({ action, index, isOpen, total, onActionPress }: ActionBut
 }
 
 export function FloatButton({ actions, bottom = 8, right = 20 }: Props) {
-  const { theme } = useThemeMode();
-  const [isOpen, setIsOpen] = useState(false);
-  const rotation = useSharedValue(0);
+  const { close, isOpen, shouldRender, theme, toggleOpen } = useFloatButton({ actionsLength: actions.length });
+  const { mainButtonStyle } = useFloatButtonAnimation(isOpen);
 
-  useEffect(() => {
-    rotation.value = withSpring(isOpen ? 1 : 0, { damping: 12, stiffness: 120 });
-  }, [isOpen, rotation]);
-
-  const mainButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value * 45}deg` }],
-  }));
-
-  if (actions.length === 0) return null;
+  if (!shouldRender) return null;
 
   return (
     <FloatButtonRoot pointerEvents="box-none" style={{ bottom, right }}>
@@ -91,12 +52,12 @@ export function FloatButton({ actions, bottom = 8, right = 20 }: Props) {
           index={index}
           isOpen={isOpen}
           total={actions.length}
-          onActionPress={() => setIsOpen(false)}
+          onActionPress={close}
         />
       ))}
 
       <Animated.View style={mainButtonStyle}>
-        <CircleButton variant="main" onPress={() => setIsOpen(current => !current)} hitSlop={8}>
+        <CircleButton variant="main" onPress={toggleOpen} hitSlop={8}>
           <Plus size={28} color={theme.white} strokeWidth={2.6} />
         </CircleButton>
       </Animated.View>

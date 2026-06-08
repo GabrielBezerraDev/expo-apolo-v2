@@ -6,13 +6,17 @@
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "package": "com.valorlogocrexpo",
-      "permissions": ["android.permission.CAMERA"]
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "plugins": [
       [
@@ -26,7 +30,8 @@
         {
           "cameraPermissionText": "Permita que o Valorlog use a câmera para escanear etiquetas."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

@@ -1,16 +1,10 @@
 import React, { PropsWithChildren, ReactNode } from "react";
 import { Body, Card, CardTitle, Footer, Header } from "./styled";
-import { useModal } from "../Modal";
-import { Text } from "tamagui";
-
-interface IFooterConfig {
-  title: string;
-  footerCallback: (...rest: any[]) => any;
-}
+import { AppCardFooterConfig, useAppCard } from "./useAppCard";
 
 type Props = PropsWithChildren<{
   header?: ReactNode;
-  footerConfig?: IFooterConfig;
+  footerConfig?: AppCardFooterConfig;
   variant?: "default" | "orangeHeader";
 }>;
 
@@ -20,15 +14,7 @@ export function AppCard({
   children,
   footerConfig,
 }: Props) {
-
-  const { openModal } = useModal();
-
-  const defaultFooterConfig = {
-    title: "OPÇÕES",
-    footerCallback: () => {
-      openModal(<Text>Teste</Text>);
-    },
-  };
+  const { footerCallback, footerTitle } = useAppCard({ footerConfig });
 
   return (
     <Card>
@@ -43,10 +29,10 @@ export function AppCard({
       ) : null}
       <Body>{children}</Body>
       <Footer
-        onPress={footerConfig ? footerConfig.footerCallback : defaultFooterConfig.footerCallback}
+        onPress={footerCallback}
         orange={variant === "orangeHeader"}
       >
-        <CardTitle colorVariant="white">{footerConfig ? footerConfig.title : defaultFooterConfig.title}</CardTitle>
+        <CardTitle colorVariant="white">{footerTitle}</CardTitle>
       </Footer>
     </Card>
   );

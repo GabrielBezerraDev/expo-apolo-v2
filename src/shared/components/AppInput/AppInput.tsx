@@ -1,7 +1,6 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode } from "react";
 import { Pressable, TextInputProps } from "react-native";
 import { Eye, EyeOff } from "lucide-react-native";
-import { useThemeMode } from "@hooks/useThemeMode";
 import { ErrorText, InputFrame, Label, StyledInput, Wrapper } from "./styled";
 import {
   Controller,
@@ -9,7 +8,7 @@ import {
   ControllerRenderProps,
   FieldValues,
 } from "react-hook-form";
-import { useWindowDimensions } from "tamagui";
+import { useAppInput } from "./useAppInput";
 
 type AppInputControllerProps<T extends FieldValues> = Omit<
   ControllerProps<T>,
@@ -35,13 +34,26 @@ export function AppInput<T extends FieldValues>({
   controllerReactFormsProps,
   ...props
 }: Props<T>) {
-  const { theme } = useThemeMode();
-  const [hidden, setHidden] = useState(Boolean(isPassword || secureTextEntry));
-  const [focused, setFocused] = useState(false);
+  const {
+    focused,
+    getValue,
+    handleBlur,
+    handleChangeText,
+    handleFocus,
+    hidden,
+    inputHeight,
+    theme,
+    toggleHidden,
+  } = useAppInput({
+    isPassword,
+    onBlur: props.onBlur,
+    onChangeText: props.onChangeText,
+    onFocus: props.onFocus,
+    secureTextEntry,
+    value: props.value,
+  });
 
   const renderInput = (field?: ControllerRenderProps<T>) => {
-    const isControlledByReactHookForm = Boolean(field);
-    const { height } = useWindowDimensions();
     return (
       <Wrapper>
         {label ? <Label>{label}</Label> : null}
@@ -52,36 +64,16 @@ export function AppInput<T extends FieldValues>({
           <StyledInput
             placeholderTextColor={theme.mutedText}
             secureTextEntry={hidden}
-            style={{ color: theme.text, height: height * 0.07 }}
+            style={{ color: theme.black, height: inputHeight }}
             {...props}
-            value={
-              isControlledByReactHookForm
-                ? field?.value == null
-                  ? ""
-                  : String(field.value)
-                : props.value
-            }
-            onChangeText={(value) => {
-              if (isControlledByReactHookForm) {
-                field?.onChange(value);
-                return;
-              }
-
-              props.onChangeText?.(value);
-            }}
-            onBlur={(event) => {
-              setFocused(false);
-              field?.onBlur();
-              props.onBlur?.(event);
-            }}
-            onFocus={(event) => {
-              setFocused(true);
-              props.onFocus?.(event);
-            }}
+            value={getValue(field)}
+            onChangeText={(value) => handleChangeText(value, field)}
+            onBlur={(event) => handleBlur(event, field)}
+            onFocus={handleFocus}
           />
 
           {isPassword ? (
-            <Pressable onPress={() => setHidden((value) => !value)} hitSlop={10}>
+            <Pressable onPress={toggleHidden} hitSlop={10}>
               {hidden ? (
                 <EyeOff
                   size={20}

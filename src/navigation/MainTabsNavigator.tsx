@@ -1,11 +1,11 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Package, PackageOpen, Truck } from "lucide-react-native";
-import { MainTabsParamList } from "@config/navigation.protocol";
+import { MainTabsParamList } from "@navigation/navigation.protocol";
 import { EntryListScreen } from "@features/pallets/screens/list/EntryListScreen";
 import { ExitListScreen } from "@features/pallets/screens/list/ExitListScreen";
 import { PalletListScreen } from "@features/pallets/screens/list/PalletListScreen";
-import { useThemeMode } from "@hooks/useThemeMode";
+import { useThemeMode } from "@shared/components/ThemeToggle";
 import { OutlinedTabIcon } from "@shared/components/OutlinedTabIcon";
 import { typography } from "@shared/typography";
 
