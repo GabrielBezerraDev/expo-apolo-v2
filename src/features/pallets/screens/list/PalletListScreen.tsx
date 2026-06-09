@@ -1,5 +1,5 @@
 import React, { useDeferredValue, useEffect, useState } from "react";
-import { Pressable } from "react-native";
+import { Button } from "tamagui";
 import { Search, SlidersHorizontal, X } from "lucide-react-native";
 import {
   PaginationComponent,
@@ -87,9 +87,9 @@ export function PalletListScreen() {
         leftIcon={<Search size={22} color={theme.primary} />}
         rightIcon={
           batchSearch ? (
-            <Pressable onPress={() => setBatchSearch("")} hitSlop={10}>
+            <Button unstyled onPress={() => setBatchSearch("")} hitSlop={10}>
               <X size={22} color={theme.primary} />
-            </Pressable>
+            </Button>
           ) : null
         }
       />

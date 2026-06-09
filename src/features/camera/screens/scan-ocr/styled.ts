@@ -1,5 +1,4 @@
-import { Pressable } from "react-native";
-import { styled, Text, View } from "tamagui";
+import { Button, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 
 export const ScannerRoot = styled(View, {
@@ -41,7 +40,8 @@ export const ScannerDescription = styled(Text, {
   textAlign: "center",
 });
 
-export const ScannerIconButton = styled(Pressable, {
+export const ScannerIconButton = styled(Button, {
+  unstyled: true,
   alignItems: "center",
   backgroundColor: "rgba(0, 0, 0, 0.42)",
   borderColor: "rgba(255, 255, 255, 0.22)",
@@ -74,7 +74,8 @@ export const FrameCorner = styled(View, {
   } as const,
 });
 
-export const CaptureButtonOuter = styled(Pressable, {
+export const CaptureButtonOuter = styled(Button, {
+  unstyled: true,
   alignItems: "center",
   backgroundColor: "rgba(255, 98, 0, 0.22)",
   borderColor: "$primary",
@@ -112,7 +113,8 @@ export const PermissionText = styled(Text, {
   textAlign: "center",
 });
 
-export const PermissionButton = styled(Pressable, {
+export const PermissionButton = styled(Button, {
+  unstyled: true,
   backgroundColor: "$primary",
   borderRadius: 14,
   paddingHorizontal: 18,

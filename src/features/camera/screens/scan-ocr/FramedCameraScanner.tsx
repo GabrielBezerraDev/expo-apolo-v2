@@ -1,21 +1,18 @@
 // FramedCameraScanner.tsx
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
   Alert,
   Platform,
   NativeModules,
   LayoutChangeEvent,
 } from 'react-native';
+import { Button, Spinner, styled, Text, View } from 'tamagui';
 import {
   Camera,
   useCameraDevices,
 } from 'react-native-vision-camera';
 import { LottieAnimLoading } from '@shared/components/Feedback';
+import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import type {
   CameraPermissionStatus,
   CameraDevice,
@@ -36,6 +33,7 @@ export interface LiveOCRResult {
 
 export const FramedCameraScanner: React.FC = () => {
   const cameraRef = useRef<Camera>(null);
+  const { theme } = useThemeMode();
   const devices = useCameraDevices();
   const device = useMemo(() => {
     if (!devices) return undefined;
@@ -330,40 +328,39 @@ export const FramedCameraScanner: React.FC = () => {
   // Render
   // -------------------------------------------------------------------------
   if (permissionStatus === 'not-determined') {
-    return <View style={styles.center}><LottieAnimLoading label="Carregando câmera" size={150} /></View>;
+    return <Center><LottieAnimLoading label="Carregando câmera" size={150} /></Center>;
   }
 
   if (!hasPermission) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.permissionText}>Permissão de câmera necessária</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Solicitar permissão</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, styles.cancelButton, { marginTop: 12 }]}
-          onPress={handleScannerCancel}>
-          <Text style={styles.buttonText}>Voltar</Text>
-        </TouchableOpacity>
-      </View>
+      <Center>
+        <PermissionText>Permissão de câmera necessária</PermissionText>
+        <ActionButton actionVariant="capture" onPress={requestPermission}>
+          <ActionButtonText>Solicitar permissão</ActionButtonText>
+        </ActionButton>
+        <ActionButton actionVariant="cancel" marginTop={12} onPress={handleScannerCancel}>
+          <ActionButtonText>Voltar</ActionButtonText>
+        </ActionButton>
+      </Center>
     );
   }
 
   if (!device) {
     return (
-      <View style={styles.center}>
+      <Center>
         <LottieAnimLoading label="Carregando câmera" size={150} />
-      </View>
+      </Center>
     );
   }
 
   const dim = 'rgba(0, 0, 0, 0.6)';
   const hasLive = liveResult && liveResult.text.length > 0;
+  const frameBorderColor = liveResult?.isStable ? theme.success : hasLive ? theme.warning : theme.white;
   return (
-    <View style={styles.container}>
+    <ScannerRoot>
       <Camera
         ref={cameraRef}
-        style={StyleSheet.absoluteFill}
+        style={absoluteFillStyle}
         onLayout={handleCameraLayout}
         device={device}
         isActive={true}
@@ -377,146 +374,207 @@ export const FramedCameraScanner: React.FC = () => {
       {!isPhotoMode && (
         <>
           {/* Dimmed overlay */}
-          <View style={{
-            position: 'absolute', top: 0, left: 0,
-            width: PREVIEW_W, height: FRAME_Y, backgroundColor: dim,
-          }} />
-          <View style={{
-            position: 'absolute', top: FRAME_Y + FRAME_H, left: 0,
-            width: PREVIEW_W, height: PREVIEW_H - (FRAME_Y + FRAME_H), backgroundColor: dim,
-          }} />
-          <View style={{
-            position: 'absolute', top: FRAME_Y, left: 0,
-            width: FRAME_X, height: FRAME_H, backgroundColor: dim,
-          }} />
-          <View style={{
-            position: 'absolute', top: FRAME_Y, left: FRAME_X + FRAME_W,
-            width: PREVIEW_W - (FRAME_X + FRAME_W), height: FRAME_H, backgroundColor: dim,
-          }} />
+          <OverlayBlock top={0} left={0} width={PREVIEW_W} height={FRAME_Y} backgroundColor={dim} />
+          <OverlayBlock
+            top={FRAME_Y + FRAME_H}
+            left={0}
+            width={PREVIEW_W}
+            height={PREVIEW_H - (FRAME_Y + FRAME_H)}
+            backgroundColor={dim}
+          />
+          <OverlayBlock top={FRAME_Y} left={0} width={FRAME_X} height={FRAME_H} backgroundColor={dim} />
+          <OverlayBlock
+            top={FRAME_Y}
+            left={FRAME_X + FRAME_W}
+            width={PREVIEW_W - (FRAME_X + FRAME_W)}
+            height={FRAME_H}
+            backgroundColor={dim}
+          />
 
           {/* Frame border — color changes based on detection state */}
-          <View style={{
-            position: 'absolute',
-            top: FRAME_Y, left: FRAME_X,
-            width: FRAME_W, height: FRAME_H,
-            borderWidth: 3,
-            borderColor: liveResult?.isStable ? '#00ff00' : hasLive ? '#ffcc00' : '#fff',
-            borderRadius: 8,
-          }} />
+          <FrameBorder
+            top={FRAME_Y}
+            left={FRAME_X}
+            width={FRAME_W}
+            height={FRAME_H}
+            borderColor={frameBorderColor}
+          />
 
           {/* Live OCR preview above the frame */}
-          <View style={[styles.helpBox, { top: FRAME_Y - (isLandscape ? 120 : 220), width: PREVIEW_W }]}> 
+          <HelpBox top={FRAME_Y - (isLandscape ? 120 : 220)} width={PREVIEW_W}>
             {hasLive ? (
-              <View style={styles.livePreview}>
-                <Text style={styles.liveLabel}>
+              <LivePreview>
+                <LiveLabel>
                   {liveResult!.isStable ? '✓ Estável' : 'Lendo...'}
-                </Text>
-                <Text style={styles.liveText} numberOfLines={2}>
+                </LiveLabel>
+                <LiveText numberOfLines={2}>
                   {liveResult!.text}
-                </Text>
+                </LiveText>
                 {liveResult!.matchedFields > 0 && (
-                  <Text style={styles.liveFields}>
+                  <LiveFields>
                     {liveResult!.matchedFields} campo(s) detectado(s)
-                  </Text>
+                  </LiveFields>
                 )}
-              </View>
+              </LivePreview>
             ) : (
-              <Text style={styles.helpText}>Alinhe a etiqueta dentro da área</Text>
+              <HelpText>Alinhe a etiqueta dentro da área</HelpText>
             )}
-          </View>
+          </HelpBox>
         </>
       )}
 
       {isPhotoMode && (
-        <View style={[styles.photoHelpBox, { width: PREVIEW_W }]}> 
-          <Text style={styles.helpText}>Enquadre a foto do pallet</Text>
-        </View>
+        <PhotoHelpBox width={PREVIEW_W}>
+          <HelpText>Enquadre a foto do pallet</HelpText>
+        </PhotoHelpBox>
       )}
 
       {/* Action buttons */}
-      <View style={[
-        styles.actions,
-        isPhotoMode ? styles.photoActions : { top: FRAME_Y + FRAME_H + 40 },
-        { width: PREVIEW_W },
-      ]}>
-        <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
+      <Actions
+        width={PREVIEW_W}
+        {...(isPhotoMode ? { bottom: 32 } : { top: FRAME_Y + FRAME_H + 40 })}
+      >
+        <ActionButton
+          actionVariant="cancel"
           onPress={handleScannerCancel}
-          disabled={isCapturing}>
-          <Text style={styles.buttonText}>Cancelar</Text>
-        </TouchableOpacity>
+          disabled={isCapturing}
+        >
+          <ActionButtonText>Cancelar</ActionButtonText>
+        </ActionButton>
 
-        <TouchableOpacity
-          style={[
-            styles.button,
-            styles.captureButton,
-            !isPhotoMode && liveResult?.isStable && styles.captureButtonStable,
-          ]}
+        <ActionButton
+          actionVariant={!isPhotoMode && liveResult?.isStable ? "stable" : "capture"}
           onPress={handleCapture}
-          disabled={isCapturing}>
+          disabled={isCapturing}
+        >
           {isCapturing ? (
-            <ActivityIndicator color="#fff" />
+            <Spinner color={theme.white} />
           ) : (
-            <Text style={styles.buttonText}>
+            <ActionButtonText>
               {isPhotoMode ? 'Tirar foto' : liveResult?.isStable ? 'Confirmar' : 'Capturar'}
-            </Text>
+            </ActionButtonText>
           )}
-        </TouchableOpacity>
-      </View>
-    </View>
+        </ActionButton>
+      </Actions>
+    </ScannerRoot>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  center: {
-    flex: 1, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: '#000',
-  },
-  permissionText: { color: '#fff', fontSize: 16, marginBottom: 20 },
-  helpBox: { position: 'absolute', alignItems: 'center', paddingHorizontal: 20 },
-  photoHelpBox: {
-    position: 'absolute',
-    top: 28,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  helpText: {
-    color: '#fff', fontSize: 16, fontWeight: '600',
-    textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4,
-  },
-  livePreview: {
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    paddingHorizontal: 16, paddingVertical: 10,
-    borderRadius: 8, alignItems: 'center',
-    maxWidth: '90%',
-    borderColor: '#ff6200ff', 
-    borderWidth: 1.5
-  },
-  liveLabel: {
-    color: '#ffcc00', fontSize: 12, fontWeight: '700',
-    marginBottom: 4, letterSpacing: 1,
-  },
-  liveText: {
-    color: '#fff', fontSize: 16, fontWeight: '600', textAlign: 'center',
-  },
-  liveFields: {
-    color: '#00ff00', fontSize: 12, marginTop: 4, fontWeight: '600',
-  },
-  actions: {
-    position: 'absolute',
-    flexDirection: 'row', justifyContent: 'space-around',
-    paddingHorizontal: 40,
-  },
-  photoActions: {
-    bottom: 32,
-  },
-  button: {
-    paddingHorizontal: 24, paddingVertical: 14,
-    borderRadius: 30, minWidth: 120, alignItems: 'center',
-  },
-  captureButton: { backgroundColor: '#ff6200' },
-  captureButtonStable: { backgroundColor: '#00a844' }, 
-  cancelButton: { backgroundColor: '#555' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+const absoluteFillStyle = {
+  position: 'absolute' as const,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+};
+
+const ScannerRoot = styled(View, {
+  backgroundColor: '$black',
+  flex: 1,
+});
+
+const Center = styled(View, {
+  alignItems: 'center',
+  backgroundColor: '$black',
+  flex: 1,
+  justifyContent: 'center',
+});
+
+const PermissionText = styled(Text, {
+  color: '$white',
+  fontSize: 16,
+  marginBottom: 20,
+});
+
+const OverlayBlock = styled(View, {
+  position: 'absolute',
+});
+
+const FrameBorder = styled(View, {
+  borderRadius: 8,
+  borderWidth: 3,
+  position: 'absolute',
+});
+
+const HelpBox = styled(View, {
+  alignItems: 'center',
+  paddingHorizontal: 20,
+  position: 'absolute',
+});
+
+const PhotoHelpBox = styled(View, {
+  alignItems: 'center',
+  paddingHorizontal: 20,
+  position: 'absolute',
+  top: 28,
+});
+
+const HelpText = styled(Text, {
+  color: '$white',
+  fontSize: 16,
+  fontWeight: '600',
+  textShadowColor: 'rgba(0,0,0,0.8)',
+  textShadowRadius: 4,
+});
+
+const LivePreview = styled(View, {
+  alignItems: 'center',
+  backgroundColor: 'rgba(0, 0, 0, 0.85)',
+  borderColor: '$primary',
+  borderRadius: 8,
+  borderWidth: 1.5,
+  maxWidth: '90%',
+  paddingHorizontal: 16,
+  paddingVertical: 10,
+});
+
+const LiveLabel = styled(Text, {
+  color: '$warning',
+  fontSize: 12,
+  fontWeight: '700',
+  letterSpacing: 1,
+  marginBottom: 4,
+});
+
+const LiveText = styled(Text, {
+  color: '$white',
+  fontSize: 16,
+  fontWeight: '600',
+  textAlign: 'center',
+});
+
+const LiveFields = styled(Text, {
+  color: '$success',
+  fontSize: 12,
+  fontWeight: '600',
+  marginTop: 4,
+});
+
+const Actions = styled(View, {
+  flexDirection: 'row',
+  justifyContent: 'space-around',
+  paddingHorizontal: 40,
+  position: 'absolute',
+});
+
+const ActionButton = styled(Button, {
+  unstyled: true,
+  alignItems: 'center',
+  borderRadius: 30,
+  minWidth: 120,
+  paddingHorizontal: 24,
+  paddingVertical: 14,
+  variants: {
+    actionVariant: {
+      cancel: { backgroundColor: '$mutedText' },
+      capture: { backgroundColor: '$primary' },
+      stable: { backgroundColor: '$success' },
+    },
+  } as const,
+});
+
+const ActionButtonText = styled(Text, {
+  color: '$white',
+  fontSize: 16,
+  fontWeight: '600',
 });

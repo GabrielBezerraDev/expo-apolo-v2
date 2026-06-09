@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Pressable, StyleSheet } from "react-native";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react-native";
-import { styled, Text, useWindowDimensions, View } from "tamagui";
+import { Button, styled, Text, useWindowDimensions, View } from "tamagui";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@navigation/navigation.protocol";
 import { useAuthSession } from "@navigation/AuthSessionContext";
@@ -33,7 +32,8 @@ const Inline = styled(View, {
   alignItems: "center",
   width: '100%'
 });
-const Remember = styled(Pressable, {
+const Remember = styled(Button, {
+  unstyled: true,
   flexDirection: "row",
   alignItems: "center",
   gap: 8,
@@ -74,6 +74,27 @@ const Version = styled(Text, {
   textAlign: "center",
   marginTop: "auto",
   fontWeight: "bold",
+});
+const FooterRow = styled(View, {
+  alignItems: "flex-end",
+  alignSelf: "center",
+  borderRadius: 5,
+  flex: 1,
+  flexDirection: "row",
+  justifyContent: "space-between",
+  paddingHorizontal: 6,
+  paddingVertical: 4,
+  width: "100%",
+});
+const PoweredRow = styled(View, {
+  alignItems: "center",
+  flexDirection: "row",
+});
+const PoweredText = styled(Text, {
+  ...typography.bodySmall,
+  color: "$mutedText",
+  fontWeight: "bold",
+  marginTop: 4,
 });
 
 export function LoginScreen(_props: Props) {
@@ -156,42 +177,20 @@ export function LoginScreen(_props: Props) {
           <LinkText>Esqueci minha senha</LinkText>
         </Inline>
         <AppButton
-          style={{width:'100%', height: height * 0.06}}
+          style={{ width: "100%", height: height * 0.06 }}
           title="ENTRAR"
           loading={isSubmitting || loginMutation.isPending}
           onPress={handleSubmit(submit)}
         />
       </Form>
-      <View
-        style={{
-          flexDirection: "row",
-          borderRadius: 5,
-          paddingHorizontal: 6,
-          paddingVertical: 4,
-          alignSelf: "center",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          flex: 1,
-          width: "100%",
-        }}
-      >
+      <FooterRow>
         <Version>Versão Atual: 1.0.0</Version>
-        <View style={[{ flexDirection: "row", alignItems: "center", paddingHorizontal: height * 0.0001 }]}> 
-          <Text style={[styles.powered, { color: theme.mutedText, fontWeight: "bold" }]}> 
-            powered by
-          </Text>
+        <PoweredRow paddingHorizontal={height * 0.0001}>
+          <PoweredText>powered by</PoweredText>
           <Text> </Text>
           <ShinyConecthus />
-        </View>
-      </View>
+        </PoweredRow>
+      </FooterRow>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  powered: {
-    ...typography.bodySmall,
-    marginTop: 4,
-    fontWeight: "bold",
-  },
-});

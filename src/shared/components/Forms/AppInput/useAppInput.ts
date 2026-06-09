@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { TextInputProps } from "react-native";
+import type { InputProps } from "tamagui";
 import { ControllerRenderProps, FieldValues } from "react-hook-form";
 import { useWindowDimensions } from "tamagui";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 
-type TextInputBlurEvent = Parameters<NonNullable<TextInputProps["onBlur"]>>[0];
-type TextInputFocusEvent = Parameters<NonNullable<TextInputProps["onFocus"]>>[0];
+type TextInputBlurEvent = unknown;
+type TextInputFocusEvent = unknown;
 
 type UseAppInputParams = Pick<
-  TextInputProps,
+  InputProps,
   "onBlur" | "onChangeText" | "onFocus" | "secureTextEntry" | "value"
 > & {
   isPassword?: boolean;
@@ -50,12 +50,12 @@ export function useAppInput({
   ) => {
     setFocused(false);
     field?.onBlur();
-    onBlur?.(event);
+    onBlur?.(event as Parameters<NonNullable<InputProps["onBlur"]>>[0]);
   };
 
   const handleFocus = (event: TextInputFocusEvent) => {
     setFocused(true);
-    onFocus?.(event);
+    onFocus?.(event as Parameters<NonNullable<InputProps["onFocus"]>>[0]);
   };
 
   const toggleHidden = () => setHidden(current => !current);

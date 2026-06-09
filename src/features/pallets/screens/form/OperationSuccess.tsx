@@ -1,18 +1,15 @@
 import React from "react";
-import { Image, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text, View } from "tamagui";
+import { Button, Image, styled, Text, useWindowDimensions, View } from "tamagui";
 import EntryPallets from "@assets/svg/EntryPallets.svg";
 import ExitPallets from "@assets/svg/ExitPallets.svg";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
-import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { typography } from "@shared/typography";
 import { usePallet } from "../../providers/PalletProvider";
 
 type Props = NativeStackScreenProps<RootStackParamList, "OperationSuccess">;
 
 export function OperationSuccess({ navigation, route }: Props) {
-  const { theme } = useThemeMode();
   const { resetEntry } = usePallet();
   const { width, height } = useWindowDimensions();
   const operation = route.params.operation;
@@ -35,91 +32,87 @@ export function OperationSuccess({ navigation, route }: Props) {
   };
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.background }]}> 
-      <View style={[styles.content, { width: contentWidth }]}> 
+    <Screen>
+      <Content width={contentWidth}>
         <Image
           source={require("@assets/svg/varlog_transparent.png")}
-          style={[styles.logo, { width: logoWidth, height: logoWidth * 0.46 }]}
+          width={logoWidth}
+          height={logoWidth * 0.46}
+          marginBottom={-8}
           resizeMode="contain"
         />
 
         <Illustration width={illustrationSize} height={illustrationSize} />
 
-        <View
-          style={[
-            styles.messageBox,
-            {
-              borderColor: theme.primary,
-              width: successBoxWidth,
-            },
-          ]}
-        >
-          <Text style={[styles.messageText, { color: theme.primary }]}> 
+        <MessageBox width={successBoxWidth}>
+          <MessageText>
             {isEntry ? "ENTRADA FEITA COM\nSUCESSO" : "SAÍDA FEITA COM\nSUCESSO"}
-          </Text>
-        </View>
+          </MessageText>
+        </MessageBox>
 
-        <Pressable
+        <HomeButton
           onPress={goHome}
-          style={({ pressed }) => [
-            styles.homeButton,
-            {
-              backgroundColor: theme.primary,
-              borderColor: theme.black,
-              opacity: pressed ? 0.84 : 1,
-            },
-          ]}
         >
-          <Text style={[styles.homeButtonText, { color: theme.white }]}>TELA INICIAL</Text>
-        </Pressable>
-      </View>
-    </View>
+          <HomeButtonText>TELA INICIAL</HomeButtonText>
+        </HomeButton>
+      </Content>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 28,
+const Screen = styled(View, {
+  alignItems: "center",
+  backgroundColor: "$background",
+  flex: 1,
+  justifyContent: "center",
+  paddingHorizontal: 24,
+  paddingVertical: 28,
+});
+
+const Content = styled(View, {
+  alignItems: "center",
+  gap: 34,
+  justifyContent: "center",
+});
+
+const MessageBox = styled(View, {
+  alignItems: "center",
+  borderColor: "$primary",
+  borderWidth: 3,
+  justifyContent: "center",
+  minHeight: 74,
+  paddingHorizontal: 16,
+  paddingVertical: 14,
+});
+
+const MessageText = styled(Text, {
+  ...typography.headingSmall,
+  color: "$primary",
+  fontWeight: "800",
+  textAlign: "center",
+  textTransform: "uppercase",
+});
+
+const HomeButton = styled(Button, {
+  unstyled: true,
+  alignItems: "center",
+  backgroundColor: "$primary",
+  borderColor: "$black",
+  borderRadius: 2,
+  borderWidth: 2,
+  justifyContent: "center",
+  minHeight: 40,
+  minWidth: 172,
+  paddingHorizontal: 18,
+  paddingVertical: 8,
+  pressStyle: {
+    opacity: 0.84,
   },
-  content: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 34,
-  },
-  logo: {
-    marginBottom: -8,
-  },
-  messageBox: {
-    alignItems: "center",
-    borderWidth: 3,
-    justifyContent: "center",
-    minHeight: 74,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  messageText: {
-    ...typography.headingSmall,
-    fontWeight: "800",
-    textAlign: "center",
-    textTransform: "uppercase",
-  },
-  homeButton: {
-    alignItems: "center",
-    borderRadius: 2,
-    borderWidth: 2,
-    justifyContent: "center",
-    minHeight: 40,
-    minWidth: 172,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-  },
-  homeButtonText: {
-    ...typography.button,
-    fontWeight: "900",
-    textAlign: "center",
-  },
+});
+
+const HomeButtonText = styled(Text, {
+  ...typography.button,
+  color: "$white",
+  fontWeight: "900",
+  textAlign: "center",
 });

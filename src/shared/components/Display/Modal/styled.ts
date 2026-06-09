@@ -1,5 +1,4 @@
-import { Pressable } from "react-native";
-import { ScrollView, styled, Text, View } from "tamagui";
+import { Button, ScrollView, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 
 export const ModalContainer = styled(View, {
@@ -11,7 +10,8 @@ export const ModalContainer = styled(View, {
   zIndex: 1000,
 });
 
-export const ModalBackdrop = styled(Pressable, {
+export const ModalBackdrop = styled(Button, {
+  unstyled: true,
   position: "absolute",
   top: 0,
   right: 0,
@@ -59,7 +59,8 @@ export const ModalTitle = styled(Text, {
   flex: 1,
 });
 
-export const ModalCloseButton = styled(Pressable, {
+export const ModalCloseButton = styled(Button, {
+  unstyled: true,
   alignItems: "center",
   borderRadius: 999,
   height: 32,
@@ -85,4 +86,13 @@ export const ModalFooter = styled(View, {
   borderTopColor: "$border",
   borderTopWidth: 1,
   padding: 16,
+});
+
+export const ModalBackdropButton = styled(Button, {
+  unstyled: true,
+  position: "absolute",
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
 });

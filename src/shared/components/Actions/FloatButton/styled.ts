@@ -1,5 +1,4 @@
-import { Pressable } from "react-native";
-import { styled, Text, View } from "tamagui";
+import { Button, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 
 export const FloatButtonRoot = styled(View, {
@@ -32,7 +31,8 @@ export const ActionLabel = styled(Text, {
   maxWidth: 150,
 });
 
-export const CircleButton = styled(Pressable, {
+export const CircleButton = styled(Button, {
+  unstyled: true,
   alignItems: "center",
   borderRadius: 999,
   borderWidth: 1,

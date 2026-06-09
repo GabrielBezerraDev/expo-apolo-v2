@@ -1,20 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import {
-  Animated,
-  Dimensions,
-  Image,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Animated } from "react-native";
+import { Image, styled, Text, useWindowDimensions, View } from "tamagui";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import { isTablet, typography } from "@shared/typography";
-import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import EmployeeSvg from "@assets/svg/employee.svg";
 import MessengerSvg from "@assets/svg/Messenger-cuate.svg";
 
-const { width, height } = Dimensions.get("window");
+const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export function ShinyConecthus() {
@@ -42,37 +35,37 @@ export function ShinyConecthus() {
   });
 
   return (
-    <View style={styles.shinyTextBox}>
+    <ShinyTextBox>
       <MaskedView
-        style={StyleSheet.absoluteFill}
+        style={absoluteFillStyle}
         maskElement={
-          <View style={styles.shinyMaskContainer}>
-            <Text style={[styles.powered, styles.shinyMaskText]}>Conecthus</Text>
-          </View>
+          <ShinyMaskContainer>
+            <ShinyMaskText>Conecthus</ShinyMaskText>
+          </ShinyMaskContainer>
         }
       >
         <LinearGradient
           colors={["#00ff59", "#29b65d", "#0bec5a"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={StyleSheet.absoluteFill}
+          style={absoluteFillStyle}
         />
         <AnimatedLinearGradient
           colors={["transparent", "#8dffad", "#18d85a", "transparent"]}
           locations={[0, 0.45, 0.55, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={[styles.shineStripe, { transform: [{ translateX }] }]}
+          style={[shineStripeStyle, { transform: [{ translateX }] }]}
         />
       </MaskedView>
-    </View>
+    </ShinyTextBox>
   );
 }
 
 
 
 export function LoginAnimatedHeader() {
-  const { theme } = useThemeMode();
+  const { width, height } = useWindowDimensions();
   const employeeOpacity = useRef(new Animated.Value(0)).current;
   const employeeTranslate = useRef(new Animated.Value(-width * 0.55)).current;
   const messengerOpacity = useRef(new Animated.Value(0)).current;
@@ -130,26 +123,25 @@ export function LoginAnimatedHeader() {
   ]);
 
   return (
-    <View style={styles.root}>
-      <Animated.View
+    <Root>
+      <AnimatedView
         style={[
-          styles.logo,
+          logoStyle,
           {
             opacity: logoOpacity,
             transform: [{ translateY: logoTranslate }],
           },
         ]}
       >
-        <Image
+        <LogoImage
           source={require("@assets/svg/varlog_transparent.png")}
-          style={styles.logoImage}
           resizeMode="contain"
         />
-      </Animated.View>
+      </AnimatedView>
 
-      <Animated.View
+      <AnimatedView
         style={[
-          styles.employee,
+          employeeStyle,
           {
             opacity: employeeOpacity,
             transform: [{ translateX: employeeTranslate }, { translateY: isTablet ? -235 : -163 }],
@@ -157,11 +149,11 @@ export function LoginAnimatedHeader() {
         ]}
       >
         <EmployeeSvg width={width * 0.50} height={height * 0.50} />
-      </Animated.View>
+      </AnimatedView>
 
-      <Animated.View
+      <AnimatedView
         style={[
-          styles.messenger,
+          messengerStyle,
           {
             opacity: messengerOpacity,
             transform: [
@@ -173,154 +165,162 @@ export function LoginAnimatedHeader() {
         ]}
       >
         <MessengerSvg width={width * 0.45} height={height * 0.45} />
-      </Animated.View>
+      </AnimatedView>
 
-      <View style={styles.titleBlock} pointerEvents="none">
-        <View style={styles.titleRow}>
-          <View style={styles.apoStrokeWrapper}>
-            <Text
-              style={[styles.title, styles.apoStroke, { color: theme.primary }]}
-            >
+      <TitleBlock pointerEvents="none">
+        <TitleRow>
+          <ApoStrokeWrapper>
+            <ApoStrokeTitle>
               Apo
-            </Text>
-            <Text style={[styles.title, styles.titleDark]}>Apo</Text>
-          </View>
-          <Text
-            style={[styles.title, styles.titleOrange, { color: theme.primary }]}
-          >
+            </ApoStrokeTitle>
+            <TitleDark>Apo</TitleDark>
+          </ApoStrokeWrapper>
+          <TitleOrange>
             llo
-          </Text>
-        </View>
-        <View style={styles.apoStrokeWrapper}>
-          <Text
-            style={[
-              styles.subtitle,
-              styles.apoStroke,
-              {
-                color: theme.black,
-                left: -0.4,
-                top: -0.4,
-                transform: [{ scale: 1.02 }],
-              },
-            ]}
-          >
+          </TitleOrange>
+        </TitleRow>
+        <ApoStrokeWrapper>
+          <SubtitleStroke>
             Controle de material
-          </Text>
-          <Text style={[styles.subtitle, { color: theme.primary }]}> 
+          </SubtitleStroke>
+          <SubtitleText>
             Controle de material
-          </Text>
-        </View>
-      </View>
-    </View>
+          </SubtitleText>
+        </ApoStrokeWrapper>
+      </TitleBlock>
+    </Root>
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    height: 330,
-    marginTop: 2,
-    marginBottom: 20  
-  },
-  logo: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    zIndex: 3,
-  },
-  logoImage: {
-    width: 218,
-    height: 138,
-    position:'absolute',
-  },
-  employee: {
-    position: "absolute",
-    left: 8,
-    top: 132,
-    zIndex: 1,
-  },
-  messenger: {
-    position: "absolute",
-    right: 6,
-    top: 126,
-    zIndex: 1,
-  },
-  titleBlock: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 132,
-    alignItems: "center",
-    zIndex: 2,
-  },
-  title: {
-    fontSize: 54,
-    fontWeight: "900",
-    fontStyle: "italic",
-    letterSpacing: -2,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  apoStrokeWrapper: {
-    position: "relative",
-  },
-  apoStroke: {
-    position: "absolute",
-    left: -1.2,
-    top: -1.2,
-    textShadowColor: "#ff6200",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 2,
-    transform: [{ scale: 1.04 }],
-  },
-  titleDark: {
-    color: "#111111",
-  },
-  titleOrange: {
-    fontWeight: "900",
-  },
-  subtitle: {
-    ...typography.headingSmall,
-    marginTop: -2,
-    fontStyle: "italic",
-  },
-  powered: {
-    ...typography.bodySmall,
-    marginTop: 4,
-    fontWeight: "bold",
-  },
-  poweredRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
-    backgroundColor: "rgba(246, 243, 247, 0.82)",
-    borderRadius: 5,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    marginTop: 6,
-  },
-  shinyTextBox: {
-    width: 72,
-    height: 20,
-    marginTop: 4,
-    overflow: "hidden",
-  },
-  shinyMaskContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  shinyMaskText: {
-    marginTop: 0,
-    color: "#000000",
-    ...typography.bodyMedium
-  },
-  shineStripe: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: 42,
-  },
+const absoluteFillStyle = {
+  position: "absolute" as const,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+};
+
+const shineStripeStyle = {
+  position: "absolute" as const,
+  top: 0,
+  bottom: 0,
+  width: 42,
+};
+
+const logoStyle = {
+  alignItems: "center" as const,
+  left: 0,
+  position: "absolute" as const,
+  right: 0,
+  top: 0,
+  zIndex: 3,
+};
+
+const employeeStyle = {
+  left: 8,
+  position: "absolute" as const,
+  top: 132,
+  zIndex: 1,
+};
+
+const messengerStyle = {
+  position: "absolute" as const,
+  right: 6,
+  top: 126,
+  zIndex: 1,
+};
+
+const Root = styled(View, {
+  height: 330,
+  marginBottom: 20,
+  marginTop: 2,
+});
+
+const LogoImage = styled(Image, {
+  height: 138,
+  position: "absolute",
+  width: 218,
+});
+
+const TitleBlock = styled(View, {
+  alignItems: "center",
+  left: 0,
+  position: "absolute",
+  right: 0,
+  top: 132,
+  zIndex: 2,
+});
+
+const TitleRow = styled(View, {
+  alignItems: "center",
+  flexDirection: "row",
+});
+
+const ApoStrokeWrapper = styled(View, {
+  position: "relative",
+});
+
+const TitleBase = styled(Text, {
+  fontSize: 54,
+  fontStyle: "italic",
+  fontWeight: "900",
+  letterSpacing: -2,
+});
+
+const ApoStrokeTitle = styled(TitleBase, {
+  color: "$primary",
+  left: -1.2,
+  position: "absolute",
+  textShadowColor: "$primary",
+  textShadowOffset: { width: 0, height: 0 },
+  textShadowRadius: 2,
+  top: -1.2,
+  transform: [{ scale: 1.04 }],
+});
+
+const TitleDark = styled(TitleBase, {
+  color: "$black",
+});
+
+const TitleOrange = styled(TitleBase, {
+  color: "$primary",
+});
+
+const SubtitleBase = styled(Text, {
+  ...typography.headingSmall,
+  fontStyle: "italic",
+  marginTop: -2,
+});
+
+const SubtitleStroke = styled(SubtitleBase, {
+  color: "$black",
+  left: -0.4,
+  position: "absolute",
+  textShadowColor: "$primary",
+  textShadowOffset: { width: 0, height: 0 },
+  textShadowRadius: 2,
+  top: -0.4,
+  transform: [{ scale: 1.02 }],
+});
+
+const SubtitleText = styled(SubtitleBase, {
+  color: "$primary",
+});
+
+const ShinyTextBox = styled(View, {
+  height: 20,
+  marginTop: 4,
+  overflow: "hidden",
+  width: 72,
+});
+
+const ShinyMaskContainer = styled(View, {
+  flex: 1,
+  justifyContent: "center",
+});
+
+const ShinyMaskText = styled(Text, {
+  ...typography.bodyMedium,
+  color: "$black",
+  fontWeight: "bold",
 });
