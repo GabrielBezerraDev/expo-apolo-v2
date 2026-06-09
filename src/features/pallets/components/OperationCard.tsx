@@ -1,6 +1,6 @@
 import React from 'react';
 import { styled, Text, View } from 'tamagui';
-import { AppCard } from '@shared/components/AppCard';
+import { AppCard } from '@shared/components/Display/AppCard';
 import { typography } from '@shared/typography';
 import { OperationItem } from '../mocks/palletMock';
 

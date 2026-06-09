@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FilterDefinition, useFilterController } from "@shared/components/Filters";
+import { FilterConfig, useFilterController } from "@shared/components/Filters";
 import { OperationItem } from "../mocks/palletMock";
 
 type UseOperationListFiltersParams = {
@@ -17,14 +17,13 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
     [data],
   );
 
-  const definitions = useMemo<FilterDefinition<OperationItem>[]>(
+  const configs = useMemo<FilterConfig[]>(
     () => [
       {
         key: "doneAt",
         label: "Data",
         type: "date",
         mode: "range",
-        getItemValue: item => item.doneAt,
       },
       {
         key: "status",
@@ -33,7 +32,6 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
         multiple: true,
         options: statusOptions,
         placeholder: "Selecione o status",
-        getItemValue: item => item.status,
       },
       {
         key: "client",
@@ -42,21 +40,18 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
         multiple: true,
         options: clientOptions,
         placeholder: "Selecione o cliente",
-        getItemValue: item => item.client,
       },
       {
         key: "totalPallets",
         label: "Total de pallets",
         type: "numberRange",
-        getItemValue: item => item.totalPallets,
       },
     ],
     [clientOptions, statusOptions],
   );
 
   return useFilterController({
-    data,
-    definitions,
+    configs,
     modalTitle,
   });
 }

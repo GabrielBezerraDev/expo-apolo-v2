@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from "react";
 import { styled, View } from "tamagui";
-import { AppHeader } from "@shared/components/AppHeader";
-import { FloatButton, FloatButtonAction } from "@shared/components/FloatButton";
+import { FloatButton, FloatButtonAction } from "@shared/components/Actions/FloatButton";
+import { AppHeader } from "@shared/components/Navigation/AppHeader";
 
 type Props = PropsWithChildren<{
   title: string;

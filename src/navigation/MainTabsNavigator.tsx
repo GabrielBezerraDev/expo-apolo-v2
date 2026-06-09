@@ -5,8 +5,8 @@ import { MainTabsParamList } from "@navigation/navigation.protocol";
 import { EntryListScreen } from "@features/pallets/screens/list/EntryListScreen";
 import { ExitListScreen } from "@features/pallets/screens/list/ExitListScreen";
 import { PalletListScreen } from "@features/pallets/screens/list/PalletListScreen";
-import { useThemeMode } from "@shared/components/ThemeToggle";
-import { OutlinedTabIcon } from "@shared/components/OutlinedTabIcon";
+import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
+import { OutlinedTabIcon } from "@shared/components/Navigation/OutlinedTabIcon";
 import { typography } from "@shared/typography";
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
@@ -67,7 +67,7 @@ export function MainTabsNavigator() {
         name="PalletList"
         component={PalletListScreen}
         options={{
-          title: "Pallets",
+          title: "Paletes",
           tabBarIcon: ({ color, focused }) => (
             <OutlinedTabIcon
               Icon={Package}

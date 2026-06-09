@@ -1,36 +1,83 @@
-import React, { useCallback, useMemo } from "react";
-import { ScrollView } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { SlidersHorizontal } from "lucide-react-native";
+import React, { useDeferredValue, useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView } from "react-native";
+import { Search, SlidersHorizontal, X } from "lucide-react-native";
+import { styled, Text, View } from "tamagui";
 import {
   PaginationComponent,
   usePagination,
   WrapperPagination,
-} from "@shared/components/Pagination";
+} from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
-import { PalletCard } from "../../components/PalletCard";
-import { palletItems } from "../../mocks/palletMock";
+import { AppInput } from "@shared/components/Forms/AppInput";
+import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { typography } from "@shared/typography";
 import { ListScreenShell } from "../../components/ListScreenShell";
+import { PalletReportStatusTabs } from "../../components/PalletReportStatusTabs";
+import { QualityReportCard } from "../../components/QualityReportCard";
 import { usePalletListFilters } from "../../hooks/usePalletListFilters";
+import { useQualityReportList } from "../../hooks/useQualityReportList";
+import { PalletReportType, QualityReport } from "../../types/qualityReport";
+
+const FeedbackRoot = styled(View, {
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: 24,
+  gap: 10,
+});
+
+const FeedbackText = styled(Text, {
+  ...typography.bodyMedium,
+  color: "$text",
+  textAlign: "center",
+});
+
+const ErrorText = styled(Text, {
+  ...typography.bodySmall,
+  color: "$error",
+  textAlign: "center",
+});
 
 export function PalletListScreen() {
-  const { setPaginationMeta } = usePagination();
-  const listedPalletItems = useMemo(() => [...palletItems, ...palletItems], []);
+  const [batchSearch, setBatchSearch] = useState("");
+  const deferredBatchSearch = useDeferredValue(batchSearch.trim());
+  const [reportType, setReportType] = useState<PalletReportType>("releasedPallet");
+  const [reportsForFilterOptions, setReportsForFilterOptions] = useState<QualityReport[]>([]);
+  const { currentPage, itemsPerPage, sendToFirstPage, setPaginationMeta } = usePagination();
   const {
+    appliedFilters,
     chips,
-    filteredData: filteredPalletItems,
     openFilterModal,
-  } = usePalletListFilters({ data: listedPalletItems, modalTitle: "Filtrar paletes" });
+  } = usePalletListFilters({ reports: reportsForFilterOptions, modalTitle: "Filtrar paletes" });
+  const qualityReportQuery = useQualityReportList({
+    appliedFilters,
+    batchSearch: deferredBatchSearch,
+    page: currentPage,
+    pageSize: itemsPerPage,
+    reportType,
+  });
+  const reports = qualityReportQuery.data?.data ?? [];
 
-  useFocusEffect(
-    useCallback(() => {
-      setPaginationMeta({
-        currentPage: 1,
-        lastPage: 1,
-        totalItems: filteredPalletItems.length,
-      });
-    }, [filteredPalletItems.length, setPaginationMeta]),
-  );
+  useEffect(() => {
+    sendToFirstPage();
+  }, [appliedFilters, deferredBatchSearch, reportType, sendToFirstPage]);
+
+  useEffect(() => {
+    if (reports.length === 0) return;
+
+    setReportsForFilterOptions(reports);
+  }, [reports]);
+
+  useEffect(() => {
+    const meta = qualityReportQuery.data?.meta;
+    if (!meta) return;
+
+    setPaginationMeta({
+      currentPage: meta.page,
+      lastPage: meta.totalPages,
+      totalItems: meta.total,
+    });
+  }, [qualityReportQuery.data?.meta, setPaginationMeta]);
 
   return (
     <ListScreenShell
@@ -43,19 +90,73 @@ export function PalletListScreen() {
         },
       ]}
     >
+      <AppInput
+        value={batchSearch}
+        onChangeText={setBatchSearch}
+        placeholder="Filtrar por lote..."
+        autoCapitalize="characters"
+        leftIcon={<Search size={22} color="#ff6200" />}
+        rightIcon={
+          batchSearch ? (
+            <Pressable onPress={() => setBatchSearch("")} hitSlop={10}>
+              <X size={22} color="#ff6200" />
+            </Pressable>
+          ) : null
+        }
+      />
+      <PalletReportStatusTabs value={reportType} onChange={setReportType} />
       <FilterChips chips={chips} />
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredPalletItems.map((item, index) => (
-          <PalletCard key={index} item={item} />
-        ))}
-      </ScrollView>
+      {renderContent()}
       <WrapperPagination>
         <PaginationComponent />
       </WrapperPagination>
     </ListScreenShell>
   );
+
+  function renderContent() {
+    if (!hasApiBaseUrl()) {
+      return (
+        <FeedbackRoot>
+          <ErrorText>Configure EXPO_PUBLIC_API_URL para carregar os reports.</ErrorText>
+        </FeedbackRoot>
+      );
+    }
+
+    if (qualityReportQuery.isLoading || qualityReportQuery.isFetching) {
+      return (
+        <FeedbackRoot>
+          <ActivityIndicator />
+          <FeedbackText>Carregando reports...</FeedbackText>
+        </FeedbackRoot>
+      );
+    }
+
+    if (qualityReportQuery.isError) {
+      return (
+        <FeedbackRoot>
+          <ErrorText>{qualityReportQuery.error.message}</ErrorText>
+        </FeedbackRoot>
+      );
+    }
+
+    if (reports.length === 0) {
+      return (
+        <FeedbackRoot>
+          <FeedbackText>Não há reports para listar.</FeedbackText>
+        </FeedbackRoot>
+      );
+    }
+
+    return (
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {reports.map(item => (
+          <QualityReportCard key={item.id} item={item} reportType={reportType} />
+        ))}
+      </ScrollView>
+    );
+  }
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBar } from 'react-native';
-import { useThemeMode } from '@shared/components/ThemeToggle';
+import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { RootNavigator } from '@navigation/RootNavigator';
 import { AppProviders } from './providers/AppProviders';
 
