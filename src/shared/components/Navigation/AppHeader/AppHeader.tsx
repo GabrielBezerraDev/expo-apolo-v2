@@ -1,10 +1,9 @@
 import React from "react";
-import { Image, Pressable } from "react-native";
 import { ArrowLeft, Menu } from "lucide-react-native";
-import { View } from "tamagui";
+import { Image, View } from "tamagui";
 import { AppDrawer } from "@shared/components/Navigation/AppDrawer";
 import { ThemeToggle } from "@shared/components/Actions/ThemeToggle";
-import { Actions, Left, Logo, Root, Subtitle, Title } from "./styled";
+import { Actions, HeaderIconButton, Left, Logo, Root, Subtitle, Title } from "./styled";
 import { fontScale } from "@shared/typography";
 import { useAppHeader } from "./useAppHeader";
 
@@ -23,9 +22,9 @@ export function AppHeader({ title, subtitle, onBack, onMenu }: Props) {
       <Root>
         <Left>
           {onBack ? (
-            <Pressable onPress={onBack} hitSlop={10}>
+            <HeaderIconButton onPress={onBack} hitSlop={10}>
               <ArrowLeft size={24} color={theme.text} />
-            </Pressable>
+            </HeaderIconButton>
           ) : (
             <Logo>
               <Image
@@ -42,9 +41,9 @@ export function AppHeader({ title, subtitle, onBack, onMenu }: Props) {
         </Left>
         <Actions>
           <ThemeToggle />
-          <Pressable onPress={handleMenuPress} hitSlop={10}>
+          <HeaderIconButton onPress={handleMenuPress} hitSlop={10}>
             <Menu size={24 * fontScale} color={theme.text} />
-          </Pressable>
+          </HeaderIconButton>
         </Actions>
       </Root>
 

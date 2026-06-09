@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useMemo } from "react";
-import { Alert, Pressable, StyleSheet } from "react-native";
+import React, { useCallback, useMemo } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
-import { Text, useWindowDimensions, View } from "tamagui";
+import { Button, styled, Text, useWindowDimensions, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
@@ -23,15 +22,12 @@ export function FormScreenPallet() {
   const {
     route,
     palletQuantity,
-    canConfirmForm,
     setPalletQuantity,
-    setScanTarget,
     startPalletCapture,
     resetEntry,
     controlFormScreenPallet,
     isValidFormScreenPalletValue,
     setFormScreenPalletValue,
-    getValeusScreenPallet,
   } = usePallet();
 
 
@@ -72,22 +68,15 @@ export function FormScreenPallet() {
 
   return (
     <ListScreenShell title="Nova entrada">
-      <View style={styles.formScreen}>
-        <View
-          style={[
-            styles.panel,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
-          <View
-            style={[styles.panelHeader, { backgroundColor: theme.primary }]}
-          >
-            <Text style={styles.panelHeaderText}>NOVA ENTRADA</Text>
-          </View>
-          <View style={styles.formBody}>
-            <Text style={[styles.helperText, { color: theme.mutedText }]}>
+      <FormScreenRoot>
+        <Panel>
+          <PanelHeader>
+            <PanelHeaderText>NOVA ENTRADA</PanelHeaderText>
+          </PanelHeader>
+          <FormBody>
+            <HelperText>
               {formSubtitle}
-            </Text>
+            </HelperText>
             <AppInput<FormScreenPalletType>
               controllerReactFormsProps={{
                 name: "roadmap",
@@ -99,9 +88,9 @@ export function FormScreenPallet() {
               editable={false}
               placeholder="Escaneie o roteiro"
               rightIcon={
-                <Pressable onPress={scanRoadmap} hitSlop={10}>
+                <IconButton onPress={scanRoadmap} hitSlop={10}>
                   <Camera size={20 * fontScale} color={theme.primary} />
-                </Pressable>
+                </IconButton>
               }
             />
             <AppInput<FormScreenPalletType>
@@ -124,43 +113,54 @@ export function FormScreenPallet() {
               onPress={confirm}
             />
             <AppButton title="CANCELAR" variant="outline" onPress={cancel} />
-          </View>
-        </View>
-      </View>
+          </FormBody>
+        </Panel>
+      </FormScreenRoot>
     </ListScreenShell>
   );
 }
 
-const styles = StyleSheet.create({
-  formScreen: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  panel: {
-    width: "100%",
-    maxWidth: 560,
-    minHeight: 560,
-    borderWidth: 1,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  panelHeader: {
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  panelHeaderText: {
-    ...typography.button,
-    color: "#ffffff",
-  },
-  formBody: {
-    padding: 18,
-    paddingTop: 48,
-    gap: 16,
-    justifyContent: "center",
-  },
-  helperText: {
-    ...typography.bodySmall,
-  },
+const FormScreenRoot = styled(View, {
+  alignItems: "center",
+  flex: 1,
+  justifyContent: "center",
+});
+
+const Panel = styled(View, {
+  backgroundColor: "$card",
+  borderColor: "$border",
+  borderRadius: 16,
+  borderWidth: 1,
+  maxWidth: 560,
+  minHeight: 560,
+  overflow: "hidden",
+  width: "100%",
+});
+
+const PanelHeader = styled(View, {
+  alignItems: "center",
+  backgroundColor: "$primary",
+  justifyContent: "center",
+  minHeight: 44,
+});
+
+const PanelHeaderText = styled(Text, {
+  ...typography.button,
+  color: "$white",
+});
+
+const FormBody = styled(View, {
+  gap: 16,
+  justifyContent: "center",
+  padding: 18,
+  paddingTop: 48,
+});
+
+const HelperText = styled(Text, {
+  ...typography.bodySmall,
+  color: "$mutedText",
+});
+
+const IconButton = styled(Button, {
+  unstyled: true,
 });

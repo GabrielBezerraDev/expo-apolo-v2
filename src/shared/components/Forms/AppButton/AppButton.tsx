@@ -1,12 +1,15 @@
 import React from 'react';
-import { ActivityIndicator, PressableProps } from 'react-native';
+import { Spinner } from 'tamagui';
 import { ButtonRoot, ButtonText } from './styled';
 import { useAppButton } from './useAppButton';
 
 
 type AppButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
 
-type Props = PressableProps & {
+type Props = Omit<
+  React.ComponentProps<typeof ButtonRoot>,
+  "buttonVariant" | "children" | "disabled" | "onPress" | "variant"
+> & {
   title: string;
   variant?: AppButtonVariant;
   loading?: boolean;
@@ -19,7 +22,7 @@ export function AppButton({ title, variant = 'primary', loading, disabled, onPre
 
   return (
     <ButtonRoot buttonVariant={variant} disabled={resolvedDisabled} onPress={onPress} {...props}>
-      {loading ? <ActivityIndicator color={loadingColor} /> : null}
+      {loading ? <Spinner color={loadingColor} /> : null}
       <ButtonText buttonVariant={variant}>{title}</ButtonText>
     </ButtonRoot>
   );

@@ -1,5 +1,4 @@
-import { Pressable } from "react-native";
-import { styled, Text, View } from "tamagui";
+import { Button, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 
 export const DateInputWrapper = styled(View, {
@@ -12,7 +11,8 @@ export const DateInputLabel = styled(Text, {
   textTransform: "uppercase",
 });
 
-export const DateInputFrame = styled(Pressable, {
+export const DateInputFrame = styled(Button, {
+  unstyled: true,
   minHeight: 52,
   borderRadius: 14,
   borderWidth: 1,

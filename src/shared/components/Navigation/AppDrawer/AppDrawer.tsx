@@ -1,8 +1,10 @@
 import React from "react";
-import { Modal, Pressable, StyleSheet } from "react-native";
+import { Modal } from "react-native";
 import Animated from "react-native-reanimated";
+import { View } from "tamagui";
 import { X } from "lucide-react-native";
 import {
+  DrawerBackdropButton,
   DrawerCloseButton,
   DrawerHeader,
   DrawerItem,
@@ -12,6 +14,8 @@ import {
   DrawerTitle,
 } from "./styled";
 import { useAppDrawer } from "./useAppDrawer";
+
+const AnimatedView = Animated.createAnimatedComponent(View);
 
 type Props = {
   visible: boolean;
@@ -23,10 +27,10 @@ export function AppDrawer({ visible, onClose }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={closeDrawer}>
-      <Animated.View style={[styles.backdrop, { backgroundColor: "rgba(0, 0, 0, 0.45)" }, backdropStyle]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} />
+      <AnimatedView style={[backdropStyleBase, { backgroundColor: "rgba(0, 0, 0, 0.45)" }, backdropStyle]}>
+        <DrawerBackdropButton onPress={closeDrawer} />
 
-        <Animated.View style={[styles.panelWrapper, panelStyle]}>
+        <AnimatedView style={[panelWrapperStyle, panelStyle]}>
           <DrawerPanel>
             <DrawerHeader>
               <DrawerTitle>Menu</DrawerTitle>
@@ -47,20 +51,23 @@ export function AppDrawer({ visible, onClose }: Props) {
               <DrawerItemText>Sair</DrawerItemText>
             </DrawerItem>
           </DrawerPanel>
-        </Animated.View>
-      </Animated.View>
+        </AnimatedView>
+      </AnimatedView>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "flex-end",
-  },
-  panelWrapper: {
-    height: "100%",
-    width: "78%",
-    maxWidth: 320,
-  },
-});
+const backdropStyleBase = {
+  position: "absolute" as const,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+  alignItems: "flex-end" as const,
+};
+
+const panelWrapperStyle = {
+  height: "100%" as const,
+  width: "78%" as const,
+  maxWidth: 320,
+};

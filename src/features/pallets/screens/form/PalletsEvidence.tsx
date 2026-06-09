@@ -1,16 +1,11 @@
 import React, { useCallback, useState } from "react";
 import {
   FlatList,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera, X } from "lucide-react-native";
-import { Text, View } from "tamagui";
+import { Button, Image, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
@@ -111,41 +106,34 @@ export function PalletsEvidence() {
   return (
     <ListScreenShell title="Captura de paletes">
       <ScrollView
-        contentContainerStyle={styles.palletsContent}
+        contentContainerStyle={palletsContentStyle}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.palletsHeader}>
+        <PalletsHeader>
           <View>
-            <Text style={[styles.palletsTitle, { color: theme.text }]}>
+            <PalletsTitle>
               Roteiro: {route}
-            </Text>
-            <Text style={[styles.helperText, { color: theme.mutedText }]}>
+            </PalletsTitle>
+            <HelperText>
               Preencha lote e 4 fotos de cada palete.
-            </Text>
+            </HelperText>
           </View>
-          <Pressable onPress={closeEntry} hitSlop={10}>
+          <IconButton onPress={closeEntry} hitSlop={10}>
             <X size={24} color={theme.mutedText} />
-          </Pressable>
-        </View>
+          </IconButton>
+        </PalletsHeader>
 
         {palletsQuantity.map((pallet, palletIndex) => (
-          <View
+          <PalletCard
             key={palletIndex}
-            style={[
-              styles.palletCard,
-              {
-                borderColor: theme.border,
-                backgroundColor: theme.card,
-                width: cardWidth,
-                height: height * 0.5,
-              },
-            ]}
+            width={cardWidth}
+            height={height * 0.5}
           >
-            <View style={styles.palletCardHeader}>
-              <Text style={[styles.palletCardTitle, { color: theme.text }]}>
+            <PalletCardHeader>
+              <PalletCardTitle>
                 Pallet {palletIndex + 1}/{palletsQuantity.length}
-              </Text>
-            </View>
+              </PalletCardTitle>
+            </PalletCardHeader>
             <FlatList
               horizontal
               pagingEnabled
@@ -154,45 +142,28 @@ export function PalletsEvidence() {
               showsHorizontalScrollIndicator={false}
               style={{ width: photoSlotWidth, height: height * 0.5 }}
               renderItem={({ item, index: photoIndex }) => (
-                <Pressable
+                <PhotoButton
                   onPress={() => scanPhoto(palletIndex, photoIndex)}
-                  style={[
-                    styles.photoSlot,
-                    {
-                      borderColor: theme.border,
-                      backgroundColor: theme.background,
-                      width: photoSlotWidth,
-                      height: height * 0.5,
-                    },
-                  ]}
+                  width={photoSlotWidth}
+                  height={height * 0.5}
                 >
                   {item ? (
-                    <Image
+                    <PhotoImage
                       source={{ uri: item }}
-                      style={styles.photo}
                       resizeMode="cover"
                     />
                   ) : (
-                    <View
-                      style={[
-                        styles.photoEmpty,
-                        { paddingBottom: height * 0.1 },
-                      ]}
-                    >
+                    <PhotoEmpty paddingBottom={height * 0.1}>
                       <Camera size={30} color={theme.primary} />
-                      <Text
-                        style={[styles.photoCounter, { color: theme.text }]}
-                      >
+                      <PhotoCounter>
                         {photoIndex + 1}/4
-                      </Text>
-                      <Text
-                        style={[styles.helperText, { color: theme.mutedText }]}
-                      >
+                      </PhotoCounter>
+                      <HelperText>
                         TOQUE PARA FOTOGRAFAR
-                      </Text>
-                    </View>
+                      </HelperText>
+                    </PhotoEmpty>
                   )}
-                </Pressable>
+                </PhotoButton>
               )}
             />
             <AppInput
@@ -201,17 +172,16 @@ export function PalletsEvidence() {
               editable={false}
               placeholder="Escaneie o lote"
               rightIcon={
-                <Pressable onPress={() => scanLot(palletIndex)} hitSlop={10}>
+                <IconButton onPress={() => scanLot(palletIndex)} hitSlop={10}>
                   <Camera size={20 * fontScale} color={theme.primary} />
-                </Pressable>
+                </IconButton>
               }
             />
-          </View>
+          </PalletCard>
         ))}
 
         <AppButton
-              style={{width:'100%', height: height * 0.06}}
-
+          style={{ width: "100%", height: height * 0.06 }}
           title={operationPallet === "exit" ? "CONTINUAR" : "CONFIRMAR"}
           disabled={!validateForm}
           onPress={finishEntry}
@@ -221,59 +191,80 @@ export function PalletsEvidence() {
   );
 }
 
-const styles = StyleSheet.create({
-  helperText: {
-    ...typography.bodySmall,
-    fontWeight: '800'
-  },
-  palletsContent: {
-    alignItems: "center",
-    gap: 16,
-    paddingVertical: 18,
-    paddingBottom: 36,
-  },
-  palletsHeader: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  palletsTitle: {
-    ...typography.headingSmall,
-  },
-  palletCard: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
-  },
-  palletCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  palletCardTitle: {
-    ...typography.bodyLarge,
-    fontWeight: "800",
-  },
-  photoSlot: {
-    height: 210,
-    borderWidth: 1,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  photo: {
-    width: "100%",
-    height: "100%",
-  },
-  photoEmpty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  photoCounter: {
-    fontSize: 42,
-    fontWeight: "900",
-  },
+const palletsContentStyle = {
+  alignItems: "center" as const,
+  gap: 16,
+  paddingBottom: 36,
+  paddingVertical: 18,
+};
+
+const HelperText = styled(Text, {
+  ...typography.bodySmall,
+  color: "$mutedText",
+  fontWeight: "800",
+});
+
+const PalletsHeader = styled(View, {
+  alignItems: "center",
+  flexDirection: "row",
+  justifyContent: "space-between",
+  width: "100%",
+});
+
+const PalletsTitle = styled(Text, {
+  ...typography.headingSmall,
+  color: "$text",
+});
+
+const PalletCard = styled(View, {
+  backgroundColor: "$card",
+  borderColor: "$border",
+  borderRadius: 16,
+  borderWidth: 1,
+  gap: 14,
+  padding: 16,
+});
+
+const PalletCardHeader = styled(View, {
+  alignItems: "center",
+  flexDirection: "row",
+  justifyContent: "space-between",
+});
+
+const PalletCardTitle = styled(Text, {
+  ...typography.bodyLarge,
+  color: "$text",
+  fontWeight: "800",
+});
+
+const PhotoButton = styled(Button, {
+  unstyled: true,
+  backgroundColor: "$background",
+  borderColor: "$border",
+  borderRadius: 14,
+  borderWidth: 1,
+  height: 210,
+  overflow: "hidden",
+});
+
+const PhotoImage = styled(Image, {
+  height: "100%",
+  width: "100%",
+});
+
+const PhotoEmpty = styled(View, {
+  alignItems: "center",
+  flex: 1,
+  gap: 8,
+  justifyContent: "center",
+});
+
+const PhotoCounter = styled(Text, {
+  color: "$text",
+  fontSize: 42,
+  fontWeight: "900",
+});
+
+const IconButton = styled(Button, {
+  unstyled: true,
 });

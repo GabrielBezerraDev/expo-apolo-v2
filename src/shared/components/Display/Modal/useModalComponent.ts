@@ -1,9 +1,7 @@
 import { useEffect, useRef } from "react";
-import { Dimensions } from "react-native";
+import { useWindowDimensions } from "tamagui";
 import { ModalConfig, ModalPlacement } from "./modal.type";
 import { useModalAnimation } from "./useModalAnimation";
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 type UseModalComponentParams = {
   modal: ModalConfig;
@@ -13,6 +11,7 @@ type UseModalComponentParams = {
 
 export function useModalComponent({ modal, removeModal, requestClose }: UseModalComponentParams) {
   const hasClosed = useRef(false);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const {
     title,

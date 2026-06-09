@@ -1,5 +1,4 @@
-import { TextInput } from "react-native";
-import { styled, Text, View } from "tamagui";
+import { Button, Input, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 
 export const Wrapper = styled(View, { gap: 7 });
@@ -28,7 +27,16 @@ export const InputFrame = styled(View, {
   } as const,
 });
 
-export const StyledInput = styled(TextInput, { flex: 1, ...typography.bodyLarge, padding: 0 });
+export const StyledInput = styled(Input, {
+  unstyled: true,
+  flex: 1,
+  ...typography.bodyLarge,
+  padding: 0,
+});
+
+export const InputIconButton = styled(Button, {
+  unstyled: true,
+});
 
 
 export const ErrorText = styled(Text, { ...typography.bodySmall, color: "$error" });

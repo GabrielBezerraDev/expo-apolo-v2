@@ -1,5 +1,4 @@
-import { Pressable, ScrollView } from "react-native";
-import { styled, Text, View } from "tamagui";
+import { Button, ScrollView, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 
 export const FilterModalRoot = styled(View, {
@@ -15,7 +14,8 @@ export const FilterPickerRoot = styled(View, {
   gap: 8,
 });
 
-export const FilterPickerButton = styled(Pressable, {
+export const FilterPickerButton = styled(Button, {
+  unstyled: true,
   minHeight: 50,
   borderRadius: 14,
   borderWidth: 1,
@@ -39,7 +39,8 @@ export const FilterOptionList = styled(View, {
   backgroundColor: "$card",
 });
 
-export const FilterOptionButton = styled(Pressable, {
+export const FilterOptionButton = styled(Button, {
+  unstyled: true,
   paddingVertical: 12,
   paddingHorizontal: 14,
   borderBottomWidth: 1,
@@ -105,7 +106,8 @@ export const FilterChipText = styled(Text, {
   maxWidth: 240,
 });
 
-export const FilterChipRemoveButton = styled(Pressable, {
+export const FilterChipRemoveButton = styled(Button, {
+  unstyled: true,
   width: 24,
   height: 24,
   borderRadius: 12,
