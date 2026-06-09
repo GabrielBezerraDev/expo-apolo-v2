@@ -10,6 +10,7 @@ import { Control, UseFormGetValues, UseFormSetValue, useForm } from "react-hook-
 import { FormScreenPalletType } from "../screens/form/FormScreenPallet/FormScreenPalletType";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formScreenPalletSchema } from "../screens/form/FormScreenPallet/FormScreenPalletSchema";
+import { OfflinePalletOperation } from "../types/offlinePalletOperation";
 
 export type EntryPallet = {
   id: string;
@@ -24,7 +25,16 @@ export type EntryScanTarget =
 
 export type ShipGoodsPhotos = {
   truck: string | null;
+};
+
+export type ExitExtraEvidencePhotos = {
   licensePlate: string | null;
+  seal: string | null;
+};
+
+export type PalletEvidenceItem = {
+  batch: string;
+  photos: string[];
 };
 
 type PalletContextValue = {
@@ -44,8 +54,15 @@ type PalletContextValue = {
   getValeusScreenPallet: UseFormGetValues<FormScreenPalletType>;
   operationPallet: OperationPallet;
   setOperationPallet: Dispatch<SetStateAction<OperationPallet>>;
+  offlineOperationId: string | null;
+  setOfflineOperationId: Dispatch<SetStateAction<string | null>>;
+  palletEvidence: PalletEvidenceItem[];
+  setPalletEvidence: Dispatch<SetStateAction<PalletEvidenceItem[]>>;
   shipGoodsPhotos: ShipGoodsPhotos;
   setShipGoodsPhotos: Dispatch<SetStateAction<ShipGoodsPhotos>>;
+  exitExtraEvidencePhotos: ExitExtraEvidencePhotos;
+  setExitExtraEvidencePhotos: Dispatch<SetStateAction<ExitExtraEvidencePhotos>>;
+  hydrateOfflineOperation: (operation: OfflinePalletOperation) => void;
 };
 
 export type OperationPallet = 'entry' | 'exit';
@@ -54,16 +71,23 @@ const PalletContext = createContext<PalletContextValue | undefined>(undefined);
 
 const initialShipGoodsPhotos: ShipGoodsPhotos = {
   truck: null,
+};
+
+const initialExitExtraEvidencePhotos: ExitExtraEvidencePhotos = {
   licensePlate: null,
+  seal: null,
 };
 
 export function PalletProvider({ children }: PropsWithChildren) {
   const [route, setRoute] = useState("");
   const [palletQuantity, setPalletQuantity] = useState("");
   const [pallets, setPallets] = useState<EntryPallet[]>([]);
+  const [palletEvidence, setPalletEvidence] = useState<PalletEvidenceItem[]>([]);
   const [scanTarget, setScanTarget] = useState<EntryScanTarget | null>(null);
   const [operationPallet, setOperationPallet] =  useState<OperationPallet>('entry');
+  const [offlineOperationId, setOfflineOperationId] = useState<string | null>(null);
   const [shipGoodsPhotos, setShipGoodsPhotos] = useState<ShipGoodsPhotos>(initialShipGoodsPhotos);
+  const [exitExtraEvidencePhotos, setExitExtraEvidencePhotos] = useState<ExitExtraEvidencePhotos>(initialExitExtraEvidencePhotos);
   const parsedQuantity = Number(palletQuantity);
   const canConfirmForm =
     route.trim().length > 0 &&
@@ -114,16 +138,51 @@ export function PalletProvider({ children }: PropsWithChildren) {
         photos: [null, null, null, null],
       })),
     );
+    setPalletEvidence(current => buildPalletEvidenceItems(currentQuantity, current));
 
     return true;
   }, [getValeusScreenPallet]);
+
+  const hydrateOfflineOperation = useCallback((operation: OfflinePalletOperation) => {
+    const roadmap = operation.formData?.roadmap ?? operation.roadmap ?? "";
+    const quantity = operation.formData?.palletsQuantity ?? "";
+    const parsedHydratedQuantity = Number(quantity);
+
+    setOfflineOperationId(operation.id);
+    setOperationPallet(operation.operationType);
+    setRoute(roadmap);
+    setPalletQuantity(quantity);
+    setFormScreenPalletValue("roadmap", roadmap, { shouldValidate: true });
+    setFormScreenPalletValue("palletsQuantity", quantity, { shouldValidate: true });
+    setPalletEvidence(
+      buildPalletEvidenceItems(
+        Number.isInteger(parsedHydratedQuantity) && parsedHydratedQuantity > 0
+          ? parsedHydratedQuantity
+          : operation.palletEvidenceData?.pallets.length ?? 0,
+        operation.palletEvidenceData?.pallets.map(pallet => ({
+          batch: pallet.batch,
+          photos: pallet.photos,
+        })) ?? [],
+      ),
+    );
+    setShipGoodsPhotos({
+      truck: operation.shipGoodsData?.truck ?? null,
+    });
+    setExitExtraEvidencePhotos({
+      licensePlate: operation.exitExtraEvidenceData?.licensePlate ?? null,
+      seal: operation.exitExtraEvidenceData?.seal ?? null,
+    });
+  }, [setFormScreenPalletValue]);
 
   const resetEntry = useCallback(() => {
     setRoute("");
     setPalletQuantity("");
     setPallets([]);
+    setPalletEvidence([]);
     setScanTarget(null);
+    setOfflineOperationId(null);
     setShipGoodsPhotos(initialShipGoodsPhotos);
+    setExitExtraEvidencePhotos(initialExitExtraEvidencePhotos);
     resetFormScreenPallet({ roadmap: "", palletsQuantity: "" });
   }, [resetFormScreenPallet]);
 
@@ -145,8 +204,15 @@ export function PalletProvider({ children }: PropsWithChildren) {
       getValeusScreenPallet,
       operationPallet,
       setOperationPallet,
+      offlineOperationId,
+      setOfflineOperationId,
+      palletEvidence,
+      setPalletEvidence,
       shipGoodsPhotos,
       setShipGoodsPhotos,
+      exitExtraEvidencePhotos,
+      setExitExtraEvidencePhotos,
+      hydrateOfflineOperation,
     }),
     [
       route,
@@ -163,13 +229,28 @@ export function PalletProvider({ children }: PropsWithChildren) {
       isValidFormScreenPalletValue,
       getValeusScreenPallet,
       operationPallet,
+      offlineOperationId,
+      palletEvidence,
       shipGoodsPhotos,
+      exitExtraEvidencePhotos,
+      hydrateOfflineOperation,
     ],
   );
 
   return (
     <PalletContext.Provider value={value}>{children}</PalletContext.Provider>
   );
+}
+
+function buildPalletEvidenceItems(quantity: number, current: PalletEvidenceItem[] = []) {
+  return Array.from({ length: quantity }, (_, index) => ({
+    batch: current[index]?.batch ?? "",
+    photos: buildPhotoSlots(current[index]?.photos),
+  }));
+}
+
+function buildPhotoSlots(photos: string[] = []) {
+  return Array.from({ length: 4 }, (_, index) => photos[index] ?? "");
 }
 
 export function usePallet() {

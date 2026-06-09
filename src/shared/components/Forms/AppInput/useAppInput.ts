@@ -38,7 +38,6 @@ export function useAppInput({
   ) => {
     if (field) {
       field.onChange(nextValue);
-      return;
     }
 
     onChangeText?.(nextValue);

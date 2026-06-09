@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import {
   FlatList,
 } from "react-native";
@@ -12,6 +12,7 @@ import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { fontScale, typography } from "@shared/typography";
+import { useOfflinePalletOperation } from "../../hooks/useOfflinePalletOperation";
 import { usePallet } from "../../providers/PalletProvider";
 import { ListScreenShell } from "../../components/ListScreenShell";
 
@@ -22,24 +23,21 @@ export function PalletsEvidence() {
   const { configureScanner } = useFrame();
   const { theme } = useThemeMode();
   const { width, height } = useWindowDimensions();
-  const { route, resetEntry, getValeusScreenPallet, operationPallet } = usePallet();
+  const {
+    operationPallet,
+    palletEvidence,
+    resetEntry,
+    route,
+    setPalletEvidence,
+  } = usePallet();
+  const { persistPalletPhoto, savePalletEvidenceDraft } = useOfflinePalletOperation();
   const cardWidth = width - width * 0.1;
   const photoSlotWidth = cardWidth - 32;
-  const [palletsQuantity, setPalletsQuantity] = useState(() =>
-    Array.from(
-      { length: Number(getValeusScreenPallet("palletsQuantity")) },
-      () => ({
-        palletsPhotos: ["", "", "", ""],
-        batch: "",
-      }),
-    ),
-  );
-  
 
   const validateForm =
-    palletsQuantity.length > 0 &&
-    palletsQuantity.every(
-      (pallet) => Boolean(pallet.batch) && pallet.palletsPhotos.every(Boolean),
+    palletEvidence.length > 0 &&
+    palletEvidence.every(
+      (pallet) => Boolean(pallet.batch) && pallet.photos.every(Boolean),
     );
 
   const scanLot = useCallback(
@@ -48,17 +46,17 @@ export function PalletsEvidence() {
         mode: "scanner",
         preset: "tinyDataLandScape",
         orientation: "LandScape",
-        onCapture: (data) => {
-          setPalletsQuantity((prev) =>
-            prev.map((pallet, index) => {
+        onCapture: async (data) => {
+          const nextEvidence = palletEvidence.map((pallet, index) => {
               if (index !== palletIndex) return pallet;
 
               return {
                 ...pallet,
                 batch: data.text,
               };
-            }),
-          );
+            });
+          setPalletEvidence(nextEvidence);
+          await savePalletEvidenceDraft({ evidence: nextEvidence });
           navigation.goBack();
         },
         onCancel: () => navigation.goBack(),
@@ -66,7 +64,7 @@ export function PalletsEvidence() {
       });
       navigation.navigate("Scanner");
     },
-    [configureScanner, navigation],
+    [configureScanner, navigation, palletEvidence, savePalletEvidenceDraft, setPalletEvidence],
   );
 
   const scanPhoto = useCallback(
@@ -75,31 +73,30 @@ export function PalletsEvidence() {
         mode: "photo",
         preset: "fullScreen",
         orientation: "LandScape",
-        onCapture: (data) => {
-          setPalletsQuantity((palletsQuantity) => {
-            palletsQuantity[palletIndex].palletsPhotos[photoIndex] =
-              data.imageUri;
-            return [...palletsQuantity];
-          });
+        onCapture: async (data) => {
+          await persistPalletPhoto({ palletIndex, photoIndex, sourceUri: data.imageUri });
           navigation.goBack();
         },
         onCancel: () => navigation.goBack(),
       });
       navigation.navigate("Scanner");
     },
-    [configureScanner, navigation],
+    [configureScanner, navigation, persistPalletPhoto],
   );
 
   const closeEntry = () => {
     resetEntry();
+    navigation.navigate("Main");
   };
 
-  const finishEntry = () => {
+  const finishEntry = async () => {
     if (operationPallet === "exit") {
+      await savePalletEvidenceDraft({ currentStep: "ship_goods" });
       navigation.navigate("ShipGoods");
       return;
     }
 
+    await savePalletEvidenceDraft({ currentStep: "completed", status: "pending_sync" });
     navigation.navigate("OperationSuccess", { operation: "entry" });
   };
 
@@ -123,7 +120,7 @@ export function PalletsEvidence() {
           </IconButton>
         </PalletsHeader>
 
-        {palletsQuantity.map((pallet, palletIndex) => (
+        {palletEvidence.map((pallet, palletIndex) => (
           <PalletCard
             key={palletIndex}
             width={cardWidth}
@@ -131,13 +128,13 @@ export function PalletsEvidence() {
           >
             <PalletCardHeader>
               <PalletCardTitle>
-                Pallet {palletIndex + 1}/{palletsQuantity.length}
+                Palete {palletIndex + 1}/{palletEvidence.length}
               </PalletCardTitle>
             </PalletCardHeader>
             <FlatList
               horizontal
               pagingEnabled
-              data={pallet.palletsPhotos}
+              data={pallet.photos}
               keyExtractor={(_, photoIndex) => `${photoIndex}`}
               showsHorizontalScrollIndicator={false}
               style={{ width: photoSlotWidth, height: height * 0.5 }}
