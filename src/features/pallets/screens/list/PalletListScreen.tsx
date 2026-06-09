@@ -1,5 +1,5 @@
-import React, { useDeferredValue, useEffect, useState } from "react";
-import { Pressable, ScrollView } from "react-native";
+import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { Pressable, RefreshControl, ScrollView } from "react-native";
 import { Search, SlidersHorizontal, X } from "lucide-react-native";
 import { styled, Text, View } from "tamagui";
 import {
@@ -10,6 +10,7 @@ import {
 import { FilterChips } from "@shared/components/Filters";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { LottieAnimLoading } from "@shared/components/Feedback";
+import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
 import { typography } from "@shared/typography";
 import { ListScreenShell } from "../../components/ListScreenShell";
@@ -18,6 +19,7 @@ import { QualityReportCard } from "../../components/QualityReportCard";
 import { usePalletListFilters } from "../../hooks/usePalletListFilters";
 import { useQualityReportList } from "../../hooks/useQualityReportList";
 import { PalletReportType, QualityReport } from "../../types/qualityReport";
+import { useQueryClient } from "@tanstack/react-query";
 
 const FeedbackRoot = styled(View, {
   flex: 1,
@@ -40,6 +42,7 @@ const ErrorText = styled(Text, {
 });
 
 export function PalletListScreen() {
+  const { theme } = useThemeMode();
   const [batchSearch, setBatchSearch] = useState("");
   const deferredBatchSearch = useDeferredValue(batchSearch.trim());
   const [reportType, setReportType] = useState<PalletReportType>("releasedPallet");
@@ -57,7 +60,20 @@ export function PalletListScreen() {
     pageSize: itemsPerPage,
     reportType,
   });
+
+
   const reports = qualityReportQuery.data?.data ?? [];
+
+  const refresh = qualityReportQuery.isRefetching && !qualityReportQuery.isLoading;
+
+  const refreshControl = (
+    <RefreshControl
+      refreshing={refresh}
+      onRefresh={() => {qualityReportQuery.refetch()}}
+      colors={[theme.primary]}
+      tintColor={theme.primary}
+    />
+  );
 
   useEffect(() => {
     sendToFirstPage();
@@ -96,11 +112,11 @@ export function PalletListScreen() {
         onChangeText={setBatchSearch}
         placeholder="Filtrar por lote..."
         autoCapitalize="characters"
-        leftIcon={<Search size={22} color="#ff6200" />}
+        leftIcon={<Search size={22} color={theme.primary} />}
         rightIcon={
           batchSearch ? (
             <Pressable onPress={() => setBatchSearch("")} hitSlop={10}>
-              <X size={22} color="#ff6200" />
+              <X size={22} color={theme.primary} />
             </Pressable>
           ) : null
         }
@@ -123,7 +139,7 @@ export function PalletListScreen() {
       );
     }
 
-    if (qualityReportQuery.isLoading || qualityReportQuery.isFetching) {
+    if (refresh) {
       return (
         <FeedbackRoot>
           <LottieAnimLoading label="Carregando paletes" />
@@ -132,18 +148,18 @@ export function PalletListScreen() {
     }
 
     if (qualityReportQuery.isError) {
-      return (
+      return renderRefreshableFeedback(
         <FeedbackRoot>
           <ErrorText>{qualityReportQuery.error.message}</ErrorText>
-        </FeedbackRoot>
+        </FeedbackRoot>,
       );
     }
 
     if (reports.length === 0) {
-      return (
+      return renderRefreshableFeedback(
         <FeedbackRoot>
           <FeedbackText>Não há reports para listar.</FeedbackText>
-        </FeedbackRoot>
+        </FeedbackRoot>,
       );
     }
 
@@ -151,11 +167,25 @@ export function PalletListScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
+        refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
       >
         {reports.map(item => (
           <QualityReportCard key={item.id} item={item} reportType={reportType} />
         ))}
+      </ScrollView>
+    );
+  }
+
+  function renderRefreshableFeedback(children: React.ReactNode) {
+    return (
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        refreshControl={refreshControl}
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
       </ScrollView>
     );
   }
