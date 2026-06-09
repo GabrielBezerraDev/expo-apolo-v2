@@ -23,7 +23,7 @@ export function MainTabsNavigator() {
         tabBarInactiveTintColor: theme.primaryLight,
         tabBarStyle: {
           backgroundColor: theme.primary,
-          borderTopColor: theme.border,
+          borderColor: theme.primaryDark,
           shadowRadius: 12,
           shadowOffset: { width: 3, height: 10 },
           height: 72,
