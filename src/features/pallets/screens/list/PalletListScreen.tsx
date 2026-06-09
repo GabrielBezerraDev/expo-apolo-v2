@@ -1,5 +1,5 @@
 import React, { useDeferredValue, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView } from "react-native";
+import { Pressable, ScrollView } from "react-native";
 import { Search, SlidersHorizontal, X } from "lucide-react-native";
 import { styled, Text, View } from "tamagui";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
 import { AppInput } from "@shared/components/Forms/AppInput";
+import { LottieAnimLoading } from "@shared/components/Feedback";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
 import { typography } from "@shared/typography";
 import { ListScreenShell } from "../../components/ListScreenShell";
@@ -125,8 +126,7 @@ export function PalletListScreen() {
     if (qualityReportQuery.isLoading || qualityReportQuery.isFetching) {
       return (
         <FeedbackRoot>
-          <ActivityIndicator />
-          <FeedbackText>Carregando reports...</FeedbackText>
+          <LottieAnimLoading label="Carregando paletes" />
         </FeedbackRoot>
       );
     }

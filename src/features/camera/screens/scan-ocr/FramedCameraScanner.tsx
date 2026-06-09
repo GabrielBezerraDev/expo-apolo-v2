@@ -15,6 +15,7 @@ import {
   Camera,
   useCameraDevices,
 } from 'react-native-vision-camera';
+import { LottieAnimLoading } from '@shared/components/Feedback';
 import type {
   CameraPermissionStatus,
   CameraDevice,
@@ -329,7 +330,7 @@ export const FramedCameraScanner: React.FC = () => {
   // Render
   // -------------------------------------------------------------------------
   if (permissionStatus === 'not-determined') {
-    return <View style={styles.center}><ActivityIndicator color="#fff" size="large" /></View>;
+    return <View style={styles.center}><LottieAnimLoading label="Carregando câmera" size={150} /></View>;
   }
 
   if (!hasPermission) {
@@ -351,8 +352,7 @@ export const FramedCameraScanner: React.FC = () => {
   if (!device) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#fff" size="large" />
-        <Text style={[styles.permissionText, { marginTop: 12 }]}>Carregando câmera...</Text>
+        <LottieAnimLoading label="Carregando câmera" size={150} />
       </View>
     );
   }
