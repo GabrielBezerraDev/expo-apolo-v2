@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -14,6 +14,7 @@ import { OperationSuccess } from '@features/pallets/screens/form/OperationSucces
 import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
 import { ShipGoods } from '@features/pallets/screens/form/ShipGoods';
 import { PalletProvider } from '@features/pallets/providers/PalletProvider';
+import { LottieAnimLoading } from '@shared/components/Feedback';
 import { PaginationProvider } from '@shared/components/Navigation/Pagination';
 import { AuthSessionProvider, useAuthSession } from './AuthSessionContext';
 import { AuthNavigator } from './AuthNavigator';
@@ -50,7 +51,7 @@ function RootNavigatorContent() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
+        <LottieAnimLoading label="Carregando aplicativo" />
       </View>
     );
   }
