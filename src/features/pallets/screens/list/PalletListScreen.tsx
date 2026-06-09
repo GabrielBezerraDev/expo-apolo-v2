@@ -1,45 +1,22 @@
-import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView } from "react-native";
+import React, { useDeferredValue, useEffect, useState } from "react";
+import { Pressable } from "react-native";
 import { Search, SlidersHorizontal, X } from "lucide-react-native";
-import { styled, Text, View } from "tamagui";
 import {
   PaginationComponent,
   usePagination,
   WrapperPagination,
 } from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
+import { RefreshableList } from "@shared/components/Display";
 import { AppInput } from "@shared/components/Forms/AppInput";
-import { LottieAnimLoading } from "@shared/components/Feedback";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
-import { typography } from "@shared/typography";
 import { ListScreenShell } from "../../components/ListScreenShell";
 import { PalletReportStatusTabs } from "../../components/PalletReportStatusTabs";
 import { QualityReportCard } from "../../components/QualityReportCard";
 import { usePalletListFilters } from "../../hooks/usePalletListFilters";
 import { useQualityReportList } from "../../hooks/useQualityReportList";
 import { PalletReportType, QualityReport } from "../../types/qualityReport";
-import { useQueryClient } from "@tanstack/react-query";
-
-const FeedbackRoot = styled(View, {
-  flex: 1,
-  alignItems: "center",
-  justifyContent: "center",
-  paddingHorizontal: 24,
-  gap: 10,
-});
-
-const FeedbackText = styled(Text, {
-  ...typography.bodyMedium,
-  color: "$text",
-  textAlign: "center",
-});
-
-const ErrorText = styled(Text, {
-  ...typography.bodySmall,
-  color: "$error",
-  textAlign: "center",
-});
 
 export function PalletListScreen() {
   const { theme } = useThemeMode();
@@ -63,17 +40,12 @@ export function PalletListScreen() {
 
 
   const reports = qualityReportQuery.data?.data ?? [];
-
+  const canLoadReports = hasApiBaseUrl();
+  const errorMessage = canLoadReports
+    ? qualityReportQuery.error?.message
+    : "Configure EXPO_PUBLIC_API_URL para carregar os reports.";
   const refresh = qualityReportQuery.isRefetching && !qualityReportQuery.isLoading;
-
-  const refreshControl = (
-    <RefreshControl
-      refreshing={refresh}
-      onRefresh={() => {qualityReportQuery.refetch()}}
-      colors={[theme.primary]}
-      tintColor={theme.primary}
-    />
-  );
+  const refreshReports = canLoadReports ? () => { void qualityReportQuery.refetch(); } : undefined;
 
   useEffect(() => {
     sendToFirstPage();
@@ -123,70 +95,21 @@ export function PalletListScreen() {
       />
       <PalletReportStatusTabs value={reportType} onChange={setReportType} />
       <FilterChips chips={chips} />
-      {renderContent()}
+      <RefreshableList
+        data={reports}
+        emptyMessage="Não há reports para listar."
+        errorMessage={errorMessage}
+        isError={!canLoadReports || qualityReportQuery.isError}
+        isLoading={qualityReportQuery.isLoading}
+        isRefreshing={refresh}
+        keyExtractor={(item) => String(item.id)}
+        loadingLabel="Carregando paletes"
+        onRefresh={refreshReports}
+        renderItem={({ item }) => <QualityReportCard item={item} reportType={reportType} />}
+      />
       <WrapperPagination>
         <PaginationComponent />
       </WrapperPagination>
     </ListScreenShell>
   );
-
-  function renderContent() {
-    if (!hasApiBaseUrl()) {
-      return (
-        <FeedbackRoot>
-          <ErrorText>Configure EXPO_PUBLIC_API_URL para carregar os reports.</ErrorText>
-        </FeedbackRoot>
-      );
-    }
-
-    if (refresh) {
-      return (
-        <FeedbackRoot>
-          <LottieAnimLoading label="Carregando paletes" />
-        </FeedbackRoot>
-      );
-    }
-
-    if (qualityReportQuery.isError) {
-      return renderRefreshableFeedback(
-        <FeedbackRoot>
-          <ErrorText>{qualityReportQuery.error.message}</ErrorText>
-        </FeedbackRoot>,
-      );
-    }
-
-    if (reports.length === 0) {
-      return renderRefreshableFeedback(
-        <FeedbackRoot>
-          <FeedbackText>Não há reports para listar.</FeedbackText>
-        </FeedbackRoot>,
-      );
-    }
-
-    return (
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
-        refreshControl={refreshControl}
-        showsVerticalScrollIndicator={false}
-      >
-        {reports.map(item => (
-          <QualityReportCard key={item.id} item={item} reportType={reportType} />
-        ))}
-      </ScrollView>
-    );
-  }
-
-  function renderRefreshableFeedback(children: React.ReactNode) {
-    return (
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
-        refreshControl={refreshControl}
-        showsVerticalScrollIndicator={false}
-      >
-        {children}
-      </ScrollView>
-    );
-  }
 }

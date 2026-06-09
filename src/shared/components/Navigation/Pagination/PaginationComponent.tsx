@@ -4,8 +4,8 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View,
 } from "react-native";
+import { View } from "tamagui";
 import {
   ChevronLeft,
   ChevronRight,
@@ -41,7 +41,7 @@ export function PaginationComponent({ itemLabel = "Paletes" }: PaginationCompone
 
   return (
     <Animated.View style={paginationStyle}>
-      <View style={[styles.wrapper, {width: width}]}>
+      <View style={[styles.wrapper, {width: width}]} backgroundColor={'$primary'} >
         <View style={[styles.totalItemsSlot, { flexShrink: 1, marginRight: 8 }]}> 
           <View
             style={[
@@ -101,10 +101,8 @@ function PaginationIconButton({ icon, size, onPress }: PaginationIconButtonProps
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: "center",
-    backgroundColor: "#fa6406ff",
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
-    elevation: 36,
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 8,
