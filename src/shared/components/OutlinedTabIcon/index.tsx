@@ -1,1 +1,0 @@
-export { OutlinedTabIcon } from './OutlinedTabIconComponent'

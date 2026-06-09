@@ -5,7 +5,7 @@ import { Text, View } from "tamagui";
 import EntryPallets from "@assets/svg/EntryPallets.svg";
 import ExitPallets from "@assets/svg/ExitPallets.svg";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
-import { useThemeMode } from "@shared/components/ThemeToggle";
+import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { typography } from "@shared/typography";
 import { usePallet } from "../../providers/PalletProvider";
 

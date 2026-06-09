@@ -4,13 +4,13 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ClipboardPlus, Filter } from "lucide-react-native";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
-import { PaginationComponent, usePagination } from "@shared/components/Pagination";
+import { PaginationComponent, usePagination } from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
 import { usePallet } from "../../providers/PalletProvider";
 import { OperationCard } from "../../components/OperationCard";
 import { entryOperations } from "../../mocks/palletMock";
 import { ListScreenShell } from "../../components/ListScreenShell";
-import { WrapperPagination } from "@shared/components/Pagination";
+import { WrapperPagination } from "@shared/components/Navigation/Pagination";
 import { useOperationListFilters } from "../../hooks/useOperationListFilters";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -21,8 +21,7 @@ export function EntryListScreen() {
   const { setPaginationMeta } = usePagination();
   const {
     chips,
-    filteredData: filteredOperations,
-    openFilterModal
+    openFilterModal,
   } = useOperationListFilters({ data: entryOperations, modalTitle: "Filtrar entradas" });
 
   useFocusEffect(
@@ -30,9 +29,9 @@ export function EntryListScreen() {
       setPaginationMeta({
         currentPage: 1,
         lastPage: 1,
-        totalItems: filteredOperations.length,
+        totalItems: entryOperations.length,
       });
-    }, [filteredOperations.length, setPaginationMeta]),
+    }, [setPaginationMeta]),
   );
 
   const startEntry = () => {
@@ -59,7 +58,7 @@ export function EntryListScreen() {
         contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {filteredOperations.map((item) => (
+        {entryOperations.map((item) => (
           <OperationCard key={item.id} item={item} />
         ))}
       </ScrollView>

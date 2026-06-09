@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -6,25 +7,22 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@navigation/navigation.protocol';
-import { useThemeMode } from '@shared/components/ThemeToggle';
+import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPallet';
 import { OperationSuccess } from '@features/pallets/screens/form/OperationSuccess';
 import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
 import { ShipGoods } from '@features/pallets/screens/form/ShipGoods';
 import { PalletProvider } from '@features/pallets/providers/PalletProvider';
-import { PaginationProvider } from '@shared/components/Pagination';
-import { AuthSessionProvider } from './AuthSessionContext';
+import { PaginationProvider } from '@shared/components/Navigation/Pagination';
+import { AuthSessionProvider, useAuthSession } from './AuthSessionContext';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const [loggedIn, setLoggedIn] = useState(false);
   const { mode, theme } = useThemeMode();
-  const login = useCallback(() => setLoggedIn(true), []);
-  const logout = useCallback(() => setLoggedIn(false), []);
   const navTheme = {
     ...(mode === "dark" ? DarkTheme : DefaultTheme),
     colors: {
@@ -38,20 +36,34 @@ export function RootNavigator() {
   };
 
   return (
-    <AuthSessionProvider login={login} logout={logout}>
+    <AuthSessionProvider>
       <NavigationContainer theme={navTheme}>
-        {!loggedIn ? (
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Auth">
-              {() => <AuthNavigator onLogin={login} />}
-            </Stack.Screen>
-          </Stack.Navigator>
-        ) : (
-          <LoggedInStack />
-        )}
+        <RootNavigatorContent />
       </NavigationContainer>
     </AuthSessionProvider>
   );
+}
+
+function RootNavigatorContent() {
+  const { isAuthenticated, isLoading } = useAuthSession();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      </Stack.Navigator>
+    );
+  }
+
+  return <LoggedInStack />;
 }
 
 function LoggedInStack() {
