@@ -1,16 +1,19 @@
 import React, { useCallback } from "react";
-import { ScrollView } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ClipboardPlus, Filter } from "lucide-react-native";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
-import { PaginationComponent, usePagination } from "@shared/components/Navigation/Pagination";
+import {
+  PaginationComponent,
+  usePagination,
+  WrapperPagination,
+} from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
+import { RefreshableList } from "@shared/components/Display";
 import { usePallet } from "../../providers/PalletProvider";
 import { OperationCard } from "../../components/OperationCard";
 import { entryOperations } from "../../mocks/palletMock";
 import { ListScreenShell } from "../../components/ListScreenShell";
-import { WrapperPagination } from "@shared/components/Navigation/Pagination";
 import { useOperationListFilters } from "../../hooks/useOperationListFilters";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -53,15 +56,12 @@ export function EntryListScreen() {
       ]}
     >
       <FilterChips chips={chips} />
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ gap: 14, paddingVertical: 20 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {entryOperations.map((item) => (
-          <OperationCard key={item.id} item={item} />
-        ))}
-      </ScrollView>
+      <RefreshableList
+        data={entryOperations}
+        emptyMessage="Não há entradas para listar."
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <OperationCard item={item} />}
+      />
       <WrapperPagination>
         <PaginationComponent />
       </WrapperPagination>
