@@ -1,5 +1,4 @@
-import { Pressable } from "react-native";
-import { styled, Text, View } from "tamagui";
+import { Button, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 
 export const Card = styled(View, {
@@ -26,7 +25,8 @@ export const Header = styled(View, {
   } as const,
 });
 
-export const Footer = styled(Pressable, {
+export const Footer = styled(Button, {
+  unstyled: true,
   paddingVertical: 14,
   paddingHorizontal: 16,
   minHeight: 50,

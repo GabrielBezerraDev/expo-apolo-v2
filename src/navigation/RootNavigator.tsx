@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View } from 'tamagui';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -50,7 +50,7 @@ function RootNavigatorContent() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View flex={1} alignItems="center" justifyContent="center">
         <LottieAnimLoading label="Carregando aplicativo" />
       </View>
     );

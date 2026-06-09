@@ -1,4 +1,4 @@
-import { styled, Text, View } from "tamagui";
+import { Button, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 
 export const Root = styled(View, {
@@ -27,3 +27,7 @@ export const Title = styled(Text, { ...typography.headingSmall, color: "$text" }
 export const Subtitle = styled(Text, { ...typography.bodySmall, color: "$mutedText" });
 
 export const Actions = styled(View, { flexDirection: "row", alignItems: "center", gap: 10 });
+
+export const HeaderIconButton = styled(Button, {
+  unstyled: true,
+});

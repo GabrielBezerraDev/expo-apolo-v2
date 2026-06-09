@@ -1,8 +1,8 @@
-import { Pressable } from "react-native";
-import { styled, Text } from "tamagui";
+import { Button, styled, Text } from "tamagui";
 import { typography } from "@shared/typography";
 
-export const ButtonRoot = styled(Pressable, {
+export const ButtonRoot = styled(Button, {
+  unstyled: true,
   minHeight: 50,
   borderRadius: 14,
   alignItems: 'center',

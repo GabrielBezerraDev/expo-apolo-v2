@@ -1,7 +1,8 @@
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
+import { View } from "tamagui";
 import {
+  ModalBackdropButton,
   ModalBody,
   ModalBodyContent,
   ModalCloseButton,
@@ -13,6 +14,8 @@ import {
 } from "./styled";
 import { ModalConfig } from "./modal.type";
 import { useModalComponent } from "./useModalComponent";
+
+const AnimatedView = Animated.createAnimatedComponent(View);
 
 type Props = {
   modal: ModalConfig;
@@ -49,11 +52,11 @@ export function ModalComponent({ modal, index, requestClose, removeModal }: Prop
   } = useModalComponent({ modal, removeModal, requestClose });
 
   return (
-    <Animated.View
+    <AnimatedView
       pointerEvents={isNotification ? "box-none" : "auto"}
       style={[
-        styles.backdropBase,
-        styles[resolvedPlacement],
+        backdropBaseStyle,
+        placementStyles[resolvedPlacement],
         {
           backgroundColor: isNotification ? "transparent" : backdropColor || "rgba(0, 0, 0, 0.5)",
           zIndex: 1000 + index * 10,
@@ -61,9 +64,9 @@ export function ModalComponent({ modal, index, requestClose, removeModal }: Prop
         backdropAnimatedStyle,
       ]}
     >
-      {!isNotification ? <Pressable style={StyleSheet.absoluteFill} onPress={handleBackdropPress} /> : null}
+      {!isNotification ? <ModalBackdropButton onPress={handleBackdropPress} /> : null}
 
-      <Animated.View
+      <AnimatedView
         style={[
           {
             elevation: 8,
@@ -96,33 +99,38 @@ export function ModalComponent({ modal, index, requestClose, removeModal }: Prop
 
           {showFooter && footerComponent ? <ModalFooter>{footerComponent}</ModalFooter> : null}
         </ModalContent>
-      </Animated.View>
-    </Animated.View>
+      </AnimatedView>
+    </AnimatedView>
   );
 }
 
-const styles = StyleSheet.create({
-  backdropBase: {
-    ...StyleSheet.absoluteFillObject,
-    padding: 20,
-  },
+const backdropBaseStyle = {
+  position: "absolute" as const,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+  padding: 20,
+};
+
+const placementStyles = {
   center: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   top: {
-    alignItems: "center",
-    justifyContent: "flex-start",
+    alignItems: "center" as const,
+    justifyContent: "flex-start" as const,
     paddingTop: 36,
   },
   bottom: {
-    alignItems: "center",
-    justifyContent: "flex-end",
+    alignItems: "center" as const,
+    justifyContent: "flex-end" as const,
     paddingBottom: 28,
   },
   notification: {
-    alignItems: "center",
-    justifyContent: "flex-start",
+    alignItems: "center" as const,
+    justifyContent: "flex-start" as const,
     paddingTop: 18,
   },
-});
+};

@@ -1,11 +1,13 @@
 import React from "react";
-import { StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
+import { View } from "tamagui";
 import { Plus } from "lucide-react-native";
 import { ActionLabel, ActionRow, CircleButton, FloatButtonRoot } from "./styled";
 import { useFloatActionButton, useFloatButton } from "./useFloatButton";
 import { useFloatActionAnimation, useFloatButtonAnimation } from "./useFloatButtonAnimation";
 import { FloatButtonAction } from "./types";
+
+const AnimatedView = Animated.createAnimatedComponent(View);
 
 type Props = {
   actions: FloatButtonAction[];
@@ -26,14 +28,14 @@ function ActionButton({ action, index, isOpen, total, onActionPress }: ActionBut
   const { animatedStyle } = useFloatActionAnimation({ index, isOpen, total });
 
   return (
-    <Animated.View pointerEvents={isOpen ? "auto" : "none"} style={[styles.action, animatedStyle]}>
+    <AnimatedView pointerEvents={isOpen ? "auto" : "none"} style={[actionStyle, animatedStyle]}>
       <ActionRow>
         {action.label ? <ActionLabel numberOfLines={1}>{action.label}</ActionLabel> : null}
         <CircleButton variant="action" disabled={Boolean(action.disabled)} onPress={handlePress} hitSlop={8}>
           <action.Icon size={24} color={theme.primary} strokeWidth={2.3} />
         </CircleButton>
       </ActionRow>
-    </Animated.View>
+    </AnimatedView>
   );
 }
 
@@ -56,18 +58,16 @@ export function FloatButton({ actions, bottom = 8, right = 20 }: Props) {
         />
       ))}
 
-      <Animated.View style={mainButtonStyle}>
+      <AnimatedView style={mainButtonStyle}>
         <CircleButton variant="main" onPress={toggleOpen} hitSlop={8}>
           <Plus size={28} color={theme.white} strokeWidth={2.6} />
         </CircleButton>
-      </Animated.View>
+      </AnimatedView>
     </FloatButtonRoot>
   );
 }
 
-const styles = StyleSheet.create({
-  action: {
-    position: "absolute",
-    right: 0,
-  },
-});
+const actionStyle = {
+  position: "absolute" as const,
+  right: 0,
+};

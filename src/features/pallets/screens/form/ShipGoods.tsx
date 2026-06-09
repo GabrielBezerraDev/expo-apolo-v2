@@ -1,15 +1,8 @@
 import React, { useCallback } from "react";
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera, X } from "lucide-react-native";
-import { Text, View } from "tamagui";
+import { Button, Image, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
@@ -60,18 +53,18 @@ export function ShipGoods() {
   return (
     <ListScreenShell title="Mercadoria embarcada">
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
+        <Header>
           <View>
-            <Text style={[styles.title, { color: theme.text }]}>Roteiro: {route}</Text>
-            <Text style={[styles.helperText, { color: theme.mutedText }]}>Tire uma foto da barcada e uma da placa do caminhão.</Text>
+            <Title>Roteiro: {route}</Title>
+            <HelperText>Tire uma foto da barcada e uma da placa do caminhão.</HelperText>
           </View>
-          <Pressable onPress={closeExit} hitSlop={10}>
+          <IconButton onPress={closeExit} hitSlop={10}>
             <X size={24} color={theme.mutedText} />
-          </Pressable>
-        </View>
+          </IconButton>
+        </Header>
 
         <PhotoSlot
           title="Foto da carga"
@@ -79,11 +72,7 @@ export function ShipGoods() {
           uri={shipGoodsPhotos.truck}
           width={photoWidth}
           height={photoHeight}
-          borderColor={theme.border}
-          backgroundColor={theme.card}
           iconColor={theme.primary}
-          textColor={theme.text}
-          mutedTextColor={theme.mutedText}
           onPress={() => scanPhoto("truck")}
         />
 
@@ -93,16 +82,12 @@ export function ShipGoods() {
           uri={shipGoodsPhotos.licensePlate}
           width={photoWidth}
           height={photoHeight}
-          borderColor={theme.border}
-          backgroundColor={theme.card}
           iconColor={theme.primary}
-          textColor={theme.text}
-          mutedTextColor={theme.mutedText}
           onPress={() => scanPhoto("licensePlate")}
         />
 
         <AppButton
-          style={{width:'100%', height: height * 0.06}}
+          style={{ width: "100%", height: height * 0.06 }}
           title="FINALIZAR SAÍDA"
           disabled={!canFinishExit}
           onPress={finishExit}
@@ -118,11 +103,7 @@ type PhotoSlotProps = {
   uri: string | null;
   width: number;
   height: number;
-  borderColor: string;
-  backgroundColor: string;
   iconColor: string;
-  textColor: string;
-  mutedTextColor: string;
   onPress: () => void;
 };
 
@@ -132,77 +113,81 @@ function PhotoSlot({
   uri,
   width,
   height,
-  borderColor,
-  backgroundColor,
   iconColor,
-  textColor,
-  mutedTextColor,
   onPress,
 }: PhotoSlotProps) {
   return (
-    <Pressable
+    <PhotoButton
       onPress={onPress}
-      style={[
-        styles.photoSlot,
-        {
-          borderColor,
-          backgroundColor,
-          width,
-          height,
-        },
-      ]}
+      width={width}
+      height={height}
     >
       {uri ? (
-        <Image source={{ uri }} style={styles.photo} resizeMode="cover" />
+        <PhotoImage source={{ uri }} resizeMode="cover" />
       ) : (
-        <View style={styles.photoEmpty}>
+        <PhotoEmpty>
           <Camera size={34} color={iconColor} />
-          <Text style={[styles.photoTitle, { color: textColor }]}>{title}</Text>
-          <Text style={[styles.helperText, { color: mutedTextColor }]}>{helper}</Text>
-          <Text style={[styles.helperText, { color: mutedTextColor }]}>TOQUE PARA FOTOGRAFAR</Text>
-        </View>
+          <PhotoTitle>{title}</PhotoTitle>
+          <HelperText>{helper}</HelperText>
+          <HelperText>TOQUE PARA FOTOGRAFAR</HelperText>
+        </PhotoEmpty>
       )}
-    </Pressable>
+    </PhotoButton>
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    alignItems: "center",
-    gap: 16,
-    paddingVertical: 18,
-    paddingBottom: 36,
-  },
-  header: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: {
-    ...typography.headingSmall,
-  },
-  helperText: {
-    ...typography.bodySmall,
-    fontWeight: '700'
-  },
-  photoSlot: {
-    borderWidth: 1,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  photo: {
-    width: "100%",
-    height: "100%",
-  },
-  photoEmpty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  photoTitle: {
-    ...typography.bodyLarge,
-    fontWeight: "800",
-  },
+const contentStyle = {
+  alignItems: "center" as const,
+  gap: 16,
+  paddingBottom: 36,
+  paddingVertical: 18,
+};
+
+const Header = styled(View, {
+  alignItems: "center",
+  flexDirection: "row",
+  justifyContent: "space-between",
+  width: "100%",
+});
+
+const Title = styled(Text, {
+  ...typography.headingSmall,
+  color: "$text",
+});
+
+const HelperText = styled(Text, {
+  ...typography.bodySmall,
+  color: "$mutedText",
+  fontWeight: "700",
+});
+
+const PhotoButton = styled(Button, {
+  unstyled: true,
+  backgroundColor: "$card",
+  borderColor: "$border",
+  borderRadius: 16,
+  borderWidth: 1,
+  overflow: "hidden",
+});
+
+const PhotoImage = styled(Image, {
+  height: "100%",
+  width: "100%",
+});
+
+const PhotoEmpty = styled(View, {
+  alignItems: "center",
+  flex: 1,
+  gap: 8,
+  justifyContent: "center",
+});
+
+const PhotoTitle = styled(Text, {
+  ...typography.bodyLarge,
+  color: "$text",
+  fontWeight: "800",
+});
+
+const IconButton = styled(Button, {
+  unstyled: true,
 });

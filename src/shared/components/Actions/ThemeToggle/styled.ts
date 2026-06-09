@@ -1,4 +1,5 @@
-import { Pressable } from "react-native";
-import { styled } from "tamagui";
+import { Button, styled } from "tamagui";
 
-export const ToggleButton = styled(Pressable, {});
+export const ToggleButton = styled(Button, {
+  unstyled: true,
+});

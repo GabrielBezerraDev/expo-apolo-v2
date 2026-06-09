@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { Dimensions } from "react-native";
+import { useWindowDimensions } from "tamagui";
 
 export type OcrFrameRatios = {
   widthRatio: number;
@@ -49,6 +49,7 @@ type OcrFrameProviderProps = PropsWithChildren<{
 }>;
 
 export function OcrFrameProvider({ children, initial = "barcode" }: OcrFrameProviderProps) {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const initialRatios = useMemo<OcrFrameRatios>(() => {
     if (typeof initial === "string") return OCR_FRAME_PRESETS[initial];
     return initial;
@@ -72,7 +73,6 @@ export function OcrFrameProvider({ children, initial = "barcode" }: OcrFrameProv
   }, [initialRatios]);
 
   const geometry = useMemo<OcrFrameGeometry>(() => {
-    const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
     const width = screenWidth * ratios.widthRatio;
     const height = screenHeight * ratios.heightRatio;
 
@@ -84,7 +84,7 @@ export function OcrFrameProvider({ children, initial = "barcode" }: OcrFrameProv
       screenWidth,
       screenHeight,
     };
-  }, [ratios]);
+  }, [ratios, screenHeight, screenWidth]);
 
   const value = useMemo<OcrFrameContextValue>(
     () => ({ ratios, geometry, setRatios, setPreset, reset }),

@@ -1,6 +1,5 @@
 import React from "react";
-import { Pressable } from "react-native";
-import { styled, Text, View } from "tamagui";
+import { Button, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
 import { PalletReportType } from "../types/qualityReport";
 
@@ -20,7 +19,8 @@ const Root = styled(View, {
   gap: 8,
 });
 
-const TabButton = styled(Pressable, {
+const TabButton = styled(Button, {
+  unstyled: true,
   flex: 1,
   minHeight: 44,
   borderRadius: 14,

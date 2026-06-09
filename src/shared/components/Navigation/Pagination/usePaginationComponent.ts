@@ -1,4 +1,4 @@
-import { useWindowDimensions } from "react-native";
+import { useWindowDimensions } from "tamagui";
 import { usePagination } from "./PaginationProvider";
 import { usePaginationAnimation } from "./usePaginationAnimation";
 

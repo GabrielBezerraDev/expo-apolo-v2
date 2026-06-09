@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
-import { Pressable, TextInputProps } from "react-native";
+import type { InputProps } from "tamagui";
 import { Eye, EyeOff } from "lucide-react-native";
-import { ErrorText, InputFrame, Label, StyledInput, Wrapper } from "./styled";
+import { ErrorText, InputFrame, InputIconButton, Label, StyledInput, Wrapper } from "./styled";
 import {
   Controller,
   ControllerProps,
@@ -15,9 +15,23 @@ type AppInputControllerProps<T extends FieldValues> = Omit<
   "render"
 >;
 
-type Props<T extends FieldValues> = TextInputProps & {
+type AppInputBaseProps = Pick<
+  InputProps,
+  | "autoCapitalize"
+  | "disabled"
+  | "keyboardType"
+  | "onBlur"
+  | "onChangeText"
+  | "onFocus"
+  | "placeholder"
+  | "secureTextEntry"
+  | "value"
+>;
+
+type Props<T extends FieldValues> = AppInputBaseProps & {
   label?: string;
   error?: string;
+  editable?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   isPassword?: boolean;
@@ -29,10 +43,18 @@ export function AppInput<T extends FieldValues>({
   error,
   leftIcon,
   rightIcon,
+  autoCapitalize,
+  editable,
+  disabled,
   isPassword,
+  keyboardType,
+  onBlur,
+  onChangeText,
+  onFocus,
+  placeholder,
   secureTextEntry,
+  value,
   controllerReactFormsProps,
-  ...props
 }: Props<T>) {
   const {
     focused,
@@ -46,11 +68,11 @@ export function AppInput<T extends FieldValues>({
     toggleHidden,
   } = useAppInput({
     isPassword,
-    onBlur: props.onBlur,
-    onChangeText: props.onChangeText,
-    onFocus: props.onFocus,
+    onBlur,
+    onChangeText,
+    onFocus,
     secureTextEntry,
-    value: props.value,
+    value,
   });
 
   const renderInput = (field?: ControllerRenderProps<T>) => {
@@ -62,10 +84,14 @@ export function AppInput<T extends FieldValues>({
           {leftIcon}
 
           <StyledInput
-            placeholderTextColor={theme.mutedText}
+            placeholderTextColor="$mutedText"
             secureTextEntry={hidden}
-            style={{ color: theme.black, height: inputHeight }}
-            {...props}
+            color="$black"
+            height={inputHeight}
+            autoCapitalize={autoCapitalize}
+            keyboardType={keyboardType}
+            placeholder={placeholder}
+            disabled={editable === false || disabled}
             value={getValue(field)}
             onChangeText={(value) => handleChangeText(value, field)}
             onBlur={(event) => handleBlur(event, field)}
@@ -73,7 +99,7 @@ export function AppInput<T extends FieldValues>({
           />
 
           {isPassword ? (
-            <Pressable onPress={toggleHidden} hitSlop={10}>
+            <InputIconButton onPress={toggleHidden} hitSlop={10}>
               {hidden ? (
                 <EyeOff
                   size={20}
@@ -85,7 +111,7 @@ export function AppInput<T extends FieldValues>({
                   color={focused ? theme.primary : theme.mutedText}
                 />
               )}
-            </Pressable>
+            </InputIconButton>
           ) : (
             rightIcon
           )}

@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useWindowDimensions } from "react-native";
+import { useWindowDimensions } from "tamagui";
 
 export type FrameRatios = {
   widthRatio: number;
