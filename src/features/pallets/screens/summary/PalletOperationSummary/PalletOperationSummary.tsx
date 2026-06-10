@@ -6,12 +6,16 @@ import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { LottieAnimLoading } from "@shared/components/Feedback";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { typography } from "@shared/typography";
-import type { OfflinePalletOperation } from "../../../types/offlinePalletOperation";
+import type {
+  OfflinePalletOperation,
+  OfflinePalletOperationSummaryItem,
+} from "../../../types/offlinePalletOperation";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { usePalletOperationSummary } from "./usePalletOperationSummary";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PalletOperationSummary">;
 const PALLET_EVIDENCE_SECTION_TITLE = "Evidências dos paletes";
+const EXIT_EVIDENCE_SECTION_TITLE = "Evidências finais da saída";
 const PHOTOS_PER_PALLET = 4;
 
 export function PalletOperationSummary({ navigation, route }: Props) {
@@ -19,8 +23,6 @@ export function PalletOperationSummary({ navigation, route }: Props) {
     navigation,
     operationId: route.params.operationId,
   });
-  const { width } = useWindowDimensions();
-  const readonlyCarouselWidth = Math.max(240, Math.min(width - 96, 480));
 
   if (isLoading) {
     return (
@@ -63,7 +65,9 @@ export function PalletOperationSummary({ navigation, route }: Props) {
               </SectionStatus>
             </SectionHeader>
             {section.title === PALLET_EVIDENCE_SECTION_TITLE ? (
-              <ReadonlyPalletEvidence operation={operation} carouselWidth={readonlyCarouselWidth} />
+              <ReadonlyPalletEvidence operation={operation} />
+            ) : section.title === EXIT_EVIDENCE_SECTION_TITLE ? (
+              <ReadonlyExitEvidence items={section.items} />
             ) : (
               section.items.map((item, index) => (
                 <SummaryItem key={`${item.label}-${index}`}>
@@ -94,10 +98,8 @@ export function PalletOperationSummary({ navigation, route }: Props) {
 }
 
 function ReadonlyPalletEvidence({
-  carouselWidth,
   operation,
 }: {
-  carouselWidth: number;
   operation: OfflinePalletOperation;
 }) {
   const { width } = useWindowDimensions();
@@ -156,6 +158,43 @@ function ReadonlyPalletEvidence({
         );
       })}
     </ReadonlyPalletList>
+  );
+}
+
+function ReadonlyExitEvidence({ items }: { items: OfflinePalletOperationSummaryItem[] }) {
+  const { width } = useWindowDimensions();
+  const carouselWidth = width * 0.93;
+  const photoHeight = 580;
+
+  return (
+    <FlatList
+      horizontal
+      pagingEnabled
+      data={items}
+      keyExtractor={(item, index) => `${item.label}-${index}`}
+      showsHorizontalScrollIndicator={false}
+      style={{ width: carouselWidth, height: photoHeight + 56 }}
+      renderItem={({ item, index }) => (
+        <ReadonlyFinalEvidencePage width={carouselWidth}>
+          <ReadonlyPalletHeader>
+            <ReadonlyPalletTitle>
+              {item.label} {index + 1}/{items.length}
+            </ReadonlyPalletTitle>
+            <ReadonlyPalletBatch>{item.value}</ReadonlyPalletBatch>
+          </ReadonlyPalletHeader>
+          <ReadonlyPhotoSlot width={carouselWidth} height={photoHeight}>
+            {item.thumbnailUri ? (
+              <ReadonlyPhotoImage src={item.thumbnailUri} />
+            ) : (
+              <ReadonlyPhotoEmpty>
+                <ReadonlyPhotoCounter>{index + 1}/{items.length}</ReadonlyPhotoCounter>
+                <ReadonlyPhotoLabel>Foto pendente</ReadonlyPhotoLabel>
+              </ReadonlyPhotoEmpty>
+            )}
+          </ReadonlyPhotoSlot>
+        </ReadonlyFinalEvidencePage>
+      )}
+    />
   );
 }
 
@@ -287,6 +326,10 @@ const ReadonlyPalletCard = styled(View, {
 
 const ReadonlyPalletHeader = styled(View, {
   gap: 2,
+});
+
+const ReadonlyFinalEvidencePage = styled(View, {
+  gap: 10,
 });
 
 const ReadonlyPalletTitle = styled(Text, {
