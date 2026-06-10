@@ -13,6 +13,8 @@ import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPalle
 import { OperationSuccess } from '@features/pallets/screens/form/OperationSuccess';
 import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
 import { ShipGoods } from '@features/pallets/screens/form/ShipGoods';
+import { ExitExtraEvidence } from '@features/pallets/screens/form/ExitExtraEvidence';
+import { PalletOperationSummary } from '@features/pallets/screens/summary/PalletOperationSummary';
 import { PalletProvider } from '@features/pallets/providers/PalletProvider';
 import { LottieAnimLoading } from '@shared/components/Feedback';
 import { PaginationProvider } from '@shared/components/Navigation/Pagination';
@@ -77,6 +79,8 @@ function LoggedInStack() {
             <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
             <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
             <Stack.Screen name="ShipGoods" component={ShipGoods} />
+            <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
+            <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />
             <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
             <Stack.Screen name="Scanner" component={FramedCameraScanner} />
           </Stack.Navigator>

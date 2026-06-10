@@ -9,7 +9,7 @@ type Props = PropsWithChildren<{
 }>;
 
 const Screen = styled(View, { flex: 1, backgroundColor: "$background" });
-const Content = styled(View, { flex: 1, paddingHorizontal: 12, gap: 14, position: "relative" });
+const Content = styled(View, { flex: 1, paddingHorizontal: 12, gap: 14,   position: "relative" });
 
 
 export function ListScreenShell({ title, children, floatActions = [] }: Props) {

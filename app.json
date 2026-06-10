@@ -31,7 +31,8 @@
           "cameraPermissionText": "Permita que o Valorlog use a câmera para escanear etiquetas."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-sqlite"
     ]
   }
 }
