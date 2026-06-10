@@ -58,7 +58,7 @@ export function PalletOperationSummary({ navigation, route }: Props) {
             </SectionHeader>
             {section.items.map((item, index) => (
               <SummaryItem key={`${item.label}-${index}`}>
-                {item.thumbnailUri ? <Thumbnail source={{ uri: item.thumbnailUri }} resizeMode="cover" /> : null}
+                {item.thumbnailUri ? <Thumbnail src={item.thumbnailUri} /> : null}
                 <ItemBody>
                   <ItemLabel>{item.label}</ItemLabel>
                   <ItemValue status={item.status}>{item.value}</ItemValue>

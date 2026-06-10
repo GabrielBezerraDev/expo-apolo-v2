@@ -145,10 +145,7 @@ export function PalletsEvidence() {
                   height={height * 0.5}
                 >
                   {item ? (
-                    <PhotoImage
-                      source={{ uri: item }}
-                      resizeMode="cover"
-                    />
+                    <PhotoImage src={item} />
                   ) : (
                     <PhotoEmpty paddingBottom={height * 0.1}>
                       <Camera size={30} color={theme.primary} />
@@ -247,6 +244,7 @@ const PhotoButton = styled(Button, {
 const PhotoImage = styled(Image, {
   height: "100%",
   width: "100%",
+  backgroundColor:'red'
 });
 
 const PhotoEmpty = styled(View, {

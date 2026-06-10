@@ -113,7 +113,7 @@ function PhotoSlot({
       height={height}
     >
       {uri ? (
-        <PhotoImage source={{ uri }} resizeMode="cover" />
+        <PhotoImage src={uri} />
       ) : (
         <PhotoEmpty>
           <Camera size={34} color={iconColor} />

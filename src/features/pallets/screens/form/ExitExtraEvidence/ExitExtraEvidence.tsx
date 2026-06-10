@@ -108,7 +108,7 @@ function PhotoSlot({ height, helper, iconColor, onPress, title, uri, width }: Ph
   return (
     <PhotoButton onPress={onPress} width={width} height={height}>
       {uri ? (
-        <PhotoImage source={{ uri }} resizeMode="cover" />
+        <PhotoImage src={uri} />
       ) : (
         <PhotoEmpty>
           <Camera size={34} color={iconColor} />
