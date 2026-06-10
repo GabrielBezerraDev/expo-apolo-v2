@@ -43,7 +43,7 @@ export function useOperationListFilters({ data, modalTitle }: UseOperationListFi
       },
       {
         key: "totalPallets",
-        label: "Total de pallets",
+        label: "Total de paletes",
         type: "numberRange",
       },
     ],

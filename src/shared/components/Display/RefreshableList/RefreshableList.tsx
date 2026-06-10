@@ -27,7 +27,7 @@ type Props<ItemT> = {
 
 const defaultContentContainerStyle: ViewStyle = {
   gap: 14,
-  paddingVertical: 20,
+  paddingBottom: 80
 };
 
 export function RefreshableList<ItemT>({

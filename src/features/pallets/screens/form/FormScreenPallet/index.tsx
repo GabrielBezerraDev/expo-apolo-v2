@@ -9,6 +9,7 @@ import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { fontScale, typography } from "@shared/typography";
+import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperation";
 import { usePallet } from "../../../providers/PalletProvider";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { FormScreenPalletType } from './FormScreenPalletType';
@@ -29,6 +30,7 @@ export function FormScreenPallet() {
     isValidFormScreenPalletValue,
     setFormScreenPalletValue,
   } = usePallet();
+  const { saveFormDraft } = useOfflinePalletOperation();
 
 
 
@@ -39,26 +41,34 @@ export function FormScreenPallet() {
       mode: "scanner",
       preset: "tinyDataLandScape",
       orientation: "LandScape",
-      onCapture: (data) => {
+      onCapture: async (data) => {
         setFormScreenPalletValue("roadmap", data.text, {
           shouldValidate: true,
         });
+        await saveFormDraft({ roadmap: data.text });
         navigation.goBack();
       },
       onCancel: () => navigator.goBack(),
       formatTextDataWithRegex: (data) => data.replace(/[^a-zA-Z0-9\s]/g, ""),
     });
     navigation.navigate('Scanner');
-  }, [configureScanner, navigation, navigator, setFormScreenPalletValue]);
+  }, [configureScanner, navigation, navigator, saveFormDraft, setFormScreenPalletValue]);
 
   const formSubtitle = useMemo(() => {
-    if (!route) return "Escaneie o roteiro e informe a quantidade de pallets.";
+    if (!route) return "Escaneie o roteiro e informe a quantidade de paletes.";
     return `Roteiro ${route}`;
   }, [route]);
 
-  const confirm = () => {
+  const confirm = async () => {
     if (!startPalletCapture()) return;
+    await saveFormDraft({ currentStep: "pallets_evidence" });
     navigation.navigate("PalletsEvidence");
+  };
+
+  const handleQuantityChange = (value: string) => {
+    const nextValue = value.replace(/[^0-9]/g, "");
+    setPalletQuantity(nextValue);
+    void saveFormDraft({ palletsQuantity: nextValue });
   };
 
   const cancel = () => {
@@ -98,11 +108,9 @@ export function FormScreenPallet() {
                 name: "palletsQuantity",
                 control: controlFormScreenPallet,
               }}
-              label="Quan. de pallets"
+              label="Quan. de paletes"
               value={palletQuantity}
-              onChangeText={(value) =>
-                setPalletQuantity(value.replace(/[^0-9]/g, ""))
-              }
+              onChangeText={handleQuantityChange}
               keyboardType="number-pad"
               placeholder="Ex: 2"
             />

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BaggageClaim, Filter } from "lucide-react-native";
@@ -10,7 +10,9 @@ import {
 } from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
 import { RefreshableList } from "@shared/components/Display";
+import { OfflinePalletDraftList } from "../../components/OfflinePalletDraftList";
 import { OperationCard } from "../../components/OperationCard";
+import { OperationListTabs, OperationListTabValue } from "../../components/OperationListTabs";
 import { exitOperations } from "../../mocks/palletMock";
 import { ListScreenShell } from "../../components/ListScreenShell";
 import { usePallet } from "../../providers/PalletProvider";
@@ -20,6 +22,7 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function ExitListScreen() {
   const navigation = useNavigation<Navigation>();
+  const [activeTab, setActiveTab] = useState<OperationListTabValue>("operations");
   const { resetEntry, setOperationPallet } = usePallet();
   const { setPaginationMeta } = usePagination();
   const {
@@ -47,16 +50,23 @@ export function ExitListScreen() {
         { Icon: Filter, label: "Filtro", onPress: openFilterModal },
       ]}
     >
-      <FilterChips chips={chips} />
-      <RefreshableList
-        data={exitOperations}
-        emptyMessage="Não há saídas para listar."
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <OperationCard item={item} />}
-      />
-      <WrapperPagination>
-        <PaginationComponent />
-      </WrapperPagination>
+      <OperationListTabs value={activeTab} operationsLabel="Saídas" onChange={setActiveTab} />
+      {activeTab === "drafts" ? (
+        <OfflinePalletDraftList operationType="exit" />
+      ) : (
+        <>
+          <FilterChips chips={chips} />
+          <RefreshableList
+            data={exitOperations}
+            emptyMessage="Não há saídas para listar."
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <OperationCard item={item} />}
+          />
+          <WrapperPagination>
+            <PaginationComponent />
+          </WrapperPagination>
+        </>
+      )}
     </ListScreenShell>
   );
 }

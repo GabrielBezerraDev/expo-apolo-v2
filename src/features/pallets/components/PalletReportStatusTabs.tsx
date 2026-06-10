@@ -9,9 +9,9 @@ type Props = {
 };
 
 const reportTypeOptions: { label: string; value: PalletReportType }[] = [
-  { label: "Liberado / Released", value: "releasedPallet" },
-  { label: "Em Espera / On Hold", value: "onHoldPallet" },
-  { label: "Rejeitado / Locked", value: "lockedPallet" },
+  { label: "Liberado", value: "releasedPallet" },
+  { label: "Em espera", value: "onHoldPallet" },
+  { label: "Rejeitado", value: "lockedPallet" },
 ];
 
 const Root = styled(View, {
