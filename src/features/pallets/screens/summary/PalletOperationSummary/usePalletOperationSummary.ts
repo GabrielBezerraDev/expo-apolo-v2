@@ -61,7 +61,7 @@ export function usePalletOperationSummary({ navigation, operationId }: UsePallet
       exit_extra_evidence: "ExitExtraEvidence",
       form: "FormScreenPallet",
       pallets_evidence: "PalletsEvidence",
-      ship_goods: "ShipGoods",
+      ship_goods: "ExitExtraEvidence",
     } as const;
     const route = routeByStep[summary.nextStep];
 

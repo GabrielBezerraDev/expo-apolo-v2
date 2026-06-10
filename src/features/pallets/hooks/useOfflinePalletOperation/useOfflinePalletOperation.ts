@@ -77,8 +77,11 @@ export function useOfflinePalletOperation() {
     });
 
     setOfflineOperationId(operation.id);
+    if (operation.id !== offlineOperationId || operation.operationType !== operationPallet) {
+      hydrateOfflineOperation(operation);
+    }
     return operation;
-  }, [getValeusScreenPallet, offlineOperationId, operationPallet, route, setOfflineOperationId]);
+  }, [getValeusScreenPallet, hydrateOfflineOperation, offlineOperationId, operationPallet, route, setOfflineOperationId]);
 
   const savePalletEvidenceDraft = useCallback(async ({
     currentStep = "pallets_evidence",
@@ -145,7 +148,7 @@ export function useOfflinePalletOperation() {
   }, [saveFormDraft]);
 
   const saveShipGoodsDraft = useCallback(async ({
-    currentStep = "ship_goods",
+    currentStep = "exit_extra_evidence",
     truck = shipGoodsPhotos.truck,
     status = "draft",
   }: {
@@ -170,7 +173,7 @@ export function useOfflinePalletOperation() {
   }, [saveFormDraft, setOfflineOperationId, shipGoodsPhotos.truck]);
 
   const persistShipGoodsPhoto = useCallback(async (sourceUri: string) => {
-    const localUri = await persistOperationPhoto({ fileName: "truck", sourceUri, step: "ship-goods" });
+    const localUri = await persistOperationPhoto({ fileName: "truck", sourceUri, step: "exit-extra" });
     setShipGoodsPhotos({ truck: localUri });
     await saveShipGoodsDraft({ truck: localUri });
     return localUri;

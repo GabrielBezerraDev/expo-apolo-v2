@@ -10,6 +10,7 @@ import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { fontScale, typography } from "@shared/typography";
 import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperation";
+import { getOfflinePalletOperationByRoadmap } from "../../../services/offlinePalletOperations";
 import { usePallet } from "../../../providers/PalletProvider";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { FormScreenPalletType } from './FormScreenPalletType';
@@ -27,7 +28,9 @@ export function FormScreenPallet() {
     startPalletCapture,
     resetEntry,
     controlFormScreenPallet,
+    getValeusScreenPallet,
     isValidFormScreenPalletValue,
+    operationPallet,
     setFormScreenPalletValue,
   } = usePallet();
   const { saveFormDraft } = useOfflinePalletOperation();
@@ -36,6 +39,7 @@ export function FormScreenPallet() {
 
   const navigator = useNavigation();
   const { height } = useWindowDimensions();
+  const operationLabel = operationPallet === "exit" ? "saída" : "entrada";
   const scanRoadmap = useCallback(() => {
     configureScanner({
       mode: "scanner",
@@ -60,6 +64,14 @@ export function FormScreenPallet() {
   }, [route]);
 
   const confirm = async () => {
+    const currentRoadmap = getValeusScreenPallet("roadmap").trim();
+    const existingOperation = await getOfflinePalletOperationByRoadmap(currentRoadmap);
+
+    if (existingOperation && existingOperation.currentStep !== "form") {
+      navigation.navigate("PalletOperationSummary", { operationId: existingOperation.id });
+      return;
+    }
+
     if (!startPalletCapture()) return;
     await saveFormDraft({ currentStep: "pallets_evidence" });
     navigation.navigate("PalletsEvidence");
@@ -77,11 +89,11 @@ export function FormScreenPallet() {
   };
 
   return (
-    <ListScreenShell title="Nova entrada">
+    <ListScreenShell title={`Nova ${operationLabel}`}>
       <FormScreenRoot>
         <Panel>
           <PanelHeader>
-            <PanelHeaderText>NOVA ENTRADA</PanelHeaderText>
+            <PanelHeaderText>{`NOVA ${operationLabel.toUpperCase()}`}</PanelHeaderText>
           </PanelHeader>
           <FormBody>
             <HelperText>

@@ -91,8 +91,8 @@ export function PalletsEvidence() {
 
   const finishEntry = async () => {
     if (operationPallet === "exit") {
-      await savePalletEvidenceDraft({ currentStep: "ship_goods" });
-      navigation.navigate("ShipGoods");
+      await savePalletEvidenceDraft({ currentStep: "exit_extra_evidence" });
+      navigation.navigate("ExitExtraEvidence");
       return;
     }
 
@@ -244,7 +244,6 @@ const PhotoButton = styled(Button, {
 const PhotoImage = styled(Image, {
   height: "100%",
   width: "100%",
-  backgroundColor:'red'
 });
 
 const PhotoEmpty = styled(View, {

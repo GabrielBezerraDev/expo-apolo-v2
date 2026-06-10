@@ -18,11 +18,10 @@ export function buildOfflinePalletOperationSummary(
   const sections: OfflinePalletOperationSummarySection[] = [formSection, palletSection];
 
   if (operation.operationType === "exit") {
-    sections.push(buildShipGoodsSection(operation));
     sections.push(buildExitExtraEvidenceSection(operation));
   }
 
-  const totalSteps = operation.operationType === "entry" ? 2 : 4;
+  const totalSteps = operation.operationType === "entry" ? 2 : 3;
   const completedSteps = sections.filter(section => section.status === "complete").length;
   const nextStep = getNextStep(operation, sections);
 
@@ -79,18 +78,9 @@ function buildPalletSection(operation: OfflinePalletOperation): OfflinePalletOpe
   };
 }
 
-function buildShipGoodsSection(operation: OfflinePalletOperation): OfflinePalletOperationSummarySection {
-  const items = [buildPhotoItem("Foto da carga", operation.shipGoodsData?.truck ?? "")];
-
-  return {
-    items,
-    status: getSectionStatus(items),
-    title: "Mercadoria embarcada",
-  };
-}
-
 function buildExitExtraEvidenceSection(operation: OfflinePalletOperation): OfflinePalletOperationSummarySection {
   const items = [
+    buildPhotoItem("Foto da carga", operation.shipGoodsData?.truck ?? ""),
     buildPhotoItem("Foto da placa", operation.exitExtraEvidenceData?.licensePlate ?? ""),
     buildPhotoItem("Foto do lacre", operation.exitExtraEvidenceData?.seal ?? ""),
   ];
@@ -110,8 +100,7 @@ function getNextStep(
   if (sections[1]?.status !== "complete") return "pallets_evidence";
 
   if (operation.operationType === "entry") return undefined;
-  if (sections[2]?.status !== "complete") return "ship_goods";
-  if (sections[3]?.status !== "complete") return "exit_extra_evidence";
+  if (sections[2]?.status !== "complete") return "exit_extra_evidence";
 
   return undefined;
 }

@@ -1,8 +1,17 @@
 import React, { useCallback } from "react";
+import { FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera, X } from "lucide-react-native";
-import { Button, Image, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
+import {
+  Button,
+  Image,
+  ScrollView,
+  styled,
+  Text,
+  useWindowDimensions,
+  View,
+} from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
@@ -13,32 +22,73 @@ import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperat
 import { usePallet } from "../../../providers/PalletProvider";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
-type EvidenceKey = "licensePlate" | "seal";
+type EvidenceKey = "truck" | "licensePlate" | "seal";
 
 export function ExitExtraEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
   const { theme } = useThemeMode();
   const { height, width } = useWindowDimensions();
-  const { exitExtraEvidencePhotos, resetEntry, route } = usePallet();
-  const { persistExitExtraEvidencePhoto, saveExitExtraEvidenceDraft } = useOfflinePalletOperation();
+  const { exitExtraEvidencePhotos, resetEntry, route, shipGoodsPhotos } =
+    usePallet();
+  const {
+    persistExitExtraEvidencePhoto,
+    persistShipGoodsPhoto,
+    saveExitExtraEvidenceDraft,
+  } = useOfflinePalletOperation();
   const photoWidth = width - width * 0.1;
-  const photoHeight = height * 0.3;
-  const canFinishExit = Boolean(exitExtraEvidencePhotos.licensePlate && exitExtraEvidencePhotos.seal);
+  const photoHeight = height * 0.42;
+  const canFinishExit = Boolean(
+    shipGoodsPhotos.truck &&
+    exitExtraEvidencePhotos.licensePlate &&
+    exitExtraEvidencePhotos.seal,
+  );
+  const evidenceItems = [
+    {
+      helper: "Carga embarcada no caminhão",
+      key: "truck" as const,
+      title: "Foto da carga",
+      uri: shipGoodsPhotos.truck,
+    },
+    {
+      helper: "Placa do caminhão",
+      key: "licensePlate" as const,
+      title: "Foto da placa",
+      uri: exitExtraEvidencePhotos.licensePlate,
+    },
+    {
+      helper: "Lacre do caminhão",
+      key: "seal" as const,
+      title: "Foto do lacre",
+      uri: exitExtraEvidencePhotos.seal,
+    },
+  ];
 
-  const scanPhoto = useCallback((photoKey: EvidenceKey) => {
-    configureScanner({
-      mode: "photo",
-      preset: "fullScreen",
-      orientation: "LandScape",
-      onCapture: async (data) => {
-        await persistExitExtraEvidencePhoto(photoKey, data.imageUri);
-        navigation.goBack();
-      },
-      onCancel: () => navigation.goBack(),
-    });
-    navigation.navigate("Scanner");
-  }, [configureScanner, navigation, persistExitExtraEvidencePhoto]);
+  const scanPhoto = useCallback(
+    (photoKey: EvidenceKey) => {
+      configureScanner({
+        mode: "photo",
+        preset: "fullScreen",
+        orientation: "LandScape",
+        onCapture: async (data) => {
+          if (photoKey === "truck") {
+            await persistShipGoodsPhoto(data.imageUri);
+          } else {
+            await persistExitExtraEvidencePhoto(photoKey, data.imageUri);
+          }
+          navigation.goBack();
+        },
+        onCancel: () => navigation.goBack(),
+      });
+      navigation.navigate("Scanner");
+    },
+    [
+      configureScanner,
+      navigation,
+      persistExitExtraEvidencePhoto,
+      persistShipGoodsPhoto,
+    ],
+  );
 
   const closeExit = () => {
     resetEntry();
@@ -46,50 +96,56 @@ export function ExitExtraEvidence() {
   };
 
   const finishExit = async () => {
-    await saveExitExtraEvidenceDraft({ currentStep: "completed", status: "pending_sync" });
+    await saveExitExtraEvidenceDraft({
+      currentStep: "completed",
+      status: "pending_sync",
+    });
     navigation.navigate("OperationSuccess", { operation: "exit" });
   };
 
   return (
     <ListScreenShell title="Evidências finais">
-      <ScrollView contentContainerStyle={contentStyle} showsVerticalScrollIndicator={false}>
-        <Header>
-          <View>
-            <Title>Roteiro: {route}</Title>
-            <HelperText>Tire uma foto da placa e uma do lacre do caminhão.</HelperText>
-          </View>
-          <IconButton onPress={closeExit} hitSlop={10}>
-            <X size={24} color={theme.mutedText} />
-          </IconButton>
-        </Header>
-
-        <PhotoSlot
-          title="Foto da placa"
-          helper="Placa do caminhão"
-          uri={exitExtraEvidencePhotos.licensePlate}
-          width={photoWidth}
-          height={photoHeight}
-          iconColor={theme.primary}
-          onPress={() => scanPhoto("licensePlate")}
+      <Header>
+        <View>
+          <Title>Roteiro: {route}</Title>
+          <HelperText>
+            Tire as fotos da carga, placa e lacre do caminhão.
+          </HelperText>
+        </View>
+        <IconButton onPress={closeExit} hitSlop={10}>
+          <X size={24} color={theme.mutedText} />
+        </IconButton>
+      </Header>
+      <View flex={1} justifyContent="center" alignItems="center" marginBottom={60}>
+      <View height={photoHeight} 
+      >
+        <FlatList
+          horizontal
+          pagingEnabled
+          data={evidenceItems}
+          keyExtractor={(item) => item.key}
+          showsHorizontalScrollIndicator={false}
+          style={{ width: photoWidth, height: photoHeight }}
+          renderItem={({ item, index }) => (
+            <PhotoSlot
+              title={item.title}
+              helper={`${item.helper} (${index + 1}/3)`}
+              uri={item.uri}
+              width={photoWidth}
+              height={photoHeight}
+              iconColor={theme.primary}
+              onPress={() => scanPhoto(item.key)}
+            />
+          )}
         />
-
-        <PhotoSlot
-          title="Foto do lacre"
-          helper="Lacre do caminhão"
-          uri={exitExtraEvidencePhotos.seal}
-          width={photoWidth}
-          height={photoHeight}
-          iconColor={theme.primary}
-          onPress={() => scanPhoto("seal")}
-        />
-
-        <AppButton
-          style={{ width: "100%", height: height * 0.06 }}
-          title="FINALIZAR SAÍDA"
-          disabled={!canFinishExit}
-          onPress={finishExit}
-        />
-      </ScrollView>
+      </View>
+      </View>
+      <AppButton
+        style={{ width: "100%", height: height * 0.06, marginBottom: height * 0.02 }}
+        title="FINALIZAR SAÍDA"
+        disabled={!canFinishExit}
+        onPress={finishExit}
+      />
     </ListScreenShell>
   );
 }
@@ -104,7 +160,15 @@ type PhotoSlotProps = {
   width: number;
 };
 
-function PhotoSlot({ height, helper, iconColor, onPress, title, uri, width }: PhotoSlotProps) {
+function PhotoSlot({
+  height,
+  helper,
+  iconColor,
+  onPress,
+  title,
+  uri,
+  width,
+}: PhotoSlotProps) {
   return (
     <PhotoButton onPress={onPress} width={width} height={height}>
       {uri ? (
