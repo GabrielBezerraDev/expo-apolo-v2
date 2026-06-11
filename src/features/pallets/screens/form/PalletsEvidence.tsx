@@ -1,20 +1,20 @@
 import React, { useCallback } from "react";
-import {
-  FlatList,
-} from "react-native";
+import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Camera, X } from "lucide-react-native";
-import { Button, Image, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
+import { Camera } from "lucide-react-native";
+import { Button, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
+import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { fontScale, typography } from "@shared/typography";
 import { useOfflinePalletOperation } from "../../hooks/useOfflinePalletOperation";
 import { usePallet } from "../../providers/PalletProvider";
 import { ListScreenShell } from "../../components/ListScreenShell";
+import { MovementCancelButton } from "../../components/MovementCancelButton";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -25,6 +25,7 @@ export function PalletsEvidence() {
   const { width, height } = useWindowDimensions();
   const {
     operationPallet,
+    offlineOperationId,
     palletEvidence,
     resetEntry,
     route,
@@ -32,7 +33,6 @@ export function PalletsEvidence() {
   } = usePallet();
   const { persistPalletPhoto, savePalletEvidenceDraft } = useOfflinePalletOperation();
   const cardWidth = width - width * 0.1;
-  const photoSlotWidth = cardWidth - 32;
 
   const validateForm =
     palletEvidence.length > 0 &&
@@ -68,11 +68,11 @@ export function PalletsEvidence() {
   );
 
   const scanPhoto = useCallback(
-    (palletIndex: number, photoIndex: number) => {
+    (palletIndex: number, photoIndex: number, captureOrientation: PhotoCaptureOrientation = "LandScape") => {
       configureScanner({
         mode: "photo",
         preset: "fullScreen",
-        orientation: "LandScape",
+        orientation: captureOrientation,
         onCapture: async (data) => {
           await persistPalletPhoto({ palletIndex, photoIndex, sourceUri: data.imageUri });
           navigation.goBack();
@@ -84,15 +84,45 @@ export function PalletsEvidence() {
     [configureScanner, navigation, persistPalletPhoto],
   );
 
-  const closeEntry = () => {
-    resetEntry();
-    navigation.navigate("Main");
+  const cancelMovement = () => {
+    const hasEvidenceData = palletEvidence.some(
+      (pallet) => pallet.batch.trim() || pallet.photos.some(Boolean),
+    );
+
+    if (!route.trim() && !hasEvidenceData && !offlineOperationId) {
+      resetEntry();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main" }],
+      });
+      return;
+    }
+
+    Alert.alert(
+      `Cancelar ${operationPallet === "entry" ? "entrada" : "saída"}`,
+      "Esta movimentação será salva como rascunho. Você poderá continuar depois. Deseja sair agora?",
+      [
+        { text: "Continuar preenchendo", style: "cancel" },
+        {
+          text: "Salvar rascunho e sair",
+          style: "destructive",
+          onPress: async () => {
+            await savePalletEvidenceDraft({ currentStep: "pallets_evidence" });
+            resetEntry();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main" }],
+            });
+          },
+        },
+      ],
+    );
   };
 
   const finishEntry = async () => {
     if (operationPallet === "exit") {
-      await savePalletEvidenceDraft({ currentStep: "ship_goods" });
-      navigation.navigate("ShipGoods");
+      await savePalletEvidenceDraft({ currentStep: "exit_extra_evidence" });
+      navigation.navigate("ExitExtraEvidence");
       return;
     }
 
@@ -101,7 +131,10 @@ export function PalletsEvidence() {
   };
 
   return (
-    <ListScreenShell title="Captura de paletes">
+    <ListScreenShell
+      title="Captura de paletes"
+      topRightAction={<MovementCancelButton onPress={cancelMovement} />}
+    >
       <ScrollView
         contentContainerStyle={palletsContentStyle}
         showsVerticalScrollIndicator={false}
@@ -115,50 +148,27 @@ export function PalletsEvidence() {
               Preencha lote e 4 fotos de cada palete.
             </HelperText>
           </View>
-          <IconButton onPress={closeEntry} hitSlop={10}>
-            <X size={24} color={theme.mutedText} />
-          </IconButton>
         </PalletsHeader>
 
         {palletEvidence.map((pallet, palletIndex) => (
           <PalletCard
             key={palletIndex}
             width={cardWidth}
-            height={height * 0.5}
           >
             <PalletCardHeader>
               <PalletCardTitle>
                 Palete {palletIndex + 1}/{palletEvidence.length}
               </PalletCardTitle>
             </PalletCardHeader>
-            <FlatList
-              horizontal
-              pagingEnabled
-              data={pallet.photos}
-              keyExtractor={(_, photoIndex) => `${photoIndex}`}
-              showsHorizontalScrollIndicator={false}
-              style={{ width: photoSlotWidth, height: height * 0.5 }}
-              renderItem={({ item, index: photoIndex }) => (
-                <PhotoButton
-                  onPress={() => scanPhoto(palletIndex, photoIndex)}
-                  width={photoSlotWidth}
-                  height={height * 0.5}
-                >
-                  {item ? (
-                    <PhotoImage src={item} />
-                  ) : (
-                    <PhotoEmpty paddingBottom={height * 0.1}>
-                      <Camera size={30} color={theme.primary} />
-                      <PhotoCounter>
-                        {photoIndex + 1}/4
-                      </PhotoCounter>
-                      <HelperText>
-                        TOQUE PARA FOTOGRAFAR
-                      </HelperText>
-                    </PhotoEmpty>
-                  )}
-                </PhotoButton>
-              )}
+            <PhotoCarousel
+              captureOrientation="Portrait"
+              emptyLabel="TOQUE PARA FOTOGRAFAR"
+              heightPreset="medium"
+              items={pallet.photos.map((photo, photoIndex) => ({
+                id: `palete-${palletIndex}-foto-${photoIndex}`,
+                uri: photo,
+              }))}
+              onPressItem={(_, photoIndex, captureOrientation) => scanPhoto(palletIndex, photoIndex, captureOrientation)}
             />
             <AppInput
               label="Escanear lote"
@@ -229,35 +239,6 @@ const PalletCardTitle = styled(Text, {
   ...typography.bodyLarge,
   color: "$text",
   fontWeight: "800",
-});
-
-const PhotoButton = styled(Button, {
-  unstyled: true,
-  backgroundColor: "$background",
-  borderColor: "$border",
-  borderRadius: 14,
-  borderWidth: 1,
-  height: 210,
-  overflow: "hidden",
-});
-
-const PhotoImage = styled(Image, {
-  height: "100%",
-  width: "100%",
-  backgroundColor:'red'
-});
-
-const PhotoEmpty = styled(View, {
-  alignItems: "center",
-  flex: 1,
-  gap: 8,
-  justifyContent: "center",
-});
-
-const PhotoCounter = styled(Text, {
-  color: "$text",
-  fontSize: 42,
-  fontWeight: "900",
 });
 
 const IconButton = styled(Button, {

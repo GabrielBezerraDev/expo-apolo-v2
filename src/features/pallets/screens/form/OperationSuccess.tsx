@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
+import { BackHandler } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Button, Image, styled, Text, useWindowDimensions, View } from "tamagui";
 import EntryPallets from "@assets/svg/EntryPallets.svg";
@@ -23,13 +25,24 @@ export function OperationSuccess({ navigation, route }: Props) {
   const illustrationSize = Math.min(contentWidth * 0.86, height * 0.32, isTablet ? 320 : 250);
   const successBoxWidth = Math.min(contentWidth * 0.88, isTablet ? 360 : 285);
 
-  const goHome = () => {
+  const goHome = useCallback(() => {
     resetEntry();
     navigation.reset({
       index: 0,
       routes: [{ name: "Main" }],
     });
-  };
+  }, [navigation, resetEntry]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+        goHome();
+        return true;
+      });
+
+      return () => subscription.remove();
+    }, [goHome]),
+  );
 
   return (
     <Screen>
