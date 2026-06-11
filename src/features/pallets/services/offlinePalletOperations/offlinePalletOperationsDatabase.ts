@@ -10,6 +10,7 @@ import {
   OfflinePalletOperationType,
   OfflineShipGoodsData,
 } from "../../types/offlinePalletOperation";
+import { deletePalletOperationImageDirectory } from "../palletImageStorage";
 
 type OfflinePalletOperationRow = {
   created_at: string;
@@ -28,6 +29,7 @@ type OfflinePalletOperationRow = {
 
 const DATABASE_NAME = "valorlog_offline.db";
 const TABLE_NAME = "offline_pallet_operations";
+const OFFLINE_OPERATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | undefined;
 
@@ -68,6 +70,7 @@ export async function getOfflinePalletOperationsDatabase() {
         ON ${TABLE_NAME}(roadmap)
         WHERE roadmap IS NOT NULL;
       `);
+      await cleanupExpiredOfflinePalletOperations(database);
 
       return database;
     });
@@ -172,6 +175,25 @@ export async function listOfflinePalletOperations(operationType: OfflinePalletOp
 export async function deleteOfflinePalletOperation(id: string) {
   const database = await getOfflinePalletOperationsDatabase();
   await database.runAsync(`DELETE FROM ${TABLE_NAME} WHERE id = ?`, id);
+}
+
+async function cleanupExpiredOfflinePalletOperations(database: SQLite.SQLiteDatabase) {
+  const expiresBefore = new Date(Date.now() - OFFLINE_OPERATION_TTL_MS).toISOString();
+  const rows = await database.getAllAsync<OfflinePalletOperationRow>(
+    `SELECT * FROM ${TABLE_NAME}
+     WHERE updated_at < ? AND status != 'pending_sync'`,
+    expiresBefore,
+  );
+
+  for (const row of rows) {
+    await deletePalletOperationImageDirectory({
+      operationId: row.id,
+      operationType: row.operation_type,
+      roadmap: row.roadmap,
+    }).catch(() => undefined);
+
+    await database.runAsync(`DELETE FROM ${TABLE_NAME} WHERE id = ?`, row.id);
+  }
 }
 
 async function getExistingOperation({
