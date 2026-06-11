@@ -32,9 +32,8 @@ export async function savePalletOperationImage({
     compress: 0.68,
     format: ImageManipulator.SaveFormat.JPEG,
   });
-  const destination = `${directory}/${sanitizePathPart(fileName)}.jpg`;
+  const destination = `${directory}/${buildUniqueImageFileName(fileName)}`;
 
-  await FileSystem.deleteAsync(destination, { idempotent: true });
   await FileSystem.copyAsync({ from: manipulated.uri, to: destination });
   await deleteTempImage(manipulated.uri, sourceUri);
 
@@ -67,6 +66,17 @@ export async function deletePalletOperationImageDirectory({
   }
 }
 
+export async function deletePalletOperationImage(imageUri?: string | null) {
+  if (!FileSystem.documentDirectory || !imageUri) return;
+  if (!imageUri.startsWith(FileSystem.documentDirectory)) return;
+
+  const info = await FileSystem.getInfoAsync(imageUri);
+
+  if (info.exists) {
+    await FileSystem.deleteAsync(imageUri, { idempotent: true });
+  }
+}
+
 async function ensureDirectory(uri: string) {
   const info = await FileSystem.getInfoAsync(uri);
   if (info.exists) return;
@@ -86,4 +96,9 @@ async function deleteTempImage(tempUri: string, originalUri: string) {
 
 function sanitizePathPart(value: string) {
   return value.trim().replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase();
+}
+
+function buildUniqueImageFileName(fileName: string) {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${sanitizePathPart(fileName)}-${suffix}.jpg`;
 }

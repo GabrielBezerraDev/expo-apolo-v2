@@ -1,9 +1,9 @@
 import React from "react";
-import { FlatList } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Button, Image, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
+import { Button, Image, ScrollView, styled, Text, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { LottieAnimLoading } from "@shared/components/Feedback";
+import { PhotoCarousel } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { typography } from "@shared/typography";
 import type {
@@ -102,7 +102,6 @@ function ReadonlyPalletEvidence({
 }: {
   operation: OfflinePalletOperation;
 }) {
-  const { width } = useWindowDimensions();
   const quantity = Number(operation.formData?.palletsQuantity ?? 0);
   const pallets = operation.palletEvidenceData?.pallets ?? [];
   const expectedPallets = Number.isInteger(quantity) && quantity > 0 ? quantity : pallets.length;
@@ -134,25 +133,14 @@ function ReadonlyPalletEvidence({
                 Lote: {pallet?.batch || "Pendente"}
               </ReadonlyPalletBatch>
             </ReadonlyPalletHeader>
-            <FlatList
-              horizontal
-              pagingEnabled
-              data={photos}
-              keyExtractor={(_, photoIndex) => `${palletIndex}-${photoIndex}`}
-              showsHorizontalScrollIndicator={false}
-              style={{ width: width * 0.93, height: 580 }}
-              renderItem={({ item, index: photoIndex }) => (
-                <ReadonlyPhotoSlot width={width * 0.93} height={580}>
-                  {item ? (
-                    <ReadonlyPhotoImage src={item} />
-                  ) : (
-                    <ReadonlyPhotoEmpty>
-                      <ReadonlyPhotoCounter>{photoIndex + 1}/4</ReadonlyPhotoCounter>
-                      <ReadonlyPhotoLabel>Foto pendente</ReadonlyPhotoLabel>
-                    </ReadonlyPhotoEmpty>
-                  )}
-                </ReadonlyPhotoSlot>
-              )}
+            <PhotoCarousel
+              heightPreset="large"
+              items={photos.map((photo, photoIndex) => ({
+                id: `palete-${palletIndex}-foto-${photoIndex}`,
+                title: `Palete ${palletIndex + 1} - foto ${photoIndex + 1}`,
+                uri: photo,
+              }))}
+              readonly
             />
           </ReadonlyPalletCard>
         );
@@ -162,38 +150,17 @@ function ReadonlyPalletEvidence({
 }
 
 function ReadonlyExitEvidence({ items }: { items: OfflinePalletOperationSummaryItem[] }) {
-  const { width } = useWindowDimensions();
-  const carouselWidth = width * 0.93;
-  const photoHeight = 580;
-
   return (
-    <FlatList
-      horizontal
-      pagingEnabled
-      data={items}
-      keyExtractor={(item, index) => `${item.label}-${index}`}
-      showsHorizontalScrollIndicator={false}
-      style={{ width: carouselWidth, height: photoHeight + 56 }}
-      renderItem={({ item, index }) => (
-        <ReadonlyFinalEvidencePage width={carouselWidth}>
-          <ReadonlyPalletHeader>
-            <ReadonlyPalletTitle>
-              {item.label} {index + 1}/{items.length}
-            </ReadonlyPalletTitle>
-            <ReadonlyPalletBatch>{item.value}</ReadonlyPalletBatch>
-          </ReadonlyPalletHeader>
-          <ReadonlyPhotoSlot width={carouselWidth} height={photoHeight}>
-            {item.thumbnailUri ? (
-              <ReadonlyPhotoImage src={item.thumbnailUri} />
-            ) : (
-              <ReadonlyPhotoEmpty>
-                <ReadonlyPhotoCounter>{index + 1}/{items.length}</ReadonlyPhotoCounter>
-                <ReadonlyPhotoLabel>Foto pendente</ReadonlyPhotoLabel>
-              </ReadonlyPhotoEmpty>
-            )}
-          </ReadonlyPhotoSlot>
-        </ReadonlyFinalEvidencePage>
-      )}
+    <PhotoCarousel
+      heightPreset="large"
+      items={items.map((item, index) => ({
+        id: `${item.label}-${index}`,
+        subtitle: item.value,
+        title: `${item.label} ${index + 1}/${items.length}`,
+        uri: item.thumbnailUri,
+      }))}
+      readonly
+      showItemHeader
     />
   );
 }
@@ -328,10 +295,6 @@ const ReadonlyPalletHeader = styled(View, {
   gap: 2,
 });
 
-const ReadonlyFinalEvidencePage = styled(View, {
-  gap: 10,
-});
-
 const ReadonlyPalletTitle = styled(Text, {
   ...typography.bodyMedium,
   color: "$text",
@@ -341,38 +304,6 @@ const ReadonlyPalletTitle = styled(Text, {
 const ReadonlyPalletBatch = styled(Text, {
   ...typography.bodySmall,
   color: "$mutedText",
-});
-
-const ReadonlyPhotoSlot = styled(View, {
-  backgroundColor: "$background",
-  borderColor: "$border",
-  borderRadius: 14,
-  borderWidth: 1,
-  overflow: "hidden",
-});
-
-const ReadonlyPhotoImage = styled(Image, {
-  height: "100%",
-  width: "100%",
-});
-
-const ReadonlyPhotoEmpty = styled(View, {
-  alignItems: "center",
-  flex: 1,
-  gap: 6,
-  justifyContent: "center",
-});
-
-const ReadonlyPhotoCounter = styled(Text, {
-  color: "$mutedText",
-  fontSize: 34,
-  fontWeight: "900",
-});
-
-const ReadonlyPhotoLabel = styled(Text, {
-  ...typography.bodySmall,
-  color: "$mutedText",
-  fontWeight: "700",
 });
 
 const ItemBody = styled(View, {
