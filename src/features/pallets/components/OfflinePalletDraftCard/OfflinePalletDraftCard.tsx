@@ -51,7 +51,7 @@ function getStepLabel(step: string) {
     exit_extra_evidence: "Evidências finais da saída",
     form: "Formulário inicial",
     pallets_evidence: "Evidências dos paletes",
-    ship_goods: "Mercadoria embarcada",
+    ship_goods: "Evidências finais da saída",
   };
 
   return labels[step] ?? step;

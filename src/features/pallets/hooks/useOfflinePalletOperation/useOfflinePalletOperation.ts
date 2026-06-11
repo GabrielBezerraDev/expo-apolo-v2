@@ -9,7 +9,10 @@ import {
   getOfflinePalletOperation,
   upsertOfflinePalletOperation,
 } from "../../services/offlinePalletOperations";
-import { savePalletOperationImage } from "../../services/palletImageStorage";
+import {
+  deletePalletOperationImage,
+  savePalletOperationImage,
+} from "../../services/palletImageStorage";
 import { PalletEvidenceItem, usePallet } from "../../providers/PalletProvider";
 
 type SaveFormDraftParams = {
@@ -62,7 +65,7 @@ export function useOfflinePalletOperation() {
     const resolvedRoadmap = roadmap ?? getValeusScreenPallet("roadmap") ?? route;
     const resolvedQuantity = palletsQuantity ?? getValeusScreenPallet("palletsQuantity") ?? "";
 
-    if (!resolvedRoadmap.trim() && !resolvedQuantity.trim() && !offlineOperationId) return null;
+    if (!resolvedRoadmap.trim() && !offlineOperationId) return null;
 
     const operation = await upsertOfflinePalletOperation({
       currentStep,
@@ -77,8 +80,11 @@ export function useOfflinePalletOperation() {
     });
 
     setOfflineOperationId(operation.id);
+    if (operation.id !== offlineOperationId || operation.operationType !== operationPallet) {
+      hydrateOfflineOperation(operation);
+    }
     return operation;
-  }, [getValeusScreenPallet, offlineOperationId, operationPallet, route, setOfflineOperationId]);
+  }, [getValeusScreenPallet, hydrateOfflineOperation, offlineOperationId, operationPallet, route, setOfflineOperationId]);
 
   const savePalletEvidenceDraft = useCallback(async ({
     currentStep = "pallets_evidence",
@@ -105,6 +111,7 @@ export function useOfflinePalletOperation() {
   const persistPalletPhoto = useCallback(async ({ palletIndex, photoIndex, sourceUri }: PersistPalletPhotoParams) => {
     const operation = await ensureOperationExists(saveFormDraft);
     if (!operation) return sourceUri;
+    const previousUri = palletEvidence[palletIndex]?.photos[photoIndex] ?? null;
 
     const localUri = await savePalletOperationImage({
       fileName: `pallet-${palletIndex + 1}-photo-${photoIndex + 1}`,
@@ -126,6 +133,7 @@ export function useOfflinePalletOperation() {
 
     setPalletEvidence(nextEvidence);
     await savePalletEvidenceDraft({ evidence: nextEvidence });
+    await deletePalletOperationImage(previousUri);
 
     return localUri;
   }, [palletEvidence, saveFormDraft, savePalletEvidenceDraft, setPalletEvidence]);
@@ -145,7 +153,7 @@ export function useOfflinePalletOperation() {
   }, [saveFormDraft]);
 
   const saveShipGoodsDraft = useCallback(async ({
-    currentStep = "ship_goods",
+    currentStep = "exit_extra_evidence",
     truck = shipGoodsPhotos.truck,
     status = "draft",
   }: {
@@ -170,11 +178,13 @@ export function useOfflinePalletOperation() {
   }, [saveFormDraft, setOfflineOperationId, shipGoodsPhotos.truck]);
 
   const persistShipGoodsPhoto = useCallback(async (sourceUri: string) => {
-    const localUri = await persistOperationPhoto({ fileName: "truck", sourceUri, step: "ship-goods" });
+    const previousUri = shipGoodsPhotos.truck;
+    const localUri = await persistOperationPhoto({ fileName: "truck", sourceUri, step: "exit-extra" });
     setShipGoodsPhotos({ truck: localUri });
     await saveShipGoodsDraft({ truck: localUri });
+    await deletePalletOperationImage(previousUri);
     return localUri;
-  }, [persistOperationPhoto, saveShipGoodsDraft, setShipGoodsPhotos]);
+  }, [persistOperationPhoto, saveShipGoodsDraft, setShipGoodsPhotos, shipGoodsPhotos.truck]);
 
   const saveExitExtraEvidenceDraft = useCallback(async ({
     currentStep = "exit_extra_evidence",
@@ -207,6 +217,7 @@ export function useOfflinePalletOperation() {
     key: "licensePlate" | "seal",
     sourceUri: string,
   ) => {
+    const previousUri = exitExtraEvidencePhotos[key];
     const localUri = await persistOperationPhoto({
       fileName: key === "licensePlate" ? "license-plate" : "seal",
       sourceUri,
@@ -216,6 +227,7 @@ export function useOfflinePalletOperation() {
 
     setExitExtraEvidencePhotos(next);
     await saveExitExtraEvidenceDraft(next);
+    await deletePalletOperationImage(previousUri);
 
     return localUri;
   }, [exitExtraEvidencePhotos, persistOperationPhoto, saveExitExtraEvidenceDraft, setExitExtraEvidencePhotos]);

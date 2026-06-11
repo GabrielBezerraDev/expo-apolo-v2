@@ -48,9 +48,25 @@ export async function getOfflinePalletOperationsDatabase() {
           exit_extra_evidence_json TEXT,
           last_error TEXT,
           created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          UNIQUE(operation_type, roadmap)
+          updated_at TEXT NOT NULL
         );
+      `);
+      await database.execAsync(`
+        DELETE FROM ${TABLE_NAME}
+        WHERE roadmap IS NOT NULL
+          AND EXISTS (
+            SELECT 1
+            FROM ${TABLE_NAME} newer
+            WHERE newer.roadmap = ${TABLE_NAME}.roadmap
+              AND (
+                newer.updated_at > ${TABLE_NAME}.updated_at
+                OR (newer.updated_at = ${TABLE_NAME}.updated_at AND newer.id > ${TABLE_NAME}.id)
+              )
+          );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS ${TABLE_NAME}_roadmap_unique
+        ON ${TABLE_NAME}(roadmap)
+        WHERE roadmap IS NOT NULL;
       `);
 
       return database;
@@ -65,21 +81,22 @@ export async function upsertOfflinePalletOperation(
 ): Promise<OfflinePalletOperation> {
   const database = await getOfflinePalletOperationsDatabase();
   const roadmap = normalizeRoadmap(patch.roadmap);
-  const existing = await getExistingOperation({ id: patch.id, operationType: patch.operationType, roadmap });
+  const existing = await getExistingOperation({ id: patch.id, roadmap });
+  const shouldApplyPatch = !existing || existing.id === patch.id;
   const now = new Date().toISOString();
   const operation: OfflinePalletOperation = {
     createdAt: existing?.createdAt ?? now,
-    currentStep: patch.currentStep ?? existing?.currentStep ?? "form",
-    exitExtraEvidenceData: patch.exitExtraEvidenceData ?? existing?.exitExtraEvidenceData,
-    formData: patch.formData ?? existing?.formData,
+    currentStep: shouldApplyPatch ? patch.currentStep ?? existing?.currentStep ?? "form" : existing.currentStep,
+    exitExtraEvidenceData: shouldApplyPatch ? patch.exitExtraEvidenceData ?? existing?.exitExtraEvidenceData : existing.exitExtraEvidenceData,
+    formData: shouldApplyPatch ? patch.formData ?? existing?.formData : existing.formData,
     id: existing?.id ?? patch.id ?? createOfflinePalletOperationId(patch.operationType, roadmap),
-    lastError: patch.lastError ?? existing?.lastError ?? null,
-    operationType: patch.operationType,
-    palletEvidenceData: patch.palletEvidenceData ?? existing?.palletEvidenceData,
+    lastError: shouldApplyPatch ? patch.lastError ?? existing?.lastError ?? null : existing.lastError,
+    operationType: existing?.operationType ?? patch.operationType,
+    palletEvidenceData: shouldApplyPatch ? patch.palletEvidenceData ?? existing?.palletEvidenceData : existing.palletEvidenceData,
     roadmap: roadmap ?? existing?.roadmap ?? null,
-    shipGoodsData: patch.shipGoodsData ?? existing?.shipGoodsData,
-    status: patch.status ?? existing?.status ?? "draft",
-    updatedAt: now,
+    shipGoodsData: shouldApplyPatch ? patch.shipGoodsData ?? existing?.shipGoodsData : existing.shipGoodsData,
+    status: shouldApplyPatch ? patch.status ?? existing?.status ?? "draft" : existing.status,
+    updatedAt: shouldApplyPatch ? now : existing.updatedAt,
   };
 
   await database.runAsync(
@@ -124,6 +141,22 @@ export async function getOfflinePalletOperation(id: string) {
   return row ? mapRowToOperation(row) : null;
 }
 
+export async function getOfflinePalletOperationByRoadmap(roadmap: string) {
+  const normalizedRoadmap = normalizeRoadmap(roadmap);
+  if (!normalizedRoadmap) return null;
+
+  const database = await getOfflinePalletOperationsDatabase();
+  const row = await database.getFirstAsync<OfflinePalletOperationRow>(
+    `SELECT * FROM ${TABLE_NAME}
+     WHERE roadmap = ? AND status != 'synced'
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+    normalizedRoadmap,
+  );
+
+  return row ? mapRowToOperation(row) : null;
+}
+
 export async function listOfflinePalletOperations(operationType: OfflinePalletOperationType) {
   const database = await getOfflinePalletOperationsDatabase();
   const rows = await database.getAllAsync<OfflinePalletOperationRow>(
@@ -143,14 +176,21 @@ export async function deleteOfflinePalletOperation(id: string) {
 
 async function getExistingOperation({
   id,
-  operationType,
   roadmap,
 }: {
   id?: string;
-  operationType: OfflinePalletOperationType;
   roadmap?: string | null;
 }) {
   const database = await getOfflinePalletOperationsDatabase();
+
+  if (roadmap) {
+    const row = await database.getFirstAsync<OfflinePalletOperationRow>(
+      `SELECT * FROM ${TABLE_NAME} WHERE roadmap = ? AND status != 'synced'`,
+      roadmap,
+    );
+
+    if (row) return mapRowToOperation(row);
+  }
 
   if (id) {
     const row = await database.getFirstAsync<OfflinePalletOperationRow>(
@@ -158,15 +198,6 @@ async function getExistingOperation({
       id,
     );
 
-    if (row) return mapRowToOperation(row);
-  }
-
-  if (roadmap) {
-    const row = await database.getFirstAsync<OfflinePalletOperationRow>(
-      `SELECT * FROM ${TABLE_NAME} WHERE operation_type = ? AND roadmap = ?`,
-      operationType,
-      roadmap,
-    );
     if (row) return mapRowToOperation(row);
   }
 

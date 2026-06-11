@@ -3,12 +3,20 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Button, Image, ScrollView, styled, Text, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { LottieAnimLoading } from "@shared/components/Feedback";
+import { PhotoCarousel } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { typography } from "@shared/typography";
+import type {
+  OfflinePalletOperation,
+  OfflinePalletOperationSummaryItem,
+} from "../../../types/offlinePalletOperation";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { usePalletOperationSummary } from "./usePalletOperationSummary";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PalletOperationSummary">;
+const PALLET_EVIDENCE_SECTION_TITLE = "Evidências dos paletes";
+const EXIT_EVIDENCE_SECTION_TITLE = "Evidências finais da saída";
+const PHOTOS_PER_PALLET = 4;
 
 export function PalletOperationSummary({ navigation, route }: Props) {
   const { continueDraft, deleteDraft, isLoading, operation, summary } = usePalletOperationSummary({
@@ -56,15 +64,21 @@ export function PalletOperationSummary({ navigation, route }: Props) {
                 <SectionStatusText>{getStatusLabel(section.status)}</SectionStatusText>
               </SectionStatus>
             </SectionHeader>
-            {section.items.map((item, index) => (
-              <SummaryItem key={`${item.label}-${index}`}>
-                {item.thumbnailUri ? <Thumbnail src={item.thumbnailUri} /> : null}
-                <ItemBody>
-                  <ItemLabel>{item.label}</ItemLabel>
-                  <ItemValue status={item.status}>{item.value}</ItemValue>
-                </ItemBody>
-              </SummaryItem>
-            ))}
+            {section.title === PALLET_EVIDENCE_SECTION_TITLE ? (
+              <ReadonlyPalletEvidence operation={operation} />
+            ) : section.title === EXIT_EVIDENCE_SECTION_TITLE ? (
+              <ReadonlyExitEvidence items={section.items} />
+            ) : (
+              section.items.map((item, index) => (
+                <SummaryItem key={`${item.label}-${index}`}>
+                  {item.thumbnailUri ? <Thumbnail src={item.thumbnailUri} /> : null}
+                  <ItemBody>
+                    <ItemLabel>{item.label}</ItemLabel>
+                    <ItemValue status={item.status}>{item.value}</ItemValue>
+                  </ItemBody>
+                </SummaryItem>
+              ))
+            )}
           </SectionCard>
         ))}
 
@@ -81,6 +95,78 @@ export function PalletOperationSummary({ navigation, route }: Props) {
       </ScrollView>
     </ListScreenShell>
   );
+}
+
+function ReadonlyPalletEvidence({
+  operation,
+}: {
+  operation: OfflinePalletOperation;
+}) {
+  const quantity = Number(operation.formData?.palletsQuantity ?? 0);
+  const pallets = operation.palletEvidenceData?.pallets ?? [];
+  const expectedPallets = Number.isInteger(quantity) && quantity > 0 ? quantity : pallets.length;
+
+  if (expectedPallets === 0) {
+    return (
+      <SummaryItem>
+        <ItemBody>
+          <ItemLabel>Paletes</ItemLabel>
+          <ItemValue status="not_started">Nenhum palete informado</ItemValue>
+        </ItemBody>
+      </SummaryItem>
+    );
+  }
+
+  return (
+    <ReadonlyPalletList>
+      {Array.from({ length: expectedPallets }, (_, palletIndex) => {
+        const pallet = pallets.find(item => item.palletIndex === palletIndex);
+        const photos = buildReadonlyPhotoSlots(pallet?.photos);
+
+        return (
+          <ReadonlyPalletCard key={`palete-${palletIndex}`}>
+            <ReadonlyPalletHeader>
+              <ReadonlyPalletTitle>
+                Palete {palletIndex + 1}/{expectedPallets}
+              </ReadonlyPalletTitle>
+              <ReadonlyPalletBatch>
+                Lote: {pallet?.batch || "Pendente"}
+              </ReadonlyPalletBatch>
+            </ReadonlyPalletHeader>
+            <PhotoCarousel
+              heightPreset="large"
+              items={photos.map((photo, photoIndex) => ({
+                id: `palete-${palletIndex}-foto-${photoIndex}`,
+                title: `Palete ${palletIndex + 1} - foto ${photoIndex + 1}`,
+                uri: photo,
+              }))}
+              readonly
+            />
+          </ReadonlyPalletCard>
+        );
+      })}
+    </ReadonlyPalletList>
+  );
+}
+
+function ReadonlyExitEvidence({ items }: { items: OfflinePalletOperationSummaryItem[] }) {
+  return (
+    <PhotoCarousel
+      heightPreset="large"
+      items={items.map((item, index) => ({
+        id: `${item.label}-${index}`,
+        subtitle: item.value,
+        title: `${item.label} ${index + 1}/${items.length}`,
+        uri: item.thumbnailUri,
+      }))}
+      readonly
+      showItemHeader
+    />
+  );
+}
+
+function buildReadonlyPhotoSlots(photos: string[] = []) {
+  return Array.from({ length: PHOTOS_PER_PALLET }, (_, index) => photos[index] ?? "");
 }
 
 function getStatusLabel(status: string) {
@@ -190,8 +276,34 @@ const SummaryItem = styled(View, {
 
 const Thumbnail = styled(Image, {
   borderRadius: 10,
-  height: 52,
-  width: 52,
+  height: 20,
+  width: 20,
+});
+
+const ReadonlyPalletList = styled(View, {
+  gap: 14,
+});
+
+const ReadonlyPalletCard = styled(View, {
+  borderTopColor: "$border",
+  borderTopWidth: 1,
+  gap: 10,
+  paddingTop: 12,
+});
+
+const ReadonlyPalletHeader = styled(View, {
+  gap: 2,
+});
+
+const ReadonlyPalletTitle = styled(Text, {
+  ...typography.bodyMedium,
+  color: "$text",
+  fontWeight: "800",
+});
+
+const ReadonlyPalletBatch = styled(Text, {
+  ...typography.bodySmall,
+  color: "$mutedText",
 });
 
 const ItemBody = styled(View, {
