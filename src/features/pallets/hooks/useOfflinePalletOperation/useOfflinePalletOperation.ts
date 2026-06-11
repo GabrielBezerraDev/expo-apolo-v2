@@ -65,7 +65,7 @@ export function useOfflinePalletOperation() {
     const resolvedRoadmap = roadmap ?? getValeusScreenPallet("roadmap") ?? route;
     const resolvedQuantity = palletsQuantity ?? getValeusScreenPallet("palletsQuantity") ?? "";
 
-    if (!resolvedRoadmap.trim() && !resolvedQuantity.trim() && !offlineOperationId) return null;
+    if (!resolvedRoadmap.trim() && !offlineOperationId) return null;
 
     const operation = await upsertOfflinePalletOperation({
       currentStep,

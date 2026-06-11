@@ -1,7 +1,8 @@
 import React, { useCallback } from "react";
+import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Camera, X } from "lucide-react-native";
+import { Camera } from "lucide-react-native";
 import { Button, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
@@ -13,6 +14,7 @@ import { fontScale, typography } from "@shared/typography";
 import { useOfflinePalletOperation } from "../../hooks/useOfflinePalletOperation";
 import { usePallet } from "../../providers/PalletProvider";
 import { ListScreenShell } from "../../components/ListScreenShell";
+import { MovementCancelButton } from "../../components/MovementCancelButton";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,6 +25,7 @@ export function PalletsEvidence() {
   const { width, height } = useWindowDimensions();
   const {
     operationPallet,
+    offlineOperationId,
     palletEvidence,
     resetEntry,
     route,
@@ -81,9 +84,39 @@ export function PalletsEvidence() {
     [configureScanner, navigation, persistPalletPhoto],
   );
 
-  const closeEntry = () => {
-    resetEntry();
-    navigation.navigate("Main");
+  const cancelMovement = () => {
+    const hasEvidenceData = palletEvidence.some(
+      (pallet) => pallet.batch.trim() || pallet.photos.some(Boolean),
+    );
+
+    if (!route.trim() && !hasEvidenceData && !offlineOperationId) {
+      resetEntry();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main" }],
+      });
+      return;
+    }
+
+    Alert.alert(
+      `Cancelar ${operationPallet === "entry" ? "entrada" : "saída"}`,
+      "Esta movimentação será salva como rascunho. Você poderá continuar depois. Deseja sair agora?",
+      [
+        { text: "Continuar preenchendo", style: "cancel" },
+        {
+          text: "Salvar rascunho e sair",
+          style: "destructive",
+          onPress: async () => {
+            await savePalletEvidenceDraft({ currentStep: "pallets_evidence" });
+            resetEntry();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main" }],
+            });
+          },
+        },
+      ],
+    );
   };
 
   const finishEntry = async () => {
@@ -98,7 +131,10 @@ export function PalletsEvidence() {
   };
 
   return (
-    <ListScreenShell title="Captura de paletes">
+    <ListScreenShell
+      title="Captura de paletes"
+      topRightAction={<MovementCancelButton onPress={cancelMovement} />}
+    >
       <ScrollView
         contentContainerStyle={palletsContentStyle}
         showsVerticalScrollIndicator={false}
@@ -112,9 +148,6 @@ export function PalletsEvidence() {
               Preencha lote e 4 fotos de cada palete.
             </HelperText>
           </View>
-          <IconButton onPress={closeEntry} hitSlop={10}>
-            <X size={24} color={theme.mutedText} />
-          </IconButton>
         </PalletsHeader>
 
         {palletEvidence.map((pallet, palletIndex) => (

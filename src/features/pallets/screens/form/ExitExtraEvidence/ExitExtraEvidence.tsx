@@ -1,9 +1,8 @@
 import React, { useCallback } from "react";
+import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { X } from "lucide-react-native";
 import {
-  Button,
   styled,
   Text,
   useWindowDimensions,
@@ -11,11 +10,11 @@ import {
 } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
-import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
+import { MovementCancelButton } from "../../../components/MovementCancelButton";
 import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperation";
 import { usePallet } from "../../../providers/PalletProvider";
 
@@ -25,9 +24,8 @@ type EvidenceKey = "truck" | "licensePlate" | "seal";
 export function ExitExtraEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
-  const { theme } = useThemeMode();
   const { height } = useWindowDimensions();
-  const { exitExtraEvidencePhotos, resetEntry, route, shipGoodsPhotos } =
+  const { exitExtraEvidencePhotos, offlineOperationId, resetEntry, route, shipGoodsPhotos } =
     usePallet();
   const {
     persistExitExtraEvidencePhoto,
@@ -86,9 +84,41 @@ export function ExitExtraEvidence() {
     ],
   );
 
-  const closeExit = () => {
-    resetEntry();
-    navigation.navigate("Main");
+  const cancelMovement = () => {
+    const hasEvidenceData = Boolean(
+      shipGoodsPhotos.truck ||
+      exitExtraEvidencePhotos.licensePlate ||
+      exitExtraEvidencePhotos.seal,
+    );
+
+    if (!route.trim() && !hasEvidenceData && !offlineOperationId) {
+      resetEntry();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main" }],
+      });
+      return;
+    }
+
+    Alert.alert(
+      "Cancelar saída",
+      "Esta movimentação será salva como rascunho. Você poderá continuar depois. Deseja sair agora?",
+      [
+        { text: "Continuar preenchendo", style: "cancel" },
+        {
+          text: "Salvar rascunho e sair",
+          style: "destructive",
+          onPress: async () => {
+            await saveExitExtraEvidenceDraft({ currentStep: "exit_extra_evidence" });
+            resetEntry();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main" }],
+            });
+          },
+        },
+      ],
+    );
   };
 
   const finishExit = async () => {
@@ -100,7 +130,10 @@ export function ExitExtraEvidence() {
   };
 
   return (
-    <ListScreenShell title="Evidências finais">
+    <ListScreenShell
+      title="Evidências finais"
+      topRightAction={<MovementCancelButton onPress={cancelMovement} />}
+    >
       <Header>
         <View>
           <Title>Roteiro: {route}</Title>
@@ -108,9 +141,6 @@ export function ExitExtraEvidence() {
             Tire as fotos da carga, placa e lacre do caminhão.
           </HelperText>
         </View>
-        <IconButton onPress={closeExit} hitSlop={10}>
-          <X size={24} color={theme.mutedText} />
-        </IconButton>
       </Header>
       <View flex={1} justifyContent="center" alignItems="center" marginBottom={60}>
         <PhotoCarousel
@@ -153,8 +183,4 @@ const HelperText = styled(Text, {
   ...typography.bodySmall,
   color: "$mutedText",
   fontWeight: "700",
-});
-
-const IconButton = styled(Button, {
-  unstyled: true,
 });

@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from "react";
+import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
@@ -13,6 +14,7 @@ import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperat
 import { getOfflinePalletOperationByRoadmap } from "../../../services/offlinePalletOperations";
 import { usePallet } from "../../../providers/PalletProvider";
 import { ListScreenShell } from "../../../components/ListScreenShell";
+import { MovementCancelButton } from "../../../components/MovementCancelButton";
 import { FormScreenPalletType } from './FormScreenPalletType';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -30,6 +32,7 @@ export function FormScreenPallet() {
     controlFormScreenPallet,
     getValeusScreenPallet,
     isValidFormScreenPalletValue,
+    offlineOperationId,
     operationPallet,
     setFormScreenPalletValue,
   } = usePallet();
@@ -83,13 +86,44 @@ export function FormScreenPallet() {
     void saveFormDraft({ palletsQuantity: nextValue });
   };
 
-  const cancel = () => {
-    resetEntry();
-    navigation.goBack();
+  const cancelMovement = () => {
+    const currentRoadmap = getValeusScreenPallet("roadmap").trim();
+
+    if (!currentRoadmap && !offlineOperationId) {
+      resetEntry();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main" }],
+      });
+      return;
+    }
+
+    Alert.alert(
+      `Cancelar ${operationLabel}`,
+      "Esta movimentação será salva como rascunho. Você poderá continuar depois. Deseja sair agora?",
+      [
+        { text: "Continuar preenchendo", style: "cancel" },
+        {
+          text: "Salvar rascunho e sair",
+          style: "destructive",
+          onPress: async () => {
+            await saveFormDraft({ currentStep: "form" });
+            resetEntry();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main" }],
+            });
+          },
+        },
+      ],
+    );
   };
 
   return (
-    <ListScreenShell title={`Nova ${operationLabel}`}>
+    <ListScreenShell
+      title={`Nova ${operationLabel}`}
+      topRightAction={<MovementCancelButton onPress={cancelMovement} />}
+    >
       <FormScreenRoot>
         <Panel>
           <PanelHeader>
@@ -132,7 +166,7 @@ export function FormScreenPallet() {
               disabled={!isValidFormScreenPalletValue}
               onPress={confirm}
             />
-            <AppButton title="CANCELAR" variant="outline" onPress={cancel} />
+            <AppButton title="CANCELAR" variant="outline" onPress={cancelMovement} />
           </FormBody>
         </Panel>
       </FormScreenRoot>
@@ -162,6 +196,7 @@ const PanelHeader = styled(View, {
   backgroundColor: "$primary",
   justifyContent: "center",
   minHeight: 44,
+  position: "relative",
 });
 
 const PanelHeaderText = styled(Text, {
