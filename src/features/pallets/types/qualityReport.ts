@@ -25,10 +25,10 @@ export type QualityReportPallet = {
 export type QualityReport = {
   id: number;
   date?: string;
-  firstBox?: number;
+  firstBox?: number | string;
   holdReason?: string;
   issue?: string;
-  lastBox?: number;
+  lastBox?: number | string;
   observation?: string;
   pallet: QualityReportPallet;
   status?: string;
