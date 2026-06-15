@@ -308,10 +308,10 @@ const SubtitleText = styled(SubtitleBase, {
 });
 
 const ShinyTextBox = styled(View, {
-  height: 20,
+  height: typography.bodyMedium.lineHeight + 4,
   marginTop: 4,
   overflow: "hidden",
-  width: 72,
+  width: 100,
 });
 
 const ShinyMaskContainer = styled(View, {
