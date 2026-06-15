@@ -46,7 +46,6 @@ export function PalletListScreen() {
     : "Configure EXPO_PUBLIC_API_URL para carregar os reports.";
   const refresh = qualityReportQuery.isRefetching && !qualityReportQuery.isLoading;
   const refreshReports = canLoadReports ? () => { void qualityReportQuery.refetch(); } : undefined;
-
   useEffect(() => {
     sendToFirstPage();
   }, [appliedFilters, deferredBatchSearch, reportType, sendToFirstPage]);

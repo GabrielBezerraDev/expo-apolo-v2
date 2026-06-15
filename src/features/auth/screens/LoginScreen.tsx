@@ -89,6 +89,7 @@ const FooterRow = styled(View, {
 const PoweredRow = styled(View, {
   alignItems: "center",
   flexDirection: "row",
+  gap: 4,
 });
 const PoweredText = styled(Text, {
   ...typography.bodySmall,
@@ -187,7 +188,6 @@ export function LoginScreen(_props: Props) {
         <Version>Versão Atual: 1.0.0</Version>
         <PoweredRow paddingHorizontal={height * 0.0001}>
           <PoweredText>powered by</PoweredText>
-          <Text> </Text>
           <ShinyConecthus />
         </PoweredRow>
       </FooterRow>
