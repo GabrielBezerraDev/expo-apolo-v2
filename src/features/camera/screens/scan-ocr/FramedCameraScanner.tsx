@@ -425,7 +425,7 @@ export const FramedCameraScanner: React.FC = () => {
 
       {isPhotoMode && (
         <PhotoHelpBox width={PREVIEW_W}>
-          <HelpText>Enquadre a foto do pallet</HelpText>
+          <HelpText>Enquadre a foto do Palete</HelpText>
         </PhotoHelpBox>
       )}
 
