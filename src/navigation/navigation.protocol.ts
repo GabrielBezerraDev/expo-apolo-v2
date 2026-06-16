@@ -1,3 +1,5 @@
+import type { Roadmap } from "@features/pallets/types/roadmap";
+
 export type AuthStackParamList = {
   Login: undefined;
 };
@@ -16,5 +18,6 @@ export type RootStackParamList = {
   PalletsEvidence: undefined;
   ExitExtraEvidence: undefined;
   PalletOperationSummary: { operationId: string };
+  RoadmapPhotos: { roadmap: Roadmap };
   OperationSuccess: { operation: 'entry' | 'exit' };
 };

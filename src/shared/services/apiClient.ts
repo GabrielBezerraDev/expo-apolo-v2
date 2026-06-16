@@ -1,14 +1,34 @@
+import { useMemo } from "react";
+import { useAuthSession } from "@navigation/AuthSessionContext";
+
 type ApiRequestParams = {
   query?: Record<string, unknown>;
-  token?: string;
 };
 
 type ApiBodyRequestParams<TBody> = ApiRequestParams & {
   body?: TBody;
 };
 
+type ApiRequestOptions = ApiRequestParams & {
+  authToken?: string;
+  body?: unknown;
+  method: "GET" | "POST";
+};
+
+export type ApiClient = {
+  get: <TResponse>(path: string, params?: ApiRequestParams) => Promise<TResponse>;
+  hasAuthToken: boolean;
+  post: <TResponse, TBody = unknown>(
+    path: string,
+    params?: ApiBodyRequestParams<TBody>,
+  ) => Promise<TResponse>;
+  postFormData: <TResponse>(
+    path: string,
+    params?: ApiBodyRequestParams<FormData>,
+  ) => Promise<TResponse>;
+};
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
-const API_TOKEN = process.env.EXPO_PUBLIC_API_TOKEN ?? "";
 
 export class ApiError extends Error {
   constructor(
@@ -19,10 +39,6 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<TResponse>(path: string, params: ApiRequestParams = {}) {
-  return apiRequest<TResponse>(path, { method: "GET", query: params.query, token: params.token });
-}
-
 export async function apiPost<TResponse, TBody = unknown>(
   path: string,
   params: ApiBodyRequestParams<TBody> = {},
@@ -31,8 +47,44 @@ export async function apiPost<TResponse, TBody = unknown>(
     body: params.body,
     method: "POST",
     query: params.query,
-    token: params.token,
   });
+}
+
+export function useApiClient(): ApiClient {
+  const { token } = useAuthSession();
+
+  return useMemo(
+    () => ({
+      get: <TResponse>(path: string, params: ApiRequestParams = {}) =>
+        apiRequest<TResponse>(path, {
+          authToken: token,
+          method: "GET",
+          query: params.query,
+        }),
+      hasAuthToken: Boolean(token),
+      post: <TResponse, TBody = unknown>(
+        path: string,
+        params: ApiBodyRequestParams<TBody> = {},
+      ) =>
+        apiRequest<TResponse>(path, {
+          authToken: token,
+          body: params.body,
+          method: "POST",
+          query: params.query,
+        }),
+      postFormData: <TResponse>(
+        path: string,
+        params: ApiBodyRequestParams<FormData> = {},
+      ) =>
+        apiRequest<TResponse>(path, {
+          authToken: token,
+          body: params.body,
+          method: "POST",
+          query: params.query,
+        }),
+    }),
+    [token],
+  );
 }
 
 export function hasApiBaseUrl() {
@@ -43,7 +95,7 @@ function buildUrl(path: string, query?: Record<string, unknown>) {
   if (!hasApiBaseUrl()) {
     throw new ApiError("Configure EXPO_PUBLIC_API_URL para carregar os dados da API.", 0);
   }
-
+ 
   const url = `${API_BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   const queryString = buildQueryString(query);
   return queryString ? `${url}?${queryString}` : url;
@@ -51,19 +103,18 @@ function buildUrl(path: string, query?: Record<string, unknown>) {
 
 async function apiRequest<TResponse>(
   path: string,
-  params: ApiRequestParams & { body?: unknown; method: "GET" | "POST" },
+  params: ApiRequestOptions,
 ) {
   const url = buildUrl(path, params.query);
-  const token = params.token || API_TOKEN;
 
   const response = await fetch(url, {
     method: params.method,
     headers: {
       Accept: "application/json",
-      ...(params.body == null ? {} : { "Content-Type": "application/json" }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(params.body == null || isFormDataBody(params.body) ? {} : { "Content-Type": "application/json" }),
+      ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}),
     },
-    ...(params.body == null ? {} : { body: JSON.stringify(params.body) }),
+    ...(params.body == null ? {} : { body: isFormDataBody(params.body) ? params.body : JSON.stringify(params.body) }),
   });
 
   if (!response.ok) {
@@ -71,6 +122,10 @@ async function apiRequest<TResponse>(
   }
 
   return response.json() as Promise<TResponse>;
+}
+
+function isFormDataBody(body: unknown): body is FormData {
+  return typeof FormData !== "undefined" && body instanceof FormData;
 }
 
 function buildQueryString(query?: Record<string, unknown>) {

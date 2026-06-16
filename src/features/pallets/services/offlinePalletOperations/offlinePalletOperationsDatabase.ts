@@ -172,6 +172,40 @@ export async function listOfflinePalletOperations(operationType: OfflinePalletOp
   return rows.map(mapRowToOperation);
 }
 
+export async function listPendingSyncPalletOperations() {
+  const database = await getOfflinePalletOperationsDatabase();
+  const rows = await database.getAllAsync<OfflinePalletOperationRow>(
+    `SELECT * FROM ${TABLE_NAME}
+     WHERE status IN ('pending_sync', 'failed')
+     ORDER BY updated_at ASC`,
+  );
+
+  return rows.map(mapRowToOperation);
+}
+
+export async function updateOfflinePalletOperationStatus({
+  id,
+  lastError = null,
+  status,
+}: {
+  id: string;
+  lastError?: string | null;
+  status: OfflinePalletOperationStatus;
+}) {
+  const database = await getOfflinePalletOperationsDatabase();
+  const updatedAt = new Date().toISOString();
+
+  await database.runAsync(
+    `UPDATE ${TABLE_NAME}
+     SET status = ?, last_error = ?, updated_at = ?
+     WHERE id = ?`,
+    status,
+    lastError,
+    updatedAt,
+    id,
+  );
+}
+
 export async function deleteOfflinePalletOperation(id: string) {
   const database = await getOfflinePalletOperationsDatabase();
   await database.runAsync(`DELETE FROM ${TABLE_NAME} WHERE id = ?`, id);
