@@ -66,7 +66,7 @@ export function RoadmapPhotosContent({ roadmap }: Props) {
               items={Array.from({ length: 4 }, (_, photoIndex) => ({
                 id: `${pallet.batch}-${photoIndex}`,
                 subtitle: `Foto ${photoIndex + 1}/4`,
-                title: `Palete ${pallet.palletIndex != null ? pallet.palletIndex + 1 : index + 1}`,
+                title: ``,
                 uri: resolveRoadmapPhotoUri(pallet.photos[photoIndex]),
               }))}
               readonly
@@ -120,8 +120,7 @@ function buildExitEvidenceItems(roadmap: Roadmap) {
 }
 
 function buildPalletTitle(pallet: RoadmapPalletPhotos, index: number) {
-  const palletNumber = pallet.palletIndex != null ? pallet.palletIndex + 1 : index + 1;
-  return `Palete ${palletNumber} - Lote ${pallet.batch}`;
+  return `Lote ${pallet.batch}`;
 }
 
 const Root = styled(View, {
