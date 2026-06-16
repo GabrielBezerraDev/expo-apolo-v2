@@ -7,11 +7,14 @@ import { Button, styled, Text, useWindowDimensions, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
+import { useModal } from "@shared/components/Display/Modal";
 import { AppButton } from "@shared/components/Forms/AppButton";
+import { hasApiBaseUrl } from "@shared/services/apiClient";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { fontScale, typography } from "@shared/typography";
 import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperation";
 import { getOfflinePalletOperationByRoadmap } from "../../../services/offlinePalletOperations";
+import { useRoadmapApi } from "../../../services/roadmapApi";
 import { usePallet } from "../../../providers/PalletProvider";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
@@ -22,6 +25,8 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 export function FormScreenPallet() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
+  const { closeModal, openModal } = useModal();
+  const roadmapApi = useRoadmapApi();
   const { theme } = useThemeMode();
   const {
     route,
@@ -43,23 +48,59 @@ export function FormScreenPallet() {
   const navigator = useNavigation();
   const { height } = useWindowDimensions();
   const operationLabel = operationPallet === "exit" ? "saída" : "entrada";
+  const clearScannedRoadmap = useCallback(() => {
+    setFormScreenPalletValue("roadmap", "", { shouldValidate: true });
+  }, [setFormScreenPalletValue]);
+
+  const openRoadmapExistsModal = useCallback((scannedRoadmap: string) => {
+    let modalId = "";
+
+    modalId = openModal(
+      <RoadmapScanWarningModal
+        roadmap={scannedRoadmap}
+        onClose={() => closeModal(modalId)}
+      />,
+      {
+        animationType: "slide",
+        heightPercent: 34,
+        maxHeightPercent: 54,
+        minHeight: 0,
+        title: "Roteiro já existe",
+        widthPercent: 88,
+      },
+    );
+  }, [closeModal, openModal]);
+
   const scanRoadmap = useCallback(() => {
     configureScanner({
       mode: "scanner",
       preset: "tinyDataLandScape",
       orientation: "LandScape",
       onCapture: async (data) => {
-        setFormScreenPalletValue("roadmap", data.text, {
+        const scannedRoadmap = data.text.trim();
+        const canValidateRoadmap = hasApiBaseUrl() && roadmapApi.hasAuthToken;
+        const roadmapExists = canValidateRoadmap
+          ? await roadmapApi.roadmapExists(scannedRoadmap).catch(() => false)
+          : false;
+
+        if (roadmapExists) {
+          clearScannedRoadmap();
+          navigation.goBack();
+          openRoadmapExistsModal(scannedRoadmap);
+          return;
+        }
+
+        setFormScreenPalletValue("roadmap", scannedRoadmap, {
           shouldValidate: true,
         });
-        await saveFormDraft({ roadmap: data.text });
+        await saveFormDraft({ roadmap: scannedRoadmap });
         navigation.goBack();
       },
       onCancel: () => navigator.goBack(),
       formatTextDataWithRegex: (data) => data.replace(/[^a-zA-Z0-9\s]/g, ""),
     });
     navigation.navigate('Scanner');
-  }, [configureScanner, navigation, navigator, saveFormDraft, setFormScreenPalletValue]);
+  }, [clearScannedRoadmap, configureScanner, navigation, navigator, openRoadmapExistsModal, roadmapApi, saveFormDraft, setFormScreenPalletValue]);
 
   const formSubtitle = useMemo(() => {
     if (!route) return "Escaneie o roteiro e informe a quantidade de paletes.";
@@ -174,6 +215,25 @@ export function FormScreenPallet() {
   );
 }
 
+function RoadmapScanWarningModal({
+  onClose,
+  roadmap,
+}: {
+  onClose: () => void;
+  roadmap: string;
+}) {
+  return (
+    <WarningModalRoot>
+      <WarningModalText>
+        O roteiro {roadmap} já existe no sistema. Escaneie outro roteiro para continuar.
+      </WarningModalText>
+      <WarningModalButton onPress={onClose}>
+        <WarningModalButtonText>ENTENDI</WarningModalButtonText>
+      </WarningModalButton>
+    </WarningModalRoot>
+  );
+}
+
 const FormScreenRoot = styled(View, {
   alignItems: "center",
   flex: 1,
@@ -218,4 +278,33 @@ const HelperText = styled(Text, {
 
 const IconButton = styled(Button, {
   unstyled: true,
+});
+
+const WarningModalRoot = styled(View, {
+  gap: 18,
+  justifyContent: "center",
+});
+
+const WarningModalText = styled(Text, {
+  ...typography.bodyMedium,
+  color: "$text",
+  fontWeight: "700",
+  textAlign: "center",
+});
+
+const WarningModalButton = styled(Button, {
+  unstyled: true,
+  alignItems: "center",
+  backgroundColor: "$primary",
+  borderRadius: 12,
+  justifyContent: "center",
+  minHeight: 46,
+  paddingHorizontal: 18,
+  paddingVertical: 12,
+});
+
+const WarningModalButtonText = styled(Text, {
+  ...typography.button,
+  color: "$white",
+  fontWeight: "900",
 });
