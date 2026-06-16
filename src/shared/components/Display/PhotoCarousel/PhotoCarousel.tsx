@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FlatList } from "react-native";
+import { FlatList, Image, StyleSheet } from "react-native";
 import { Maximize2 } from "lucide-react-native";
 import { PhotoViewerModal } from "./PhotoViewerModal";
 import {
@@ -15,7 +15,6 @@ import {
   ItemSubtitle,
   ItemTitle,
   PhotoFrame,
-  PhotoImage,
 } from "./styled";
 import type { PhotoCarouselItem, PhotoCarouselProps } from "./types";
 import { usePhotoCarouselLayout } from "./usePhotoCarouselLayout";
@@ -67,7 +66,6 @@ export function PhotoCarousel({
     const hasPhoto = Boolean(item.uri);
     const canEdit = !readonly && !item.disabled && Boolean(onPressItem);
     const resolvedCaptureOrientation = item.captureOrientation ?? captureOrientation;
-
     return (
       <CarouselPage width={carouselWidth}>
         {showItemHeader ? (
@@ -78,7 +76,11 @@ export function PhotoCarousel({
         ) : null}
         <PhotoFrame width={carouselWidth} height={photoHeight}>
           {hasPhoto ? (
-            <PhotoImage src={item.uri ?? ""} resizeMode={imageResizeMode} />
+            <Image
+              resizeMode={imageResizeMode}
+              source={{ uri: item.uri ?? "" }}
+              style={styles.image}
+            />
           ) : (
             <EmptyContent>
               {!showItemHeader && item.title ? <EmptyTitle>{item.title}</EmptyTitle> : null}
@@ -100,3 +102,10 @@ export function PhotoCarousel({
     );
   }
 }
+
+const styles = StyleSheet.create({
+  image: {
+    height: "100%",
+    width: "100%",
+  },
+});
