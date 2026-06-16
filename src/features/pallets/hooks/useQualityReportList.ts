@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuthSession } from "@navigation/AuthSessionContext";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
 import {
   DateFilterValue,
@@ -8,7 +7,7 @@ import {
   FilterValues,
   NumberRangeFilterValue,
 } from "@shared/components/Filters";
-import { getFilterQualityReport } from "../services/qualityReportApi";
+import { useQualityReportApi } from "../services/qualityReportApi";
 import { PalletReportType, QualityReportQueryParams } from "../types/qualityReport";
 
 type UseQualityReportListParams = {
@@ -26,7 +25,7 @@ export function useQualityReportList({
   pageSize,
   reportType,
 }: UseQualityReportListParams) {
-  const { token } = useAuthSession();
+  const qualityReportApi = useQualityReportApi();
   const queryParams = useMemo(
     () => buildQualityReportQueryParams({ appliedFilters, batchSearch, page, pageSize, reportType }),
     [appliedFilters, batchSearch, page, pageSize, reportType],
@@ -34,8 +33,8 @@ export function useQualityReportList({
 
   return useQuery({
     queryKey: ["quality-report", queryParams],
-    queryFn: () => getFilterQualityReport(queryParams, token),
-    enabled: hasApiBaseUrl(),
+    queryFn: () => qualityReportApi.getFilterQualityReport(queryParams),
+    enabled: hasApiBaseUrl() && qualityReportApi.hasAuthToken,
   });
 }
 

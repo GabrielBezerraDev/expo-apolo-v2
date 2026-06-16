@@ -2,7 +2,16 @@ import React from 'react';
 import { styled, Text, View } from 'tamagui';
 import { AppCard } from '@shared/components/Display/AppCard';
 import { typography } from '@shared/typography';
-import { OperationItem } from '../mocks/palletMock';
+
+export type OperationItem = {
+  completedSteps: string;
+  doneAt: string;
+  id: string;
+  roadmap: string;
+  status: string;
+  totalPallets: number;
+  type: 'entry' | 'exit';
+};
 
 const HeaderRow = styled(View, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' });
 const HeaderText = styled(Text, { ...typography.bodyMedium, color: '$white', fontWeight: '800' });
@@ -18,8 +27,8 @@ export function OperationCard({ item }: { item: OperationItem }) {
     <AppCard variant="orangeHeader" header={<HeaderRow><HeaderText>{title}</HeaderText></HeaderRow>}>
       <Body>
         <Line>{item.completedSteps}</Line>
+        <Line>Roteiro: {item.roadmap}</Line>
         <Line>Status: {item.status}</Line>
-        <Muted>Cliente: {item.client}</Muted>
         <Muted>Total de pallets: {item.totalPallets}</Muted>
         <Action>Histórico</Action>
       </Body>

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BaggageClaim, Filter } from "lucide-react-native";
@@ -10,13 +10,16 @@ import {
 } from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
 import { RefreshableList } from "@shared/components/Display";
+import { hasApiBaseUrl } from "@shared/services/apiClient";
 import { OfflinePalletDraftList } from "../../components/OfflinePalletDraftList";
-import { OperationCard } from "../../components/OperationCard";
+import { OperationCard, type OperationItem } from "../../components/OperationCard";
 import { OperationListTabs, OperationListTabValue } from "../../components/OperationListTabs";
-import { exitOperations } from "../../mocks/palletMock";
 import { ListScreenShell } from "../../components/ListScreenShell";
 import { usePallet } from "../../providers/PalletProvider";
 import { useOperationListFilters } from "../../hooks/useOperationListFilters";
+import { useRoadmapList } from "../../hooks/useRoadmapList";
+import { useRoadmapSync } from "../../hooks/useRoadmapSync";
+import type { Roadmap } from "../../types/roadmap";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -24,17 +27,47 @@ export function ExitListScreen() {
   const navigation = useNavigation<Navigation>();
   const [activeTab, setActiveTab] = useState<OperationListTabValue>("operations");
   const { resetEntry, setOperationPallet } = usePallet();
-  const { setPaginationMeta } = usePagination();
+  const { currentPage, itemsPerPage, sendToFirstPage, setPaginationMeta } = usePagination();
+  const { syncPendingOperations } = useRoadmapSync();
   const {
+    appliedFilters,
     chips,
     openFilterModal,
-  } = useOperationListFilters({ data: exitOperations, modalTitle: "Filtrar saídas" });
+  } = useOperationListFilters({ modalTitle: "Filtrar saídas" });
+  const roadmapQuery = useRoadmapList({
+    appliedFilters,
+    page: currentPage,
+    pageSize: itemsPerPage,
+    typeRoadmap: "EXIT",
+  });
+  const operations = (roadmapQuery.data?.data ?? []).map(mapRoadmapToExitOperation);
+  const canLoadRoadmaps = hasApiBaseUrl();
+  const errorMessage = canLoadRoadmaps
+    ? roadmapQuery.error?.message
+    : "Configure EXPO_PUBLIC_API_URL para carregar as saídas.";
+  const refresh = roadmapQuery.isRefetching && !roadmapQuery.isLoading;
+  const refreshOperations = canLoadRoadmaps ? () => { void roadmapQuery.refetch(); } : undefined;
 
   useFocusEffect(
     useCallback(() => {
-      setPaginationMeta({ currentPage: 1, lastPage: 1, totalItems: exitOperations.length });
-    }, [setPaginationMeta]),
+      void syncPendingOperations();
+    }, [syncPendingOperations]),
   );
+
+  useEffect(() => {
+    sendToFirstPage();
+  }, [appliedFilters, sendToFirstPage]);
+
+  useEffect(() => {
+    const meta = roadmapQuery.data?.meta;
+    if (!meta) return;
+
+    setPaginationMeta({
+      currentPage: meta.page,
+      lastPage: meta.totalPages,
+      totalItems: meta.total,
+    });
+  }, [roadmapQuery.data?.meta, setPaginationMeta]);
 
   const startExit = () => {
     resetEntry();
@@ -57,9 +90,15 @@ export function ExitListScreen() {
         <>
           <FilterChips chips={chips} />
           <RefreshableList
-            data={exitOperations}
+            data={operations}
             emptyMessage="Não há saídas para listar."
+            errorMessage={errorMessage}
+            isError={!canLoadRoadmaps || roadmapQuery.isError}
+            isLoading={roadmapQuery.isLoading}
+            isRefreshing={refresh}
             keyExtractor={(item) => item.id}
+            loadingLabel="Carregando saídas"
+            onRefresh={refreshOperations}
             renderItem={({ item }) => <OperationCard item={item} />}
           />
           <WrapperPagination>
@@ -69,4 +108,29 @@ export function ExitListScreen() {
       )}
     </ListScreenShell>
   );
+}
+
+function mapRoadmapToExitOperation(roadmap: Roadmap): OperationItem {
+  return {
+    completedSteps: `${roadmap.pallets?.length ?? 0}/${roadmap.palletsQuantity} paletes vinculados`,
+    doneAt: formatDate(roadmap.updatedAt),
+    id: String(roadmap.id),
+    roadmap: roadmap.roadmap,
+    status: roadmap.statusRoadmap === "FINISHED" ? "Finalizado" : "Em progresso",
+    totalPallets: roadmap.palletsQuantity,
+    type: "exit",
+  };
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }

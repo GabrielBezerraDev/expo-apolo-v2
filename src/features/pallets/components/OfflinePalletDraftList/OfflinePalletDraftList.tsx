@@ -6,6 +6,7 @@ import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { RefreshableList } from "@shared/components/Display";
 import { OfflinePalletOperationType } from "../../types/offlinePalletOperation";
 import { useOfflinePalletDrafts } from "../../hooks/useOfflinePalletDrafts";
+import { useRoadmapSync } from "../../hooks/useRoadmapSync";
 import { OfflinePalletDraftCard } from "../OfflinePalletDraftCard";
 
 type Props = {
@@ -17,6 +18,7 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 export function OfflinePalletDraftList({ operationType }: Props) {
   const navigation = useNavigation<Navigation>();
   const { deleteDraft, drafts, isLoading, isRefreshing, refreshDrafts } = useOfflinePalletDrafts({ operationType });
+  const { syncOperation } = useRoadmapSync();
 
   return (
     <RefreshableList
@@ -31,6 +33,10 @@ export function OfflinePalletDraftList({ operationType }: Props) {
         <OfflinePalletDraftCard
           item={item}
           onOpen={() => navigation.navigate("PalletOperationSummary", { operationId: item.id })}
+          onRetry={async () => {
+            await syncOperation(item.id);
+            await refreshDrafts();
+          }}
           onDelete={() => {
             Alert.alert(
               "Excluir rascunho",

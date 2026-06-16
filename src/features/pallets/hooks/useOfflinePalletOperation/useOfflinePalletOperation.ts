@@ -95,6 +95,7 @@ export function useOfflinePalletOperation() {
     if (!operation) return null;
 
     const palletEvidenceData = mapPalletEvidence(evidence);
+    console.log("Pallet Evidence",palletEvidenceData);
     const updated = await upsertOfflinePalletOperation({
       currentStep,
       id: operation.id,

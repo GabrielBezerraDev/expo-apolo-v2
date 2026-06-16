@@ -10,12 +10,13 @@ type Props = {
   item: OfflinePalletOperation;
   onDelete: (item: OfflinePalletOperation) => void;
   onOpen: (item: OfflinePalletOperation) => void;
+  onRetry?: (item: OfflinePalletOperation) => void;
 };
 
-export function OfflinePalletDraftCard({ item, onDelete, onOpen }: Props) {
+export function OfflinePalletDraftCard({ item, onDelete, onOpen, onRetry }: Props) {
   const summary = buildOfflinePalletOperationSummary(item);
   const title = `${item.operationType === "entry" ? "ENTRADA" : "SAÍDA"}: ${item.roadmap ?? "Sem roteiro"}`;
-  const statusLabel = item.status === "pending_sync" ? "Pronto para envio" : "Em andamento";
+  const status = getStatusPresentation(item.status);
 
   return (
     <Card>
@@ -25,10 +26,13 @@ export function OfflinePalletDraftCard({ item, onDelete, onOpen }: Props) {
       <Body>
         <Row>
           <Line>{summary.progressLabel}</Line>
-          <StatusChip status={item.status === "pending_sync" ? "ready" : "draft"}>
-            <StatusText>{statusLabel}</StatusText>
+          <StatusChip status={status.variant}>
+            <StatusText>{status.label}</StatusText>
           </StatusChip>
         </Row>
+        {item.status === "failed" && item.lastError ? (
+          <ErrorLine>{item.lastError}</ErrorLine>
+        ) : null}
         <Muted>Etapa atual: {getStepLabel(summary.nextStep ?? item.currentStep)}</Muted>
         <Muted>Quantidade: {item.formData?.palletsQuantity || "Pendente"}</Muted>
         <Muted>Atualizado em: {formatDate(item.updatedAt)}</Muted>
@@ -36,6 +40,11 @@ export function OfflinePalletDraftCard({ item, onDelete, onOpen }: Props) {
           <OpenButton onPress={() => onOpen(item)}>
             <OpenText>Ver resumo</OpenText>
           </OpenButton>
+          {item.status === "failed" && onRetry ? (
+            <RetryButton onPress={() => onRetry(item)}>
+              <RetryText>Tentar novamente</RetryText>
+            </RetryButton>
+          ) : null}
           <DeleteButton onPress={() => onDelete(item)}>
             <DeleteText>Excluir</DeleteText>
           </DeleteButton>
@@ -43,6 +52,16 @@ export function OfflinePalletDraftCard({ item, onDelete, onOpen }: Props) {
       </Body>
     </Card>
   );
+}
+
+function getStatusPresentation(status: OfflinePalletOperation["status"]): {
+  label: string;
+  variant: "draft" | "failed" | "ready" | "syncing";
+} {
+  if (status === "pending_sync") return { label: "Pronto para envio", variant: "ready" };
+  if (status === "failed") return { label: "Falha no envio", variant: "failed" };
+  if (status === "syncing") return { label: "Sincronizando", variant: "syncing" };
+  return { label: "Em andamento", variant: "draft" };
 }
 
 function getStepLabel(step: string) {
@@ -111,6 +130,12 @@ const Muted = styled(Text, {
   color: "$mutedText",
 });
 
+const ErrorLine = styled(Text, {
+  ...typography.bodySmall,
+  color: "$error",
+  fontWeight: "700",
+});
+
 const StatusChip = styled(View, {
   borderRadius: 10,
   paddingHorizontal: 10,
@@ -118,7 +143,9 @@ const StatusChip = styled(View, {
   variants: {
     status: {
       draft: { backgroundColor: "$primaryLight" },
+      failed: { backgroundColor: "$error" },
       ready: { backgroundColor: "$success" },
+      syncing: { backgroundColor: "$primaryLight" },
     },
   } as const,
 });
@@ -143,6 +170,20 @@ const OpenText = styled(Text, {
 const OpenButton = styled(Button, {
   unstyled: true,
   paddingVertical: 6,
+});
+
+const RetryButton = styled(Button, {
+  unstyled: true,
+  borderColor: "$primary",
+  borderRadius: 8,
+  borderWidth: 1,
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+});
+
+const RetryText = styled(Text, {
+  ...typography.label,
+  color: "$primary",
 });
 
 const DeleteButton = styled(Button, {
