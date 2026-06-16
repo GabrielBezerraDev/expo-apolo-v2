@@ -1,10 +1,14 @@
 import React, { useCallback } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Button, styled, Text, View } from 'tamagui';
 import { AppCard } from '@shared/components/Display/AppCard';
 import { useModal } from '@shared/components/Display/Modal';
+import type { RootStackParamList } from '@navigation/navigation.protocol';
 import { typography } from '@shared/typography';
-import { RoadmapPhotosModal } from './RoadmapPhotosModal';
 import type { Roadmap } from '../types/roadmap';
+
+type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export type OperationItem = {
   completedSteps: string;
@@ -25,18 +29,12 @@ const Muted = styled(Text, { ...typography.bodySmall, color: '$mutedText' });
 
 export function OperationCard({ item }: { item: OperationItem }) {
   const { closeModal, openModal } = useModal();
+  const navigation = useNavigation<Navigation>();
   const title = `${item.type === 'entry' ? 'ENTRADA' : 'SAÍDA'} FEITA: ${item.doneAt}`;
 
-  const openPhotosModal = useCallback(() => {
-    openModal(<RoadmapPhotosModal roadmap={item.roadmapDetails} />, {
-      animationType: 'slide',
-      heightPercent: 86,
-      maxHeightPercent: 92,
-      minHeight: 0,
-      title: 'Fotos do roteiro',
-      widthPercent: 94,
-    });
-  }, [item.roadmapDetails, openModal]);
+  const openPhotosScreen = useCallback(() => {
+    navigation.navigate('RoadmapPhotos', { roadmap: item.roadmapDetails });
+  }, [item.roadmapDetails, navigation]);
 
   const openOptionsModal = useCallback(() => {
     let modalId = '';
@@ -44,7 +42,7 @@ export function OperationCard({ item }: { item: OperationItem }) {
       <OperationOptionsModal
         onViewPhotos={() => {
           closeModal(modalId);
-          openPhotosModal();
+          openPhotosScreen();
         }}
       />,
       {
@@ -56,7 +54,7 @@ export function OperationCard({ item }: { item: OperationItem }) {
         widthPercent: 88,
       },
     );
-  }, [closeModal, openModal, openPhotosModal]);
+  }, [closeModal, openModal, openPhotosScreen]);
 
   return (
     <AppCard

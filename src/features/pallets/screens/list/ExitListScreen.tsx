@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { BaggageClaim, Filter } from "lucide-react-native";
+import { Filter, PackageMinus } from "lucide-react-native";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import {
   PaginationComponent,
@@ -79,7 +79,7 @@ export function ExitListScreen() {
     <ListScreenShell
       title="Saídas"
       floatActions={[
-        { Icon: BaggageClaim, label: "Nova Saída", onPress: startExit },
+        { Icon: PackageMinus, label: "Nova Saída", onPress: startExit },
         { Icon: Filter, label: "Filtro", onPress: openFilterModal },
       ]}
     >

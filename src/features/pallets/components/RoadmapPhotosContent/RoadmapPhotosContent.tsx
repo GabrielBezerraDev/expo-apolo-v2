@@ -5,14 +5,14 @@ import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { PhotoCarousel } from "@shared/components/Display";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { typography } from "@shared/typography";
-import { hasRoadmapPhotoPublicUrl, resolveRoadmapPhotoUri } from "../../services/roadmapPhotoStorage";
+import { resolveRoadmapPhotoUri } from "../../services/roadmapPhotoStorage";
 import type { Roadmap, RoadmapPalletPhotos } from "../../types/roadmap";
 
 type Props = {
   roadmap: Roadmap;
 };
 
-export function RoadmapPhotosModal({ roadmap }: Props) {
+export function RoadmapPhotosContent({ roadmap }: Props) {
   const { theme } = useThemeMode();
   const [batchSearch, setBatchSearch] = useState("");
   const deferredBatchSearch = useDeferredValue(batchSearch.trim().toLowerCase());
@@ -22,14 +22,11 @@ export function RoadmapPhotosModal({ roadmap }: Props) {
     [deferredBatchSearch, palletPhotos],
   );
   const exitEvidenceItems = useMemo(() => buildExitEvidenceItems(roadmap), [roadmap]);
+  const showExitEvidence = roadmap.typeRoadmap === "EXIT" && exitEvidenceItems.length > 0 && !deferredBatchSearch;
 
   return (
     <Root>
       <SummaryText>Roteiro: {roadmap.roadmap}</SummaryText>
-      {!hasRoadmapPhotoPublicUrl() ? (
-        <WarningText>Configure EXPO_PUBLIC_MINIO_VALORLOG_PUBLIC_URL para carregar as fotos públicas.</WarningText>
-      ) : null}
-
       <AppInput
         value={batchSearch}
         onChangeText={setBatchSearch}
@@ -45,7 +42,7 @@ export function RoadmapPhotosModal({ roadmap }: Props) {
         }
       />
 
-      {roadmap.typeRoadmap === "EXIT" && exitEvidenceItems.length > 0 ? (
+      {showExitEvidence ? (
         <Section>
           <SectionTitle>Fotos da saída</SectionTitle>
           <PhotoCarousel
@@ -60,15 +57,12 @@ export function RoadmapPhotosModal({ roadmap }: Props) {
       ) : null}
 
       {filteredPalletPhotos.length > 0 ? (
-        filteredPalletPhotos.map((pallet, index) => {
-          console.log("PATH: ",pallet.photos);
-          return (
+        filteredPalletPhotos.map((pallet, index) => (
           <Section key={`${pallet.batch}-${pallet.palletIndex ?? index}`}>
             <SectionTitle>{buildPalletTitle(pallet, index)}</SectionTitle>
             <PhotoCarousel
               emptyLabel="Foto não disponível"
-              heightPreset="medium"
-              imageResizeMode="contain"
+              heightPreset="large"
               items={Array.from({ length: 4 }, (_, photoIndex) => ({
                 id: `${pallet.batch}-${photoIndex}`,
                 subtitle: `Foto ${photoIndex + 1}/4`,
@@ -79,8 +73,7 @@ export function RoadmapPhotosModal({ roadmap }: Props) {
               showItemHeader
             />
           </Section>
-        )
-        })
+        ))
       ) : (
         <EmptyText>Nenhum palete encontrado para o lote informado.</EmptyText>
       )}
