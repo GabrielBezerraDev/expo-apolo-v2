@@ -120,6 +120,7 @@ function mapRoadmapToEntryOperation(roadmap: Roadmap): OperationItem {
     doneAt: formatDate(roadmap.updatedAt),
     id: String(roadmap.id),
     roadmap: roadmap.roadmap,
+    roadmapDetails: roadmap,
     status: roadmap.statusRoadmap === "FINISHED" ? "Finalizado" : "Em progresso",
     totalPallets: roadmap.palletsQuantity,
     type: "entry",

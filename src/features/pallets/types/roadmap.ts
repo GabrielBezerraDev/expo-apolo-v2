@@ -1,6 +1,19 @@
 export type RoadmapType = "ENTRY" | "EXIT";
 export type RoadmapStatus = "IN_PROGRESS" | "FINISHED";
 
+export type RoadmapPalletPhotos = {
+  batch: string;
+  palletId?: number;
+  palletIndex?: number;
+  photos: string[];
+};
+
+export type RoadmapExitEvidencePhotos = {
+  licensePlate?: string;
+  seal?: string;
+  truck?: string;
+};
+
 export type RoadmapPallet = {
   id: number;
   palletId: number;
@@ -19,11 +32,11 @@ export type RoadmapPallet = {
 
 export type Roadmap = {
   createdAt: string;
-  exitEvidencePhotos?: Record<string, string> | null;
+  exitEvidencePhotos?: RoadmapExitEvidencePhotos | null;
   id: number;
   pallets: RoadmapPallet[];
   palletsQuantity: number;
-  photosPallets?: unknown;
+  photosPallets?: RoadmapPalletPhotos[] | null;
   roadmap: string;
   statusRoadmap: RoadmapStatus;
   typeRoadmap: RoadmapType;

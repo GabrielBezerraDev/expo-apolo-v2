@@ -17,6 +17,7 @@ import {
   PhotoFrame,
   PhotoImage,
 } from "./styled";
+import { Image } from "react-native";
 import type { PhotoCarouselItem, PhotoCarouselProps } from "./types";
 import { usePhotoCarouselLayout } from "./usePhotoCarouselLayout";
 
@@ -67,7 +68,6 @@ export function PhotoCarousel({
     const hasPhoto = Boolean(item.uri);
     const canEdit = !readonly && !item.disabled && Boolean(onPressItem);
     const resolvedCaptureOrientation = item.captureOrientation ?? captureOrientation;
-
     return (
       <CarouselPage width={carouselWidth}>
         {showItemHeader ? (
