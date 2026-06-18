@@ -64,3 +64,15 @@ export type RoadmapQueryParams = {
   statusRoadmap?: RoadmapStatus | string;
   typeRoadmap?: RoadmapType | "VALORLOG_ENTRY" | "VALORLOG_EXIT";
 };
+
+export type RoadmapPalletValidationRequest = {
+  batch: string;
+  typeRoadmap: RoadmapType;
+};
+
+export type RoadmapPalletValidationResponse = {
+  batch: string;
+  currentStage: string;
+  message: string;
+  valid: boolean;
+};
