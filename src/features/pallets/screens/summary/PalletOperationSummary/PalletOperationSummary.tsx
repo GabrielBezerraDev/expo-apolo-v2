@@ -9,7 +9,7 @@ import { typography } from "@shared/typography";
 import type {
   OfflinePalletOperation,
   OfflinePalletOperationSummaryItem,
-} from "../../../types/offlinePalletOperation";
+} from "../../../protocol";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { usePalletOperationSummary } from "./usePalletOperationSummary";
 

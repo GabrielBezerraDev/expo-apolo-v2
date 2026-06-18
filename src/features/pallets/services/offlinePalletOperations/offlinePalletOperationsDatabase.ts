@@ -9,7 +9,7 @@ import {
   OfflinePalletOperationStatus,
   OfflinePalletOperationType,
   OfflineShipGoodsData,
-} from "../../types/offlinePalletOperation";
+} from "../../protocol";
 import { deletePalletOperationImageDirectory } from "../palletImageStorage";
 
 type OfflinePalletOperationRow = {
