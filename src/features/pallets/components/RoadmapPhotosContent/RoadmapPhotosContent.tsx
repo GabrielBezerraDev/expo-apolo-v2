@@ -6,7 +6,7 @@ import { PhotoCarousel } from "@shared/components/Display";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { typography } from "@shared/typography";
 import { resolveRoadmapPhotoUri } from "../../services/roadmapPhotoStorage";
-import type { Roadmap, RoadmapPalletPhotos } from "../../types/roadmap";
+import type { Roadmap, RoadmapPalletPhotos } from "../../protocol";
 
 type Props = {
   roadmap: Roadmap;

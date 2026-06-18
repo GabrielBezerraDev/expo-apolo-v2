@@ -1,4 +1,4 @@
-import type { Roadmap } from "@features/pallets/types/roadmap";
+import type { Roadmap } from "@features/pallets/protocol";
 
 export type AuthStackParamList = {
   Login: undefined;

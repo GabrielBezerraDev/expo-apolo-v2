@@ -4,16 +4,16 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import {
-  buildOfflinePalletOperationSummary,
   OfflinePalletOperation,
   OfflinePalletOperationSummary,
-} from "../../../types/offlinePalletOperation";
+} from "../../../protocol";
 import {
+  buildOfflinePalletOperationSummary,
   deleteOfflinePalletOperation,
   getOfflinePalletOperation,
+  useOfflinePalletOperation,
 } from "../../../services/offlinePalletOperations";
 import { deletePalletOperationImageDirectory } from "../../../services/palletImageStorage";
-import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperation";
 
 type UsePalletOperationSummaryParams = {
   navigation: NativeStackNavigationProp<RootStackParamList, "PalletOperationSummary">;
