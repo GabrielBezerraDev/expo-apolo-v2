@@ -4,10 +4,10 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { RefreshableList } from "@shared/components/Display";
-import { OfflinePalletOperationType } from "../../types/offlinePalletOperation";
-import { useOfflinePalletDrafts } from "../../hooks/useOfflinePalletDrafts";
-import { useRoadmapSync } from "../../hooks/useRoadmapSync";
+import { OfflinePalletOperationType } from "../../protocol";
+import { useRoadmapSync } from "../../services/roadmapSync";
 import { OfflinePalletDraftCard } from "../OfflinePalletDraftCard";
+import { useOfflinePalletDrafts } from "./hooks";
 
 type Props = {
   operationType: OfflinePalletOperationType;

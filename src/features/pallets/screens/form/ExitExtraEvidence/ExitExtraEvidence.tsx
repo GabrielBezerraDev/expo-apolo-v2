@@ -15,7 +15,7 @@ import { AppButton } from "@shared/components/Forms/AppButton";
 import { typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
-import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperation";
+import { useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
 import { usePallet } from "../../../providers/PalletProvider";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;

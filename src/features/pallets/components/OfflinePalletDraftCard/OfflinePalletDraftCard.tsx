@@ -1,10 +1,8 @@
 import React from "react";
 import { Button, styled, Text, View } from "tamagui";
 import { typography } from "@shared/typography";
-import {
-  buildOfflinePalletOperationSummary,
-  OfflinePalletOperation,
-} from "../../types/offlinePalletOperation";
+import { OfflinePalletOperation } from "../../protocol";
+import { buildOfflinePalletOperationSummary } from "../../services/offlinePalletOperations";
 
 type Props = {
   item: OfflinePalletOperation;

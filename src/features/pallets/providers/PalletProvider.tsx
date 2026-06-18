@@ -10,7 +10,7 @@ import { Control, UseFormGetValues, UseFormSetValue, useForm } from "react-hook-
 import { FormScreenPalletType } from "../screens/form/FormScreenPallet/FormScreenPalletType";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formScreenPalletSchema } from "../screens/form/FormScreenPallet/FormScreenPalletSchema";
-import { OfflinePalletOperation } from "../types/offlinePalletOperation";
+import { OfflinePalletOperation } from "../protocol";
 
 export type EntryPallet = {
   id: string;

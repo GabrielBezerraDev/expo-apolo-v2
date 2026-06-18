@@ -12,7 +12,7 @@ import { AppButton } from "@shared/components/Forms/AppButton";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { fontScale, typography } from "@shared/typography";
-import { useOfflinePalletOperation } from "../../../hooks/useOfflinePalletOperation";
+import { useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
 import { getOfflinePalletOperationByRoadmap } from "../../../services/offlinePalletOperations";
 import { useRoadmapApi } from "../../../services/roadmapApi";
 import { usePallet } from "../../../providers/PalletProvider";

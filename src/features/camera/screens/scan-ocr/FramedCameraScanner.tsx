@@ -18,9 +18,9 @@ import type {
   CameraDevice,
   CameraDeviceFormat,
 } from 'react-native-vision-camera';
-import { useFrame } from '../../providers/FrameProvider';
+import { useFrame } from '../../providers';
 
-export type { ScannerCaptureResult } from '../../providers/FrameProvider';
+export type { ScannerCaptureResult } from '../../providers';
 
 const { OCRModule } = NativeModules;
 

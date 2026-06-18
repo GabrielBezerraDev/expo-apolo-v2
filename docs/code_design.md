@@ -5,7 +5,8 @@ This document defines the application architecture and implementation standards.
 ## Folder Structure
 
 - Main application features must live in `src/features`.
-- Each feature should own its internal scope, such as `screens`, `components`, `hooks`, `providers`, `services`, `types`, `utils`, and `mocks` when needed.
+- Each feature should own its internal scope, such as `screens`, `components`, `hooks`, `providers`, `services`, `protocol`, `schemas`, `utils`, and `mocks` when needed.
+- Feature contracts must live in `protocol`, not `types`. This includes TypeScript types, interfaces, abstract classes, request/response contracts, and other general contracts.
 - Shared code used across features must live in `src/shared`.
 - Shared components must live in `src/shared/components`.
 - Shared utilities must live in `src/shared/utils` or another equivalent shared folder.
@@ -16,6 +17,14 @@ This document defines the application architecture and implementation standards.
 - Every created folder must expose its public API through an `index.ts` or `index.tsx`.
 - Imports from outside a folder should prefer the folder `index`, not internal files.
 - Internal files can exist freely, but they should only be imported directly inside the same module/folder.
+
+## Protocol, Schemas, And Hooks
+
+- Do not create nested folders inside `protocol`, `schemas`, or `hooks`.
+- Files in `protocol`, `schemas`, and `hooks` must be created directly in the folder and exported through its `index.ts`.
+- Use `protocol` for all feature contracts instead of a `types` folder.
+- Use `schemas` only for validation schemas and schema-related helpers.
+- Use `hooks` only when the hook is shared within that specific scope; otherwise, keep the hook next to its owning component, screen, or service.
 
 ## Components And UI
 
@@ -56,7 +65,7 @@ This document defines the application architecture and implementation standards.
 - Less frequent and simpler flows, such as login, can use Axios through a centralized service.
 - Requests must not live directly inside screen components.
 - Create services inside the feature or in `shared/services` when they are reusable.
-- Request/response types should live close to the service or inside the feature `types` folder.
+- Request/response contracts should live close to the service or inside the feature `protocol` folder.
 
 ## Reusability
 
@@ -81,6 +90,6 @@ This document defines the application architecture and implementation standards.
 - Is component logic extracted into a hook when the component is not trivial?
 - Are providers placed at the smallest possible scope?
 - Does dynamic data use TanStack Query?
-- Are services/types outside components?
+- Are services/protocol contracts outside components?
 - Do imports use aliases when appropriate?
 - Does `npm run typecheck` pass?

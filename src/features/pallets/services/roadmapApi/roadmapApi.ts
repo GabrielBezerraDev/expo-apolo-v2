@@ -6,7 +6,7 @@ import type {
   RoadmapPalletValidationResponse,
   RoadmapQueryParams,
   RoadmapResponse,
-} from "../../types/roadmap";
+} from "../../protocol";
 
 export type RoadmapApi = {
   finishRoadmap: (body: FormData) => Promise<Roadmap>;

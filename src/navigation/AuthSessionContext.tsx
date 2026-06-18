@@ -8,7 +8,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { AuthTokens } from "@features/auth/types/authTypes";
+import { AuthTokens } from "@features/auth/protocol";
 
 const AUTH_TOKEN_STORAGE_KEY = "@valorlog:authToken";
 const AUTH_REFRESH_TOKEN_STORAGE_KEY = "@valorlog:refreshToken";

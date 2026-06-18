@@ -2,8 +2,8 @@ import type { RoadmapApi } from "../roadmapApi";
 import type {
   OfflinePalletEvidenceItem,
   OfflinePalletOperation,
-} from "../../types/offlinePalletOperation";
-import type { RoadmapType } from "../../types/roadmap";
+} from "../../protocol";
+import type { RoadmapType } from "../../protocol";
 
 const PHOTOS_PER_PALLET = 4;
 
