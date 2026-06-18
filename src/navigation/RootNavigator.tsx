@@ -9,6 +9,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@navigation/navigation.protocol';
 import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
+import { NotificationBootstrap } from '@features/notifications';
 import { FormScreenPallet } from '@features/pallets/screens/form/FormScreenPallet';
 import { OperationSuccess } from '@features/pallets/screens/form/OperationSuccess';
 import { PalletsEvidence } from '@features/pallets/screens/form/PalletsEvidence';
@@ -21,6 +22,7 @@ import { PaginationProvider } from '@shared/components/Navigation/Pagination';
 import { AuthSessionProvider, useAuthSession } from './AuthSessionContext';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
+import { SocketProvider } from '@shared/services/socket';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -71,21 +73,24 @@ function RootNavigatorContent() {
 
 function LoggedInStack() {
   return (
-    <FrameProvider>
-      <PalletProvider>
-        <PaginationProvider>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Main" component={MainTabsNavigator} />
-            <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
-            <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
-            <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
-            <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />
-            <Stack.Screen name="RoadmapPhotos" component={RoadmapPhotosScreen} />
-            <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
-            <Stack.Screen name="Scanner" component={FramedCameraScanner} />
-          </Stack.Navigator>
-        </PaginationProvider>
-      </PalletProvider>
-    </FrameProvider>
+    <SocketProvider>
+      <NotificationBootstrap />
+      <FrameProvider>
+        <PalletProvider>
+          <PaginationProvider>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="Main" component={MainTabsNavigator} />
+              <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
+              <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
+              <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
+              <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />
+              <Stack.Screen name="RoadmapPhotos" component={RoadmapPhotosScreen} />
+              <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
+              <Stack.Screen name="Scanner" component={FramedCameraScanner} />
+            </Stack.Navigator>
+          </PaginationProvider>
+        </PalletProvider>
+      </FrameProvider>
+    </SocketProvider>
   );
 }

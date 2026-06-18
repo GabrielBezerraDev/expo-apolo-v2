@@ -7,12 +7,15 @@ import { Button, ScrollView, styled, Text, useWindowDimensions, View } from "tam
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
+import { useModal } from "@shared/components/Display/Modal";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
+import { hasApiBaseUrl } from "@shared/services/apiClient";
 import { fontScale, typography } from "@shared/typography";
 import { useOfflinePalletOperation } from "../../hooks/useOfflinePalletOperation";
 import { usePallet } from "../../providers/PalletProvider";
+import { type RoadmapApi, useRoadmapApi } from "../../services/roadmapApi";
 import { ListScreenShell } from "../../components/ListScreenShell";
 import { MovementCancelButton } from "../../components/MovementCancelButton";
 
@@ -21,6 +24,8 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 export function PalletsEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
+  const { closeModal, openModal } = useModal();
+  const roadmapApi = useRoadmapApi();
   const { theme } = useThemeMode();
   const { width, height } = useWindowDimensions();
   const {
@@ -33,6 +38,25 @@ export function PalletsEvidence() {
   } = usePallet();
   const { persistPalletPhoto, savePalletEvidenceDraft } = useOfflinePalletOperation();
   const cardWidth = width - width * 0.1;
+
+  const openPalletValidationModal = useCallback((message: string) => {
+    let modalId = "";
+
+    modalId = openModal(
+      <PalletScanWarningModal
+        message={message}
+        onClose={() => closeModal(modalId)}
+      />,
+      {
+        animationType: "slide",
+        heightPercent: 34,
+        maxHeightPercent: 54,
+        minHeight: 0,
+        title: "Palete não autorizado",
+        widthPercent: 88,
+      },
+    );
+  }, [closeModal, openModal]);
 
   const validateForm =
     palletEvidence.length > 0 &&
@@ -47,24 +71,50 @@ export function PalletsEvidence() {
         preset: "tinyDataLandScape",
         orientation: "LandScape",
         onCapture: async (data) => {
-          const nextEvidence = palletEvidence.map((pallet, index) => {
+          const scannedBatch = data.text.trim();
+          navigation.goBack();
+
+          try {
+            await validateScannedBatch({
+              batch: scannedBatch,
+              operationPallet,
+              roadmapApi,
+            });
+          } catch (error) {
+            const nextEvidence = palletEvidence.map((pallet, index) => {
               if (index !== palletIndex) return pallet;
 
               return {
                 ...pallet,
-                batch: data.text,
+                batch: "",
               };
             });
+
+            setPalletEvidence(nextEvidence);
+            await savePalletEvidenceDraft({ evidence: nextEvidence });
+            requestAnimationFrame(() => {
+              openPalletValidationModal(getPalletValidationErrorMessage(error));
+            });
+            return;
+          }
+
+          const nextEvidence = palletEvidence.map((pallet, index) => {
+            if (index !== palletIndex) return pallet;
+
+            return {
+              ...pallet,
+              batch: scannedBatch,
+            };
+          });
           setPalletEvidence(nextEvidence);
           await savePalletEvidenceDraft({ evidence: nextEvidence });
-          navigation.goBack();
         },
         onCancel: () => navigation.goBack(),
         formatTextDataWithRegex: (data) => data.replace(/\D/g, ""),
       });
       navigation.navigate("Scanner");
     },
-    [configureScanner, navigation, palletEvidence, savePalletEvidenceDraft, setPalletEvidence],
+    [configureScanner, navigation, openPalletValidationModal, operationPallet, palletEvidence, roadmapApi, savePalletEvidenceDraft, setPalletEvidence],
   );
 
   const scanPhoto = useCallback(
@@ -195,6 +245,54 @@ export function PalletsEvidence() {
   );
 }
 
+function PalletScanWarningModal({
+  message,
+  onClose,
+}: {
+  message: string;
+  onClose: () => void;
+}) {
+  return (
+    <WarningModalRoot>
+      <WarningModalText>{message}</WarningModalText>
+      <WarningModalButton onPress={onClose}>
+        <WarningModalButtonText>ENTENDI</WarningModalButtonText>
+      </WarningModalButton>
+    </WarningModalRoot>
+  );
+}
+
+async function validateScannedBatch({
+  batch,
+  operationPallet,
+  roadmapApi,
+}: {
+  batch: string;
+  operationPallet: "entry" | "exit";
+  roadmapApi: RoadmapApi;
+}) {
+  if (!batch) {
+    throw new Error("Lote do palete é obrigatório.");
+  }
+
+  if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) {
+    throw new Error("Não foi possível validar o palete. Verifique sua conexão e tente novamente.");
+  }
+
+  await roadmapApi.validatePallet({
+    batch,
+    typeRoadmap: operationPallet === "entry" ? "ENTRY" : "EXIT",
+  });
+}
+
+function getPalletValidationErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Não foi possível validar o palete. Tente novamente.";
+}
+
 const palletsContentStyle = {
   alignItems: "center" as const,
   gap: 16,
@@ -243,4 +341,33 @@ const PalletCardTitle = styled(Text, {
 
 const IconButton = styled(Button, {
   unstyled: true,
+});
+
+const WarningModalRoot = styled(View, {
+  gap: 18,
+  justifyContent: "center",
+});
+
+const WarningModalText = styled(Text, {
+  ...typography.bodyMedium,
+  color: "$text",
+  fontWeight: "700",
+  textAlign: "center",
+});
+
+const WarningModalButton = styled(Button, {
+  unstyled: true,
+  alignItems: "center",
+  backgroundColor: "$primary",
+  borderRadius: 12,
+  justifyContent: "center",
+  minHeight: 46,
+  paddingHorizontal: 18,
+  paddingVertical: 12,
+});
+
+const WarningModalButtonText = styled(Text, {
+  ...typography.button,
+  color: "$white",
+  fontWeight: "900",
 });

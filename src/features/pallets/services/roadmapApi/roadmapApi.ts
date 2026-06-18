@@ -1,6 +1,12 @@
 import { useMemo } from "react";
 import { useApiClient } from "@shared/services/apiClient";
-import type { Roadmap, RoadmapQueryParams, RoadmapResponse } from "../../types/roadmap";
+import type {
+  Roadmap,
+  RoadmapPalletValidationRequest,
+  RoadmapPalletValidationResponse,
+  RoadmapQueryParams,
+  RoadmapResponse,
+} from "../../types/roadmap";
 
 export type RoadmapApi = {
   finishRoadmap: (body: FormData) => Promise<Roadmap>;
@@ -8,6 +14,7 @@ export type RoadmapApi = {
   hasAuthToken: boolean;
   roadmapExists: (roadmap: string) => Promise<boolean>;
   startRoadmap: (body: FormData) => Promise<Roadmap>;
+  validatePallet: (body: RoadmapPalletValidationRequest) => Promise<RoadmapPalletValidationResponse>;
 };
 
 export function useRoadmapApi(): RoadmapApi {
@@ -40,6 +47,8 @@ export function useRoadmapApi(): RoadmapApi {
       },
       startRoadmap: (body: FormData) =>
         apiClient.postFormData<Roadmap>("/roadmap/start", { body }),
+      validatePallet: (body: RoadmapPalletValidationRequest) =>
+        apiClient.post<RoadmapPalletValidationResponse, RoadmapPalletValidationRequest>("/roadmap/validate-pallet", { body }),
     }),
     [apiClient],
   );
