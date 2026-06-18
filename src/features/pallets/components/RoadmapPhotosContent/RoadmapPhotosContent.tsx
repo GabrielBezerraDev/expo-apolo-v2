@@ -48,7 +48,6 @@ export function RoadmapPhotosContent({ roadmap }: Props) {
           <PhotoCarousel
             emptyLabel="Foto não disponível"
             heightPreset="medium"
-            imageResizeMode="contain"
             items={exitEvidenceItems}
             readonly
             showItemHeader
