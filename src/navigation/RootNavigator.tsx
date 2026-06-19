@@ -11,12 +11,11 @@ import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { NotificationBootstrap } from '@features/notifications';
 import { ExitExtraEvidence, FormScreenPallet, OperationSuccess, PalletsEvidence } from '@features/pallets/screens/form';
-import { PalletOperationSummary } from '@features/pallets/screens/summary/PalletOperationSummary';
-import { RoadmapPhotosScreen } from '@features/pallets/screens/roadmap/RoadmapPhotosScreen';
-import { PalletProvider } from '@features/pallets/providers/PalletProvider';
+import { PalletOperationSummary } from '@features/pallets/screens/summary';
+import { RoadmapPhotosScreen } from '@features/pallets/screens/roadmap';
+import { PalletProvider } from '@features/pallets/providers';
 import { LottieAnimLoading } from '@shared/components/Feedback';
-import { PaginationProvider } from '@shared/components/Navigation/Pagination';
-import { AuthSessionProvider, useAuthSession } from './AuthSessionContext';
+import { AuthSessionProvider, useAuthSession } from '@shared/services/authSession';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
 import { SocketProvider } from '@shared/services/socket';
@@ -74,18 +73,16 @@ function LoggedInStack() {
       <NotificationBootstrap />
       <FrameProvider>
         <PalletProvider>
-          <PaginationProvider>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="Main" component={MainTabsNavigator} />
-              <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
-              <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
-              <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
-              <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />
-              <Stack.Screen name="RoadmapPhotos" component={RoadmapPhotosScreen} />
-              <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
-              <Stack.Screen name="Scanner" component={FramedCameraScanner} />
-            </Stack.Navigator>
-          </PaginationProvider>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Main" component={MainTabsNavigator} />
+            <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
+            <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
+            <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
+            <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />
+            <Stack.Screen name="RoadmapPhotos" component={RoadmapPhotosScreen} />
+            <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
+            <Stack.Screen name="Scanner" component={FramedCameraScanner} />
+          </Stack.Navigator>
         </PalletProvider>
       </FrameProvider>
     </SocketProvider>

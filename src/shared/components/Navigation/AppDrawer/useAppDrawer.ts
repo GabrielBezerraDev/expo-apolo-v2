@@ -1,4 +1,4 @@
-import { useAuthSession } from "@navigation/AuthSessionContext";
+import { useAuthSession } from "@shared/services/authSession";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { useAppDrawerAnimation } from "./useAppDrawerAnimation";
 

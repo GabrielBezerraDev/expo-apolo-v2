@@ -275,9 +275,7 @@ async function validateScannedBatch({
     throw new Error("Lote do palete é obrigatório.");
   }
 
-  if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) {
-    throw new Error("Não foi possível validar o palete. Verifique sua conexão e tente novamente.");
-  }
+  if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) return;
 
   await roadmapApi.validatePallet({
     batch,

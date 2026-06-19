@@ -30,6 +30,7 @@ type OfflinePalletOperationRow = {
 const DATABASE_NAME = "valorlog_offline.db";
 const TABLE_NAME = "offline_pallet_operations";
 const OFFLINE_OPERATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const STALE_SYNCING_MS = 5 * 60 * 1000;
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | undefined;
 
@@ -60,14 +61,17 @@ export async function getOfflinePalletOperationsDatabase() {
             SELECT 1
             FROM ${TABLE_NAME} newer
             WHERE newer.roadmap = ${TABLE_NAME}.roadmap
+              AND newer.operation_type = ${TABLE_NAME}.operation_type
               AND (
                 newer.updated_at > ${TABLE_NAME}.updated_at
                 OR (newer.updated_at = ${TABLE_NAME}.updated_at AND newer.id > ${TABLE_NAME}.id)
               )
           );
 
-        CREATE UNIQUE INDEX IF NOT EXISTS ${TABLE_NAME}_roadmap_unique
-        ON ${TABLE_NAME}(roadmap)
+        DROP INDEX IF EXISTS ${TABLE_NAME}_roadmap_unique;
+
+        CREATE UNIQUE INDEX IF NOT EXISTS ${TABLE_NAME}_operation_roadmap_unique
+        ON ${TABLE_NAME}(operation_type, roadmap)
         WHERE roadmap IS NOT NULL;
       `);
       await cleanupExpiredOfflinePalletOperations(database);
@@ -84,7 +88,11 @@ export async function upsertOfflinePalletOperation(
 ): Promise<OfflinePalletOperation> {
   const database = await getOfflinePalletOperationsDatabase();
   const roadmap = normalizeRoadmap(patch.roadmap);
-  const existing = await getExistingOperation({ id: patch.id, roadmap });
+  const existing = await getExistingOperation({
+    id: patch.id,
+    operationType: patch.operationType,
+    roadmap,
+  });
   const shouldApplyPatch = !existing || existing.id === patch.id;
   const now = new Date().toISOString();
   const operation: OfflinePalletOperation = {
@@ -144,17 +152,24 @@ export async function getOfflinePalletOperation(id: string) {
   return row ? mapRowToOperation(row) : null;
 }
 
-export async function getOfflinePalletOperationByRoadmap(roadmap: string) {
+export async function getOfflinePalletOperationByRoadmap(
+  roadmap: string,
+  operationType?: OfflinePalletOperationType,
+) {
   const normalizedRoadmap = normalizeRoadmap(roadmap);
   if (!normalizedRoadmap) return null;
 
   const database = await getOfflinePalletOperationsDatabase();
+  const operationTypeFilter = operationType ? "AND operation_type = ?" : "";
+  const params = operationType
+    ? [normalizedRoadmap, operationType]
+    : [normalizedRoadmap];
   const row = await database.getFirstAsync<OfflinePalletOperationRow>(
     `SELECT * FROM ${TABLE_NAME}
-     WHERE roadmap = ? AND status != 'synced'
+     WHERE roadmap = ? ${operationTypeFilter} AND status != 'synced'
      ORDER BY updated_at DESC
      LIMIT 1`,
-    normalizedRoadmap,
+    ...params,
   );
 
   return row ? mapRowToOperation(row) : null;
@@ -174,10 +189,13 @@ export async function listOfflinePalletOperations(operationType: OfflinePalletOp
 
 export async function listPendingSyncPalletOperations() {
   const database = await getOfflinePalletOperationsDatabase();
+  const staleSyncingBefore = new Date(Date.now() - STALE_SYNCING_MS).toISOString();
   const rows = await database.getAllAsync<OfflinePalletOperationRow>(
     `SELECT * FROM ${TABLE_NAME}
      WHERE status IN ('pending_sync', 'failed')
+        OR (status = 'syncing' AND updated_at < ?)
      ORDER BY updated_at ASC`,
+    staleSyncingBefore,
   );
 
   return rows.map(mapRowToOperation);
@@ -215,7 +233,7 @@ async function cleanupExpiredOfflinePalletOperations(database: SQLite.SQLiteData
   const expiresBefore = new Date(Date.now() - OFFLINE_OPERATION_TTL_MS).toISOString();
   const rows = await database.getAllAsync<OfflinePalletOperationRow>(
     `SELECT * FROM ${TABLE_NAME}
-     WHERE updated_at < ? AND status != 'pending_sync'`,
+     WHERE updated_at < ? AND status IN ('draft', 'synced')`,
     expiresBefore,
   );
 
@@ -232,26 +250,30 @@ async function cleanupExpiredOfflinePalletOperations(database: SQLite.SQLiteData
 
 async function getExistingOperation({
   id,
+  operationType,
   roadmap,
 }: {
   id?: string;
+  operationType: OfflinePalletOperationType;
   roadmap?: string | null;
 }) {
   const database = await getOfflinePalletOperationsDatabase();
-
-  if (roadmap) {
-    const row = await database.getFirstAsync<OfflinePalletOperationRow>(
-      `SELECT * FROM ${TABLE_NAME} WHERE roadmap = ? AND status != 'synced'`,
-      roadmap,
-    );
-
-    if (row) return mapRowToOperation(row);
-  }
 
   if (id) {
     const row = await database.getFirstAsync<OfflinePalletOperationRow>(
       `SELECT * FROM ${TABLE_NAME} WHERE id = ?`,
       id,
+    );
+
+    if (row) return mapRowToOperation(row);
+  }
+
+  if (roadmap) {
+    const row = await database.getFirstAsync<OfflinePalletOperationRow>(
+      `SELECT * FROM ${TABLE_NAME}
+       WHERE roadmap = ? AND operation_type = ? AND status != 'synced'`,
+      roadmap,
+      operationType,
     );
 
     if (row) return mapRowToOperation(row);

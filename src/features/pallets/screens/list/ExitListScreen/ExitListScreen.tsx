@@ -5,6 +5,7 @@ import { Filter, PackageMinus } from "lucide-react-native";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import {
   PaginationComponent,
+  PaginationProvider,
   usePagination,
   WrapperPagination,
 } from "@shared/components/Navigation/Pagination";
@@ -23,6 +24,14 @@ import { useOperationListFilters, useRoadmapList } from "../hooks";
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function ExitListScreen() {
+  return (
+    <PaginationProvider>
+      <ExitListScreenContent />
+    </PaginationProvider>
+  );
+}
+
+function ExitListScreenContent() {
   const navigation = useNavigation<Navigation>();
   const [activeTab, setActiveTab] = useState<OperationListTabValue>("operations");
   const { resetEntry, setOperationPallet } = usePallet();

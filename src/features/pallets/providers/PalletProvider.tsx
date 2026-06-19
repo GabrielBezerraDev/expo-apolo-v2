@@ -7,10 +7,9 @@ import React, {
 } from "react";
 import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
 import { Control, UseFormGetValues, UseFormSetValue, useForm } from "react-hook-form";
-import { FormScreenPalletType } from "../screens/form/FormScreenPallet/FormScreenPalletType";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { formScreenPalletSchema } from "../screens/form/FormScreenPallet/FormScreenPalletSchema";
-import { OfflinePalletOperation } from "../protocol";
+import { formScreenPalletSchema } from "../schemas";
+import { FormScreenPalletType, OfflinePalletOperation } from "../protocol";
 
 export type EntryPallet = {
   id: string;
