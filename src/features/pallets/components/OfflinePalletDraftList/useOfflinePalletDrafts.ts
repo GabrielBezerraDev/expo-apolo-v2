@@ -3,12 +3,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import {
   OfflinePalletOperation,
   OfflinePalletOperationType,
-} from "../../../protocol";
+} from "../../protocol";
 import {
   deleteOfflinePalletOperation,
   listOfflinePalletOperations,
-} from "../../../services/offlinePalletOperations";
-import { deletePalletOperationImageDirectory } from "../../../services/palletImageStorage";
+} from "../../services/offlinePalletOperations";
+import { deletePalletOperationImageDirectory } from "../../services/palletImageStorage";
 
 type UseOfflinePalletDraftsParams = {
   operationType: OfflinePalletOperationType;

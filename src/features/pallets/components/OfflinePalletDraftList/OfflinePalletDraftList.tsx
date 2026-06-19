@@ -7,7 +7,7 @@ import { RefreshableList } from "@shared/components/Display";
 import { OfflinePalletOperationType } from "../../protocol";
 import { useRoadmapSync } from "../../services/roadmapSync";
 import { OfflinePalletDraftCard } from "../OfflinePalletDraftCard";
-import { useOfflinePalletDrafts } from "./hooks";
+import { useOfflinePalletDrafts } from "./useOfflinePalletDrafts";
 
 type Props = {
   operationType: OfflinePalletOperationType;

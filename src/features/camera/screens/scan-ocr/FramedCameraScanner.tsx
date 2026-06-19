@@ -3,7 +3,6 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import {
   Alert,
   Platform,
-  NativeModules,
   LayoutChangeEvent,
 } from 'react-native';
 import { Button, Spinner, styled, Text, View } from 'tamagui';
@@ -18,11 +17,10 @@ import type {
   CameraDevice,
   CameraDeviceFormat,
 } from 'react-native-vision-camera';
+import { cropImageForOcr, recognizeTextFromImage, setOcrScreenOrientation } from '../../services';
 import { useFrame } from '../../providers';
 
 export type { ScannerCaptureResult } from '../../providers';
-
-const { OCRModule } = NativeModules;
 
 export interface LiveOCRResult {
   text: string;
@@ -117,10 +115,10 @@ export const FramedCameraScanner: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    Promise.resolve(OCRModule?.setScreenOrientation?.(nativeOrientation)).catch(() => undefined);
+    setOcrScreenOrientation(nativeOrientation).catch(() => undefined);
 
     return () => {
-      Promise.resolve(OCRModule?.setScreenOrientation?.('portrait')).catch(() => undefined);
+      setOcrScreenOrientation('portrait').catch(() => undefined);
     };
   }, [nativeOrientation]);
 
@@ -214,14 +212,15 @@ export const FramedCameraScanner: React.FC = () => {
         snapshot.width, snapshot.height,
       );
 
-      const cropped = await OCRModule.cropImage(
+      const cropped = await cropImageForOcr(
         snapPath, cropX, cropY, cropW, cropH,
       );
 
       // Single pass OCR, no rotation retries — speed matters here
-      const ocrResult = await OCRModule.recognizeText(cropped.path, {
+      const ocrResult = await recognizeTextFromImage(cropped.path, {
         multipleAttempts: false,
       });
+      if (!ocrResult) return;
 
       const rawText = ocrResult.text?.trim() || '';
       const text = formatTextDataWithRegex.current
@@ -244,9 +243,8 @@ export const FramedCameraScanner: React.FC = () => {
       latestResultRef.current = result;
       setLiveResult(result);
 
-    } catch (err) {
+    } catch {
       // Failed OCR on a snapshot isn't fatal — just skip this tick
-      // console.log('Live OCR tick failed:', err);
     } finally {
       isProcessingRef.current = false;
     }
@@ -303,7 +301,7 @@ export const FramedCameraScanner: React.FC = () => {
         photo.width, photo.height,
       );
 
-      const result = await OCRModule.cropImage(
+      const result = await cropImageForOcr(
         photoPath, cropX, cropY, cropW, cropH,
       );
 

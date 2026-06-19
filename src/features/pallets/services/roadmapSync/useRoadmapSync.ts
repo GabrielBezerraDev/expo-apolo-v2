@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
 import {
   getOfflinePalletOperation,
@@ -12,6 +13,7 @@ export type RoadmapSyncState = "idle" | "syncing" | "synced" | "failed" | "skipp
 
 export function useRoadmapSync() {
   const roadmapApi = useRoadmapApi();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<RoadmapSyncState>("idle");
 
@@ -34,6 +36,8 @@ export function useRoadmapSync() {
     try {
       const roadmap = await syncOfflinePalletOperation(roadmapApi, operation);
       await updateOfflinePalletOperationStatus({ id: operation.id, status: "synced" });
+      await queryClient.invalidateQueries({ queryKey: ["roadmap"] });
+      await queryClient.invalidateQueries({ queryKey: ["quality-report"] });
       setState("synced");
       return roadmap;
     } catch (syncError) {
@@ -43,7 +47,7 @@ export function useRoadmapSync() {
       setState("failed");
       return null;
     }
-  }, [roadmapApi]);
+  }, [queryClient, roadmapApi]);
 
   const syncPendingOperations = useCallback(async () => {
     if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) return;
