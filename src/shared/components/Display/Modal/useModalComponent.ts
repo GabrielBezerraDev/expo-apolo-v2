@@ -36,6 +36,7 @@ export function useModalComponent({ modal, removeModal, requestClose }: UseModal
     contentStyle,
     bodyStyle,
     onClose,
+    timeModal
   } = modal.options || {};
 
   const resolvedPlacement: ModalPlacement = placement;
@@ -66,7 +67,7 @@ export function useModalComponent({ modal, removeModal, requestClose }: UseModal
 
     const timeout = setTimeout(() => {
       requestClose(modal.id);
-    }, 5500);
+    }, timeModal || 5500);
 
     return () => clearTimeout(timeout);
   }, [isNotification, modal.id, preventClose, requestClose]);

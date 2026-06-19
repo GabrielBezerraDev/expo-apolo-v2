@@ -16,9 +16,9 @@ import { useOfflinePalletOperation } from "../../../services/offlinePalletOperat
 import { getOfflinePalletOperationByRoadmap } from "../../../services/offlinePalletOperations";
 import { useRoadmapApi } from "../../../services/roadmapApi";
 import { usePallet } from "../../../providers/PalletProvider";
+import { FormScreenPalletType } from "../../../protocol";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
-import { FormScreenPalletType } from './FormScreenPalletType';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -109,7 +109,7 @@ export function FormScreenPallet() {
 
   const confirm = async () => {
     const currentRoadmap = getValeusScreenPallet("roadmap").trim();
-    const existingOperation = await getOfflinePalletOperationByRoadmap(currentRoadmap);
+    const existingOperation = await getOfflinePalletOperationByRoadmap(currentRoadmap, operationPallet);
 
     if (existingOperation && existingOperation.currentStep !== "form") {
       navigation.navigate("PalletOperationSummary", { operationId: existingOperation.id });

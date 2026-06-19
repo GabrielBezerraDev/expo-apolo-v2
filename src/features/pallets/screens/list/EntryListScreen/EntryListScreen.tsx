@@ -5,6 +5,7 @@ import { ClipboardPlus, Filter } from "lucide-react-native";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import {
   PaginationComponent,
+  PaginationProvider,
   usePagination,
   WrapperPagination,
 } from "@shared/components/Navigation/Pagination";
@@ -23,6 +24,14 @@ import { useOperationListFilters, useRoadmapList } from "../hooks";
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function EntryListScreen() {
+  return (
+    <PaginationProvider>
+      <EntryListScreenContent />
+    </PaginationProvider>
+  );
+}
+
+function EntryListScreenContent() {
   const navigation = useNavigation<Navigation>();
   const [activeTab, setActiveTab] = useState<OperationListTabValue>("operations");
   const { resetEntry, setOperationPallet } = usePallet();

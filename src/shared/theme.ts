@@ -1,3 +1,5 @@
+import { createContext, useContext } from 'react';
+
 export const lightTheme = {
   mode: 'light',
   background: 'rgb(255, 255, 255)',
@@ -43,7 +45,25 @@ export const darkTheme = {
 export type AppTheme = typeof lightTheme;
 export type ThemeMode = 'light' | 'dark';
 
+export type ThemeModeContextValue = {
+  mode: ThemeMode;
+  theme: AppTheme;
+  toggleTheme: () => void;
+};
+
 export const appThemes = {
   light: lightTheme,
   dark: darkTheme,
 };
+
+export const ThemeModeContext = createContext<ThemeModeContextValue | undefined>(undefined);
+
+export function useThemeMode() {
+  const context = useContext(ThemeModeContext);
+
+  if (!context) {
+    throw new Error('useThemeMode must be used within an AppThemeProvider');
+  }
+
+  return context;
+}

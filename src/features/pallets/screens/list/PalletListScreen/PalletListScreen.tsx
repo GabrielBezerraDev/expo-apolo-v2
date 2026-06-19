@@ -3,6 +3,7 @@ import { Button } from "tamagui";
 import { Search, SlidersHorizontal, X } from "lucide-react-native";
 import {
   PaginationComponent,
+  PaginationProvider,
   usePagination,
   WrapperPagination,
 } from "@shared/components/Navigation/Pagination";
@@ -19,6 +20,14 @@ import { usePalletListFilters } from "./usePalletListFilters";
 import { useQualityReportList } from "./useQualityReportList";
 
 export function PalletListScreen() {
+  return (
+    <PaginationProvider>
+      <PalletListScreenContent />
+    </PaginationProvider>
+  );
+}
+
+function PalletListScreenContent() {
   const { theme } = useThemeMode();
   const [batchSearch, setBatchSearch] = useState("");
   const deferredBatchSearch = useDeferredValue(batchSearch.trim());

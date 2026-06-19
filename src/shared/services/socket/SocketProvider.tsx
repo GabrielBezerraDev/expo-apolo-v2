@@ -1,6 +1,6 @@
 import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
-import { useAuthSession } from "@navigation/AuthSessionContext";
+import { useAuthSession } from "@shared/services/authSession";
 import type { AppSocket, SocketContextValue } from "./socket.types";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "";

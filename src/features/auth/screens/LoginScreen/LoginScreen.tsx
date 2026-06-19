@@ -5,7 +5,7 @@ import { Check } from "lucide-react-native";
 import { Button, styled, Text, useWindowDimensions, View } from "tamagui";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@navigation/navigation.protocol";
-import { useAuthSession } from "@navigation/AuthSessionContext";
+import { useAuthSession } from "@shared/services/authSession";
 import { useThemeMode, ThemeToggle } from "@shared/components/Actions/ThemeToggle";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";

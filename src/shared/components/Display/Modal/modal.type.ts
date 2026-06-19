@@ -26,6 +26,7 @@ export interface ModalOptions {
   backdropColor?: string;
   contentStyle?: StyleProp<ViewStyle>;
   bodyStyle?: StyleProp<ViewStyle>;
+  timeModal?: number;
   onClose?: () => void;
 }
 

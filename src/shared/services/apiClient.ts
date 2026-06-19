@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useAuthSession } from "@navigation/AuthSessionContext";
+import { useAuthSession } from "@shared/services/authSession";
 
 type ApiRequestParams = {
   query?: Record<string, unknown>;
