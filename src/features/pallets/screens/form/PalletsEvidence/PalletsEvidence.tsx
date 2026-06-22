@@ -75,6 +75,11 @@ export function PalletsEvidence() {
           navigation.goBack();
 
           try {
+            validateUniqueScannedBatch({
+              batch: scannedBatch,
+              evidence: palletEvidence,
+              palletIndex,
+            });
             await validateScannedBatch({
               batch: scannedBatch,
               operationPallet,
@@ -243,6 +248,31 @@ export function PalletsEvidence() {
       </ScrollView>
     </ListScreenShell>
   );
+}
+
+function validateUniqueScannedBatch({
+  batch,
+  evidence,
+  palletIndex,
+}: {
+  batch: string;
+  evidence: Array<{ batch: string }>;
+  palletIndex: number;
+}) {
+  const normalizedBatch = normalizeBatch(batch);
+  if (!normalizedBatch) return;
+
+  const duplicatedBatch = evidence.some(
+    (pallet, index) => index !== palletIndex && normalizeBatch(pallet.batch) === normalizedBatch,
+  );
+
+  if (duplicatedBatch) {
+    throw new Error("Este lote já foi informado em outro palete. Escaneie um lote diferente.");
+  }
+}
+
+function normalizeBatch(value: string) {
+  return value.trim().toLowerCase();
 }
 
 function PalletScanWarningModal({
