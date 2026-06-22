@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react-native";
@@ -13,6 +13,11 @@ import { typography } from "@shared/typography";
 import { LoginAnimatedHeader, ShinyConecthus } from "../../components/LoginAnimatedHeader";
 import { loginSchema } from "../../schemas";
 import { LoginFormData, normalizeAuthTokens } from "../../protocol";
+import {
+  clearRememberedCredentials,
+  getRememberedCredentials,
+  saveRememberedCredentials,
+} from "../../services";
 import { useLoginMutation } from "./useLoginMutation";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
@@ -115,13 +120,38 @@ export function LoginScreen(_props: Props) {
     mode: "onChange",
   });
 
+  useEffect(() => {
+    let active = true;
+
+    getRememberedCredentials()
+      .then((credentials) => {
+        if (!active || !credentials) return;
+
+        setValue("email", credentials.email, { shouldValidate: true });
+        setValue("password", credentials.password, { shouldValidate: true });
+        setValue("remember", true, { shouldValidate: true });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [setValue]);
+
   const submit = async (data: LoginFormData) => {
     setLoginError("");
 
     try {
+      const email = data.email.trim();
       const response = await loginMutation.mutateAsync({
-        email: data.email.trim(),
+        email,
         password: data.password,
+      });
+
+      await persistCredentialsPreference({
+        email,
+        password: data.password,
+        remember: data.remember,
       });
 
       await login(normalizeAuthTokens(response));
@@ -130,6 +160,19 @@ export function LoginScreen(_props: Props) {
     }
   };
   const remember = watch("remember");
+
+  const toggleRemember = () => {
+    const nextRemember = !remember;
+
+    setValue("remember", nextRemember, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+
+    if (!nextRemember) {
+      void clearRememberedCredentials();
+    }
+  };
 
   return (
     <Screen>
@@ -161,14 +204,7 @@ export function LoginScreen(_props: Props) {
         />
         {loginError ? <AuthErrorText>{loginError}</AuthErrorText> : null}
         <Inline>
-          <Remember
-            onPress={() =>
-              setValue("remember", !remember, {
-                shouldDirty: true,
-                shouldTouch: true,
-              })
-            }
-          >
+          <Remember onPress={toggleRemember}>
             <Checkbox checked={remember}>
               {remember ? <Check size={14} color={theme.white} /> : null}
             </Checkbox>
@@ -192,4 +228,21 @@ export function LoginScreen(_props: Props) {
       </FooterRow>
     </Screen>
   );
+}
+
+async function persistCredentialsPreference({
+  email,
+  password,
+  remember,
+}: {
+  email: string;
+  password: string;
+  remember: boolean;
+}) {
+  if (remember) {
+    await saveRememberedCredentials({ email, password });
+    return;
+  }
+
+  await clearRememberedCredentials();
 }

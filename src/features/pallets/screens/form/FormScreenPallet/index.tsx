@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { Alert } from "react-native";
+import { useFormState } from "react-hook-form";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
@@ -42,6 +43,7 @@ export function FormScreenPallet() {
     setFormScreenPalletValue,
   } = usePallet();
   const { saveFormDraft } = useOfflinePalletOperation();
+  const { errors } = useFormState({ control: controlFormScreenPallet });
 
 
 
@@ -184,6 +186,7 @@ export function FormScreenPallet() {
               value={route}
               editable={false}
               placeholder="Escaneie o roteiro"
+              error={errors.roadmap?.message}
               rightIcon={
                 <IconButton onPress={scanRoadmap} hitSlop={10}>
                   <Camera size={20 * fontScale} color={theme.primary} />
@@ -200,6 +203,7 @@ export function FormScreenPallet() {
               onChangeText={handleQuantityChange}
               keyboardType="number-pad"
               placeholder="Ex: 2"
+              error={errors.palletsQuantity?.message}
             />
             <AppButton
               style={{width:'100%', height: height * 0.06}}
