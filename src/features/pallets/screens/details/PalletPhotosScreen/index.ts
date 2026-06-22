@@ -1,0 +1,1 @@
+export { PalletPhotosScreen } from "./PalletPhotosScreen";
