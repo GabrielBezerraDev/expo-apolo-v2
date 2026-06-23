@@ -1,8 +1,15 @@
-import React from "react";
-import { styled, Text, View } from "tamagui";
+import React, { useCallback } from "react";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Button, styled, Text, View } from "tamagui";
+import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { AppCard } from "@shared/components/Display/AppCard";
+import { useModal } from "@shared/components/Display/Modal";
 import { typography } from "@shared/typography";
 import { PalletReportType, QualityReport } from "../../protocol";
+import { getPalletStageLabel } from "../../utils";
+
+type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 type Props = {
   item: QualityReport;
@@ -46,15 +53,55 @@ const MutedLine = styled(Text, {
 });
 
 export function QualityReportCard({ item, reportType }: Props) {
+  const { closeModal, openModal } = useModal();
+  const navigation = useNavigation<Navigation>();
   const pallet = item.pallet ?? {};
+
+  const openHistoryScreen = useCallback(() => {
+    if (!pallet.id) return;
+
+    navigation.navigate("PalletHistory", { batch: pallet.batch, palletId: pallet.id });
+  }, [navigation, pallet.batch, pallet.id]);
+
+  const openPhotosScreen = useCallback(() => {
+    if (!pallet.id) return;
+
+    navigation.navigate("PalletPhotos", { batch: pallet.batch, palletId: pallet.id });
+  }, [navigation, pallet.batch, pallet.id]);
+
+  const openOptionsModal = useCallback(() => {
+    let modalId = "";
+    modalId = openModal(
+      <PalletOptionsModal
+        hasPalletId={Boolean(pallet.id)}
+        onViewHistory={() => {
+          closeModal(modalId);
+          openHistoryScreen();
+        }}
+        onViewPhotos={() => {
+          closeModal(modalId);
+          openPhotosScreen();
+        }}
+      />,
+      {
+        animationType: "slide",
+        heightPercent: 30,
+        maxHeightPercent: 42,
+        minHeight: 0,
+        title: "Opções",
+        widthPercent: 88,
+      },
+    );
+  }, [closeModal, openHistoryScreen, openModal, openPhotosScreen, pallet.id]);
 
   return (
     <AppCard
       variant="orangeHeader"
+      footerConfig={{ title: "OPÇÕES", footerCallback: openOptionsModal }}
       header={
         <Header>
           <HeaderText>{formatDate(item.date ?? pallet.createdAt)}</HeaderText>
-          <Badge>{stageToLabel(pallet.currentStage)}</Badge>
+          <Badge>{getPalletStageLabel(pallet.currentStage)}</Badge>
         </Header>
       }
     >
@@ -64,6 +111,35 @@ export function QualityReportCard({ item, reportType }: Props) {
       <Line>Linha: {pallet.lineName ?? pallet.lineId ?? "-"}</Line>
       {renderReportDetails(item, reportType)}
     </AppCard>
+  );
+}
+
+function PalletOptionsModal({
+  hasPalletId,
+  onViewHistory,
+  onViewPhotos,
+}: {
+  hasPalletId: boolean;
+  onViewHistory: () => void;
+  onViewPhotos: () => void;
+}) {
+  if (!hasPalletId) {
+    return (
+      <OptionsRoot>
+        <UnavailableText>Palete sem identificador.</UnavailableText>
+      </OptionsRoot>
+    );
+  }
+
+  return (
+    <OptionsRoot>
+      <OptionButton onPress={onViewHistory}>
+        <OptionButtonText>Histórico do Palete</OptionButtonText>
+      </OptionButton>
+      <OptionButton onPress={onViewPhotos}>
+        <OptionButtonText>Fotos do Palete</OptionButtonText>
+      </OptionButton>
+    </OptionsRoot>
   );
 }
 
@@ -92,17 +168,32 @@ function formatDate(value?: string) {
   });
 }
 
-function stageToLabel(value?: string) {
-  const labels: Record<string, string> = {
-    FINISHED: "Finalizado",
-    PACKAGING: "Qualidade",
-    PACKAGING_FOR_REVIEW: "Retorno Produção",
-    PRODUCTION: "Produção",
-    PRODUCTION_FOR_REVIEW: "Retorno Produção",
-    STORAGE: "Expedição",
-    WIP: "WIP",
-    WIP_FOR_REVIEW: "Retorno Apontamento",
-  };
+const OptionsRoot = styled(View, {
+  gap: 12,
+  justifyContent: "center",
+});
 
-  return value ? labels[value] ?? value : "-";
-}
+const OptionButton = styled(Button, {
+  unstyled: true,
+  alignItems: "center",
+  backgroundColor: "$primary",
+  borderRadius: 12,
+  justifyContent: "center",
+  minHeight: 46,
+  paddingHorizontal: 18,
+  paddingVertical: 12,
+});
+
+const OptionButtonText = styled(Text, {
+  ...typography.button,
+  color: "$white",
+  fontWeight: "900",
+  textTransform: "uppercase",
+});
+
+const UnavailableText = styled(Text, {
+  ...typography.bodyMedium,
+  color: "$mutedText",
+  fontWeight: "700",
+  textAlign: "center",
+});

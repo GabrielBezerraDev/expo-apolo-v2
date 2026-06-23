@@ -18,6 +18,8 @@ export type RootStackParamList = {
   PalletsEvidence: undefined;
   ExitExtraEvidence: undefined;
   PalletOperationSummary: { operationId: string };
+  PalletHistory: { batch?: string; palletId: number };
+  PalletPhotos: { batch?: string; palletId: number };
   RoadmapPhotos: { roadmap: Roadmap };
   OperationSuccess: { operation: 'entry' | 'exit' };
 };

@@ -9,7 +9,10 @@ export type PalletStage =
   | "PACKAGING_FOR_REVIEW"
   | "PRODUCTION_FOR_REVIEW"
   | "WIP_FOR_REVIEW"
-  | "FINISHED";
+  | "FINISHED"
+  | "TO_VALORLOG"
+  | "VALORLOG_ENTRY"
+  | "VALORLOG_EXIT";
 
 export type QualityReportPallet = {
   id?: number;
