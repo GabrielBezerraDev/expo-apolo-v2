@@ -11,6 +11,7 @@ import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { NotificationBootstrap } from '@features/notifications';
 import { ExitExtraEvidence, FormScreenPallet, OperationSuccess, PalletsEvidence } from '@features/pallets/screens/form';
+import { PalletHistoryScreen, PalletPhotosScreen } from '@features/pallets/screens/details';
 import { PalletOperationSummary } from '@features/pallets/screens/summary';
 import { RoadmapPhotosScreen } from '@features/pallets/screens/roadmap';
 import { PalletProvider } from '@features/pallets/providers';
@@ -79,6 +80,8 @@ function LoggedInStack() {
             <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
             <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
             <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />
+            <Stack.Screen name="PalletHistory" component={PalletHistoryScreen} />
+            <Stack.Screen name="PalletPhotos" component={PalletPhotosScreen} />
             <Stack.Screen name="RoadmapPhotos" component={RoadmapPhotosScreen} />
             <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
             <Stack.Screen name="Scanner" component={FramedCameraScanner} />

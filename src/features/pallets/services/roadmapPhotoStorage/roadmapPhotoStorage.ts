@@ -5,6 +5,14 @@ export function hasRoadmapPhotoPublicUrl() {
 }
 
 export function resolveRoadmapPhotoUri(path?: string | null) {
+  return resolvePublicPhotoUri(path);
+}
+
+export function resolvePalletPhotoUri(path?: string | null) {
+  return resolvePublicPhotoUri(path);
+}
+
+function resolvePublicPhotoUri(path?: string | null) {
   const normalizedPath = path?.trim().replace(/^\/+/, "");
   if (!normalizedPath) return null;
   if (/^https?:\/\//i.test(normalizedPath)) return encodeURI(normalizedPath);

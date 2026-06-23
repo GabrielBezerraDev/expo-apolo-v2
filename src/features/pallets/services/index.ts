@@ -1,4 +1,5 @@
 export * from "./offlinePalletOperations";
+export * from "./palletApi";
 export * from "./palletImageStorage";
 export * from "./qualityReportApi";
 export * from "./roadmapApi";

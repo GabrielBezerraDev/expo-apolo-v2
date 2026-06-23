@@ -75,13 +75,15 @@ export function PhotoCarousel({
           </ItemHeader>
         ) : null}
         <PhotoFrame width={carouselWidth} height={photoHeight}>
-          {hasPhoto ? (
+          {hasPhoto ? (() => {
+            console.log('URI: ',item.uri);
+            return (
             <Image
-              resizeMode={imageResizeMode}
               source={{ uri: item.uri ?? "" }}
               style={styles.image}
             />
-          ) : (
+          )
+          })() : (
             <EmptyContent>
               {!showItemHeader && item.title ? <EmptyTitle>{item.title}</EmptyTitle> : null}
               {showCounter ? <EmptyCounter>{index + 1}/{items.length}</EmptyCounter> : null}

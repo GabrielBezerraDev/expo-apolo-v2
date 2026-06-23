@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { FilterConfig, useFilterController } from "@shared/components/Filters";
 import { QualityReport } from "../../../protocol";
+import { getPalletStageLabel } from "../../../utils";
 
 type UsePalletListFiltersParams = {
   reports: QualityReport[];
@@ -8,13 +9,13 @@ type UsePalletListFiltersParams = {
 };
 
 const stageOptions = [
-  { label: "WIP", value: "WIP" },
-  { label: "Qualidade", value: "PACKAGING" },
-  { label: "Expedição", value: "STORAGE" },
-  { label: "Finalizado", value: "FINISHED" },
-  { label: "Retorno Produção", value: "PACKAGING_FOR_REVIEW" },
-  { label: "Retorno Apontamento", value: "WIP_FOR_REVIEW" },
-];
+  "WIP",
+  "STORAGE",
+  "FINISHED",
+  "TO_VALORLOG",
+  "VALORLOG_ENTRY",
+  "VALORLOG_EXIT",
+].map(value => ({ label: getPalletStageLabel(value), value }));
 
 export function usePalletListFilters({ modalTitle, reports }: UsePalletListFiltersParams) {
   const lineOptions = useMemo(
