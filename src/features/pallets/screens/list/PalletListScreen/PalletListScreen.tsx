@@ -11,7 +11,7 @@ import { FilterChips } from "@shared/components/Filters";
 import { RefreshableList } from "@shared/components/Display";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
-import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { hasApiBaseUrl, isApiTimeoutError } from "@shared/services/apiClient";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { PalletReportStatusTabs } from "../../../components/PalletReportStatusTabs";
 import { QualityReportCard } from "../../../components/QualityReportCard";
@@ -105,11 +105,12 @@ function PalletListScreenContent() {
       <FilterChips chips={chips} />
       <RefreshableList
         data={reports}
-        emptyMessage="Não há reports para listar."
+        emptyMessage="Não há Paletes"
         errorMessage={errorMessage}
         isError={!canLoadReports || qualityReportQuery.isError}
         isLoading={qualityReportQuery.isLoading}
         isRefreshing={refresh}
+        isTimeoutError={isApiTimeoutError(qualityReportQuery.error)}
         keyExtractor={(item) => String(item.id)}
         loadingLabel="Carregando paletes"
         onRefresh={refreshReports}
