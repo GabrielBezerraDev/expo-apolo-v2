@@ -87,6 +87,7 @@ export const FramedCameraScanner: React.FC = () => {
     handleScannerCapture,
     handleScannerCancel,
     formatTextDataWithRegex,
+    resetScanner,
   } = useFrame();
 
   const { mode, orientation, pollIntervalMs, stableReadsRequired } = scanner;
@@ -121,6 +122,11 @@ export const FramedCameraScanner: React.FC = () => {
       setOcrScreenOrientation('portrait').catch(() => undefined);
     };
   }, [nativeOrientation]);
+
+  useEffect(() => () => {
+    setOcrScreenOrientation('portrait').catch(() => undefined);
+    resetScanner();
+  }, [resetScanner]);
 
   useEffect(() => {
     isPollingRef.current = false;
@@ -250,6 +256,11 @@ export const FramedCameraScanner: React.FC = () => {
     }
   }, [computeSnapshotCropRect, formatTextDataWithRegex, stableReadsRequired]);
 
+  const handleCancel = useCallback(async () => {
+    await setOcrScreenOrientation('portrait').catch(() => undefined);
+    handleScannerCancel();
+  }, [handleScannerCancel]);
+
   // Start/stop the polling loop based on camera readiness
   useEffect(() => {
     if (isPhotoMode || !hasPermission || !device || isCapturing) {
@@ -287,6 +298,7 @@ export const FramedCameraScanner: React.FC = () => {
         : photo.path;
 
       if (isPhotoMode) {
+        await setOcrScreenOrientation('portrait').catch(() => undefined);
         handleScannerCapture({
           imageUri: photoPath,
           text: '',
@@ -307,6 +319,7 @@ export const FramedCameraScanner: React.FC = () => {
 
       const liveData = latestResultRef.current;
 
+      await setOcrScreenOrientation('portrait').catch(() => undefined);
       handleScannerCapture({
         imageUri: result.path,
         text: liveData?.text?.trim() || '',
@@ -336,7 +349,7 @@ export const FramedCameraScanner: React.FC = () => {
         <ActionButton actionVariant="capture" onPress={requestPermission}>
           <ActionButtonText>Solicitar permissão</ActionButtonText>
         </ActionButton>
-        <ActionButton actionVariant="cancel" marginTop={12} onPress={handleScannerCancel}>
+        <ActionButton actionVariant="cancel" marginTop={12} onPress={handleCancel}>
           <ActionButtonText>Voltar</ActionButtonText>
         </ActionButton>
       </Center>
@@ -434,7 +447,7 @@ export const FramedCameraScanner: React.FC = () => {
       >
         <ActionButton
           actionVariant="cancel"
-          onPress={handleScannerCancel}
+          onPress={handleCancel}
           disabled={isCapturing}
         >
           <ActionButtonText>Cancelar</ActionButtonText>
