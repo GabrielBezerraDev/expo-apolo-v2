@@ -29,6 +29,8 @@ export type ApiClient = {
 };
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+const DEFAULT_API_TIMEOUT_MS = 20_000;
+const FORM_DATA_API_TIMEOUT_MS = 180_000;
 
 export class ApiError extends Error {
   constructor(
@@ -37,6 +39,10 @@ export class ApiError extends Error {
   ) {
     super(message);
   }
+}
+
+export function isApiTimeoutError(error: unknown) {
+  return error instanceof ApiError && error.status === 408;
 }
 
 export async function apiPost<TResponse, TBody = unknown>(
@@ -106,26 +112,53 @@ async function apiRequest<TResponse>(
   params: ApiRequestOptions,
 ) {
   const url = buildUrl(path, params.query);
+  const isFormData = isFormDataBody(params.body);
+  const requestBody = buildRequestBody(params.body);
+  const controller = new AbortController();
+  const timeoutMs = isFormData ? FORM_DATA_API_TIMEOUT_MS : DEFAULT_API_TIMEOUT_MS;
+  let didTimeout = false;
+  const timeoutId = setTimeout(() => {
+    didTimeout = true;
+    controller.abort();
+  }, timeoutMs);
 
-  const response = await fetch(url, {
-    method: params.method,
-    headers: {
-      Accept: "application/json",
-      ...(params.body == null || isFormDataBody(params.body) ? {} : { "Content-Type": "application/json" }),
-      ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}),
-    },
-    ...(params.body == null ? {} : { body: isFormDataBody(params.body) ? params.body : JSON.stringify(params.body) }),
-  });
+  try {
+    const response = await fetch(url, {
+      method: params.method,
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        ...(params.body == null || isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}),
+      },
+      ...(requestBody == null ? {} : { body: requestBody }),
+    });
 
-  if (!response.ok) {
-    throw new ApiError(await getErrorMessage(response), response.status);
+    if (!response.ok) {
+      throw new ApiError(await getErrorMessage(response), response.status);
+    }
+
+    return response.json() as Promise<TResponse>;
+  } catch (error) {
+    if (didTimeout) {
+      throw new ApiError("Tempo limite da requisição excedido.", 408);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return response.json() as Promise<TResponse>;
 }
 
 function isFormDataBody(body: unknown): body is FormData {
   return typeof FormData !== "undefined" && body instanceof FormData;
+}
+
+function buildRequestBody(body: unknown): BodyInit | undefined {
+  if (body == null) return undefined;
+  if (isFormDataBody(body)) return body;
+
+  return JSON.stringify(body);
 }
 
 function buildQueryString(query?: Record<string, unknown>) {

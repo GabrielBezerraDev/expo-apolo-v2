@@ -11,7 +11,7 @@ import {
 } from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
 import { RefreshableList } from "@shared/components/Display";
-import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { hasApiBaseUrl, isApiTimeoutError } from "@shared/services/apiClient";
 import { OfflinePalletDraftList } from "../../../components/OfflinePalletDraftList";
 import { OperationCard, type OperationItem } from "../../../components/OperationCard";
 import { OperationListTabs, OperationListTabValue } from "../../../components/OperationListTabs";
@@ -103,11 +103,12 @@ function EntryListScreenContent() {
           <FilterChips chips={chips} />
           <RefreshableList
             data={operations}
-            emptyMessage="Não há entradas para listar."
+            emptyMessage="Não há registros de entradas"
             errorMessage={errorMessage}
             isError={!canLoadRoadmaps || roadmapQuery.isError}
             isLoading={roadmapQuery.isLoading}
             isRefreshing={refresh}
+            isTimeoutError={isApiTimeoutError(roadmapQuery.error)}
             keyExtractor={(item) => item.id}
             loadingLabel="Carregando entradas"
             onRefresh={refreshOperations}

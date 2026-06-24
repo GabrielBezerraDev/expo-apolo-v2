@@ -3,10 +3,13 @@ import {
   FlatList,
   ListRenderItem,
   StyleProp,
+  useWindowDimensions,
   ViewStyle,
 } from "react-native";
+import EmptyIllustration from "@assets/svg/Empty-rafiki.svg";
+import ErrorIllustration from "@assets/svg/error-illustration-exact.svg";
 import { LottieAnimLoading } from "@shared/components/Feedback";
-import { ErrorText, FeedbackRoot, FeedbackText } from "./styled";
+import { ErrorText, FeedbackRoot, FeedbackText, RetryButton, RetryButtonText } from "./styled";
 import { useRefreshableList } from "./useRefreshableList";
 
 type Props<ItemT> = {
@@ -17,6 +20,7 @@ type Props<ItemT> = {
   isError?: boolean;
   isLoading?: boolean;
   isRefreshing?: boolean;
+  isTimeoutError?: boolean;
   keyExtractor: (item: ItemT, index: number) => string;
   loadingLabel?: string;
   onRefresh?: () => void;
@@ -38,6 +42,7 @@ export function RefreshableList<ItemT>({
   isError,
   isLoading,
   isRefreshing,
+  isTimeoutError,
   keyExtractor,
   loadingLabel,
   onRefresh,
@@ -45,6 +50,8 @@ export function RefreshableList<ItemT>({
   showsVerticalScrollIndicator = false,
   style,
 }: Props<ItemT>) {
+  const { width, height } = useWindowDimensions();
+  const illustrationSize = getFeedbackIllustrationSize(width, height);
   const {
     emptyMessage: resolvedEmptyMessage,
     errorMessage: resolvedErrorMessage,
@@ -85,14 +92,29 @@ export function RefreshableList<ItemT>({
         contentContainerStyle,
       ]}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-      ListEmptyComponent={showError ? renderError : renderEmpty}
+      ListEmptyComponent={isTimeoutError && showError ? renderTimeoutError : showError ? renderError : renderEmpty}
     />
   );
 
   function renderEmpty() {
     return (
       <FeedbackRoot>
+        <EmptyIllustration width={illustrationSize.width} height={illustrationSize.height} />
         <FeedbackText>{resolvedEmptyMessage}</FeedbackText>
+      </FeedbackRoot>
+    );
+  }
+
+  function renderTimeoutError() {
+    return (
+      <FeedbackRoot>
+        <ErrorIllustration width={illustrationSize.width} height={illustrationSize.height} />
+        <ErrorText>{resolvedErrorMessage}</ErrorText>
+        {onRefresh ? (
+          <RetryButton onPress={onRefresh}>
+            <RetryButtonText>TENTAR NOVAMENTE</RetryButtonText>
+          </RetryButton>
+        ) : null}
       </FeedbackRoot>
     );
   }
@@ -104,4 +126,14 @@ export function RefreshableList<ItemT>({
       </FeedbackRoot>
     );
   }
+}
+
+function getFeedbackIllustrationSize(width: number, height: number) {
+  const shortestSide = Math.min(width, height);
+  const illustrationWidth = Math.min(Math.max(shortestSide * 0.56, 180), 320);
+
+  return {
+    height: illustrationWidth * 0.82,
+    width: illustrationWidth,
+  };
 }
