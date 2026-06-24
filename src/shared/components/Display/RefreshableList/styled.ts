@@ -6,7 +6,7 @@ export const FeedbackRoot = styled(View, {
   alignItems: "center",
   justifyContent: "center",
   paddingHorizontal: 24,
-  gap: 14,
+  gap: 6,
 });
 
 export const FeedbackText = styled(Text, {
