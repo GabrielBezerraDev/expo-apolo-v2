@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   styled,
@@ -10,6 +10,7 @@ import {
 } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
+import { setOcrScreenOrientation } from "@features/camera/services";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { typography } from "@shared/typography";
@@ -24,7 +25,8 @@ type EvidenceKey = "truck" | "licensePlate" | "seal";
 export function ExitExtraEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
+  const portraitHeight = Math.max(width, height);
   const { exitExtraEvidencePhotos, offlineOperationId, resetEntry, route, shipGoodsPhotos } =
     usePallet();
   const {
@@ -36,6 +38,12 @@ export function ExitExtraEvidence() {
     shipGoodsPhotos.truck &&
     exitExtraEvidencePhotos.licensePlate &&
     exitExtraEvidencePhotos.seal,
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      setOcrScreenOrientation("portrait").catch(() => undefined);
+    }, []),
   );
   const evidenceItems = [
     {
@@ -158,7 +166,7 @@ export function ExitExtraEvidence() {
         />
       </View>
       <AppButton
-        style={{ width: "100%", height: height * 0.06, marginBottom: height * 0.02 }}
+        style={{ width: "100%", height: portraitHeight * 0.06, marginBottom: portraitHeight * 0.02 }}
         title="FINALIZAR SAÍDA"
         disabled={!canFinishExit}
         onPress={finishExit}

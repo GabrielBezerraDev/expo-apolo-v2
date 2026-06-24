@@ -1,11 +1,12 @@
 import React, { useCallback } from "react";
 import { Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
 import { Button, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
+import { setOcrScreenOrientation } from "@features/camera/services";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { useModal } from "@shared/components/Display/Modal";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
@@ -28,6 +29,8 @@ export function PalletsEvidence() {
   const roadmapApi = useRoadmapApi();
   const { theme } = useThemeMode();
   const { width, height } = useWindowDimensions();
+  const portraitWidth = Math.min(width, height);
+  const portraitHeight = Math.max(width, height);
   const {
     operationPallet,
     offlineOperationId,
@@ -37,7 +40,13 @@ export function PalletsEvidence() {
     setPalletEvidence,
   } = usePallet();
   const { persistPalletPhoto, savePalletEvidenceDraft } = useOfflinePalletOperation();
-  const cardWidth = width - width * 0.1;
+  const cardWidth = portraitWidth - portraitWidth * 0.1;
+
+  useFocusEffect(
+    useCallback(() => {
+      setOcrScreenOrientation("portrait").catch(() => undefined);
+    }, []),
+  );
 
   const openPalletValidationModal = useCallback((message: string) => {
     let modalId = "";
@@ -240,7 +249,7 @@ export function PalletsEvidence() {
         ))}
 
         <AppButton
-          style={{ width: "100%", height: height * 0.06 }}
+          style={{ width: "100%", height: portraitHeight * 0.06 }}
           title={operationPallet === "exit" ? "CONTINUAR" : "CONFIRMAR"}
           disabled={!validateForm}
           onPress={finishEntry}
