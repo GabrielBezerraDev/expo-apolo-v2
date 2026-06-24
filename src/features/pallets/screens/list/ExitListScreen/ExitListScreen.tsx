@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Filter, PackageMinus } from "lucide-react-native";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
@@ -17,7 +17,6 @@ import { OperationCard, type OperationItem } from "../../../components/Operation
 import { OperationListTabs, OperationListTabValue } from "../../../components/OperationListTabs";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { usePallet } from "../../../providers/PalletProvider";
-import { useRoadmapSync } from "../../../services/roadmapSync";
 import type { Roadmap } from "../../../protocol";
 import { useOperationListFilters, useRoadmapList } from "../hooks";
 
@@ -36,7 +35,6 @@ function ExitListScreenContent() {
   const [activeTab, setActiveTab] = useState<OperationListTabValue>("operations");
   const { resetEntry, setOperationPallet } = usePallet();
   const { currentPage, itemsPerPage, sendToFirstPage, setPaginationMeta } = usePagination();
-  const { syncPendingOperations } = useRoadmapSync();
   const {
     appliedFilters,
     chips,
@@ -55,12 +53,6 @@ function ExitListScreenContent() {
     : "Configure EXPO_PUBLIC_API_URL para carregar as saídas.";
   const refresh = roadmapQuery.isRefetching && !roadmapQuery.isLoading;
   const refreshOperations = canLoadRoadmaps ? () => { void roadmapQuery.refetch(); } : undefined;
-
-  useFocusEffect(
-    useCallback(() => {
-      void syncPendingOperations();
-    }, [syncPendingOperations]),
-  );
 
   useEffect(() => {
     sendToFirstPage();

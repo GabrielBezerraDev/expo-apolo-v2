@@ -54,9 +54,10 @@ export function OfflinePalletDraftCard({ item, onDelete, onOpen, onRetry }: Prop
 
 function getStatusPresentation(status: OfflinePalletOperation["status"]): {
   label: string;
-  variant: "draft" | "failed" | "ready" | "syncing";
+  variant: "draft" | "failed" | "ready" | "review" | "syncing";
 } {
   if (status === "pending_sync") return { label: "Pronto para envio", variant: "ready" };
+  if (status === "validation_failed") return { label: "Revisar validação", variant: "review" };
   if (status === "failed") return { label: "Falha no envio", variant: "failed" };
   if (status === "syncing") return { label: "Sincronizando", variant: "syncing" };
   return { label: "Em andamento", variant: "draft" };
@@ -143,6 +144,7 @@ const StatusChip = styled(View, {
       draft: { backgroundColor: "$primaryLight" },
       failed: { backgroundColor: "$error" },
       ready: { backgroundColor: "$success" },
+      review: { backgroundColor: "$warning" },
       syncing: { backgroundColor: "$primaryLight" },
     },
   } as const,

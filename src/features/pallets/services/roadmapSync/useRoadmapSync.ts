@@ -1,13 +1,13 @@
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { hasApiBaseUrl, isApiValidationError } from "@shared/services/apiClient";
 import {
   getOfflinePalletOperation,
   listPendingSyncPalletOperations,
   updateOfflinePalletOperationStatus,
 } from "../offlinePalletOperations";
 import { useRoadmapApi } from "../roadmapApi";
-import { syncOfflinePalletOperation } from "./roadmapSyncService";
+import { OfflineOperationValidationError, syncOfflinePalletOperation } from "./roadmapSyncService";
 
 export type RoadmapSyncState = "idle" | "syncing" | "synced" | "failed" | "skipped";
 
@@ -41,6 +41,31 @@ export function useRoadmapSync() {
       setState("synced");
       return roadmap;
     } catch (syncError) {
+      if (syncError instanceof OfflineOperationValidationError) {
+        await updateOfflinePalletOperationStatus({
+          id: operation.id,
+          lastError: syncError.message,
+          status: "validation_failed",
+          validationIssues: syncError.issues,
+        });
+        setError(syncError.message);
+        setState("failed");
+        return null;
+      }
+
+      if (isApiValidationError(syncError)) {
+        const message = syncError instanceof Error ? syncError.message : "Operação precisa ser revisada antes da sincronização.";
+        await updateOfflinePalletOperationStatus({
+          id: operation.id,
+          lastError: message,
+          status: "validation_failed",
+          validationIssues: [{ message, stage: getValidationIssueStage(message, operation.operationType) }],
+        });
+        setError(message);
+        setState("failed");
+        return null;
+      }
+
       const message = syncError instanceof Error ? syncError.message : "Falha ao sincronizar movimentacao.";
       await updateOfflinePalletOperationStatus({ id: operation.id, lastError: message, status: "failed" });
       setError(message);
@@ -65,4 +90,13 @@ export function useRoadmapSync() {
     syncOperation,
     syncPendingOperations,
   };
+}
+
+function getValidationIssueStage(message: string, operationType: "entry" | "exit") {
+  const normalizedMessage = message.toLowerCase();
+
+  if (normalizedMessage.includes("roteiro")) return "form";
+  if (operationType === "exit" && normalizedMessage.includes("foto")) return "exit_extra_evidence";
+
+  return "pallets_evidence";
 }

@@ -12,7 +12,7 @@ import { useModal } from "@shared/components/Display/Modal";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
-import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { hasApiBaseUrl, isApiNetworkError } from "@shared/services/apiClient";
 import { fontScale, typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
@@ -67,6 +67,25 @@ export function PalletsEvidence() {
     );
   }, [closeModal, openModal]);
 
+  const openPendingValidationModal = useCallback(() => {
+    let modalId = "";
+
+    modalId = openModal(
+      <PalletScanWarningModal
+        message="Sem conexão com a API. O lote foi salvo e será validado automaticamente na sincronização."
+        onClose={() => closeModal(modalId)}
+      />,
+      {
+        animationType: "slide",
+        heightPercent: 34,
+        maxHeightPercent: 54,
+        minHeight: 0,
+        title: "Validação pendente",
+        widthPercent: 88,
+      },
+    );
+  }, [closeModal, openModal]);
+
   const validateForm =
     palletEvidence.length > 0 &&
     palletEvidence.every(
@@ -89,11 +108,15 @@ export function PalletsEvidence() {
               evidence: palletEvidence,
               palletIndex,
             });
-            await validateScannedBatch({
+            const validationResult = await validateScannedBatch({
               batch: scannedBatch,
               operationPallet,
               roadmapApi,
             });
+
+            if (validationResult === "skipped") {
+              requestAnimationFrame(openPendingValidationModal);
+            }
           } catch (error) {
             const nextEvidence = palletEvidence.map((pallet, index) => {
               if (index !== palletIndex) return pallet;
@@ -128,7 +151,7 @@ export function PalletsEvidence() {
       });
       navigation.navigate("Scanner");
     },
-    [configureScanner, navigation, openPalletValidationModal, operationPallet, palletEvidence, roadmapApi, savePalletEvidenceDraft, setPalletEvidence],
+    [configureScanner, navigation, openPalletValidationModal, openPendingValidationModal, operationPallet, palletEvidence, roadmapApi, savePalletEvidenceDraft, setPalletEvidence],
   );
 
   const scanPhoto = useCallback(
@@ -314,12 +337,19 @@ async function validateScannedBatch({
     throw new Error("Lote do palete é obrigatório.");
   }
 
-  if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) return;
+  if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) return "skipped";
 
-  await roadmapApi.validatePallet({
-    batch,
-    typeRoadmap: operationPallet === "entry" ? "ENTRY" : "EXIT",
-  });
+  try {
+    await roadmapApi.validatePallet({
+      batch,
+      typeRoadmap: operationPallet === "entry" ? "ENTRY" : "EXIT",
+    });
+  } catch (error) {
+    if (isApiNetworkError(error)) return "skipped";
+    throw error;
+  }
+
+  return "validated";
 }
 
 function getPalletValidationErrorMessage(error: unknown) {

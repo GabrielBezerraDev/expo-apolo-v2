@@ -53,7 +53,7 @@ export function PalletOperationSummary({ navigation, route }: Props) {
           <HeaderTitle>{operation.roadmap ?? "Sem roteiro"}</HeaderTitle>
           <HeaderText>{operation.operationType === "entry" ? "Entrada" : "Saída"}</HeaderText>
           <HeaderText>{summary.progressLabel}</HeaderText>
-          <StatusText>{operation.status === "pending_sync" ? "Pronto para envio" : "Em andamento"}</StatusText>
+          <StatusText>{getOperationStatusLabel(operation.status)}</StatusText>
         </HeaderCard>
 
         {summary.sections.map(section => (
@@ -174,6 +174,18 @@ function getStatusLabel(status: string) {
     complete: "Completo",
     not_started: "Não iniciado",
     pending: "Pendente",
+  };
+
+  return labels[status] ?? status;
+}
+
+function getOperationStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    draft: "Em andamento",
+    failed: "Falha no envio",
+    pending_sync: "Pronto para envio",
+    syncing: "Sincronizando",
+    validation_failed: "Revisar validação",
   };
 
   return labels[status] ?? status;
