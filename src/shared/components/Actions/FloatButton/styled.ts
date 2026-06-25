@@ -1,4 +1,5 @@
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const FloatButtonRoot = styled(View, {
@@ -42,6 +43,7 @@ export const CircleButton = styled(Button, {
   shadowOffset: { width: 0, height: 8 },
   shadowOpacity: 0.18,
   shadowRadius: 12,
+  pressStyle: buttonPressStyle,
   width: 58,
   variants: {
     variant: {

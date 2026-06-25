@@ -2,6 +2,7 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Package, PackageOpen, Truck } from "lucide-react-native";
 import { MainTabsParamList } from "@navigation/navigation.protocol";
+import { OfflineSyncBootstrap } from "@features/pallets/components";
 import { EntryListScreen, ExitListScreen, PalletListScreen } from "@features/pallets/screens/list";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { OutlinedTabIcon } from "@shared/components/Navigation/OutlinedTabIcon";
@@ -14,6 +15,8 @@ export function MainTabsNavigator() {
   const { theme } = useThemeMode();
 
   return (
+    <>
+    <OfflineSyncBootstrap />
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
@@ -77,5 +80,6 @@ export function MainTabsNavigator() {
         }}
       />
     </Tab.Navigator>
+    </>
   );
 }

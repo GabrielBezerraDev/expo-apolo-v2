@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   FlatList,
   ListRenderItem,
@@ -8,8 +8,10 @@ import {
 } from "react-native";
 import EmptyIllustration from "@assets/svg/Empty-rafiki.svg";
 import ErrorIllustration from "@assets/svg/error-illustration-exact.svg";
+import WithoutInternetIllustration from "@assets/svg/Without_internet.svg";
 import { LottieAnimLoading } from "@shared/components/Feedback";
-import { ErrorText, FeedbackRoot, FeedbackText, RetryButton, RetryButtonText } from "./styled";
+import { useModal } from "@shared/components/Display/Modal";
+import { ErrorText, FeedbackRoot, FeedbackText, OfflineNoticeText, RetryButton, RetryButtonText } from "./styled";
 import { useRefreshableList } from "./useRefreshableList";
 
 type Props<ItemT> = {
@@ -19,10 +21,13 @@ type Props<ItemT> = {
   errorMessage?: string;
   isError?: boolean;
   isLoading?: boolean;
+  isOfflineState?: boolean;
   isRefreshing?: boolean;
   isTimeoutError?: boolean;
   keyExtractor: (item: ItemT, index: number) => string;
   loadingLabel?: string;
+  offlineMessage?: string;
+  offlineNoticeMessage?: string;
   onRefresh?: () => void;
   renderItem: ListRenderItem<ItemT>;
   showsVerticalScrollIndicator?: boolean;
@@ -41,15 +46,20 @@ export function RefreshableList<ItemT>({
   errorMessage,
   isError,
   isLoading,
+  isOfflineState,
   isRefreshing,
   isTimeoutError,
   keyExtractor,
   loadingLabel,
+  offlineMessage = "Sem conexão com a internet.",
+  offlineNoticeMessage = "Sem conexão com a internet. Exibindo dados salvos recentemente.",
   onRefresh,
   renderItem,
   showsVerticalScrollIndicator = false,
   style,
 }: Props<ItemT>) {
+  const { openModal } = useModal();
+  const lastOfflineNoticeStateRef = useRef(false);
   const { width, height } = useWindowDimensions();
   const illustrationSize = getFeedbackIllustrationSize(width, height);
   const {
@@ -60,16 +70,39 @@ export function RefreshableList<ItemT>({
     showEmpty,
     showError,
     showLoading,
+    showOffline,
   } = useRefreshableList({
     dataLength: data.length,
     emptyMessage,
     errorMessage,
     isError,
     isLoading,
+    isOfflineState,
     isRefreshing,
     loadingLabel,
     onRefresh,
   });
+
+  useEffect(() => {
+    const shouldShowOfflineNotice = Boolean(isOfflineState && data.length > 0);
+
+    if (shouldShowOfflineNotice && !lastOfflineNoticeStateRef.current) {
+      openModal(<OfflineNotice message={offlineNoticeMessage} />, {
+        animationType: "slide",
+        bodyStyle: { padding: 12 },
+        closeOnBackdrop: false,
+        maxHeightPercent: 22,
+        minHeight: 0,
+        placement: "notification",
+        showCloseButton: false,
+        showHeader: false,
+        timeModal: 4200,
+        widthPercent: 92,
+      });
+    }
+
+    lastOfflineNoticeStateRef.current = shouldShowOfflineNotice;
+  }, [data.length, isOfflineState, offlineNoticeMessage, openModal]);
 
   if (showLoading) {
     return (
@@ -88,11 +121,11 @@ export function RefreshableList<ItemT>({
       style={[{ flex: 1 }, style]}
       contentContainerStyle={[
         defaultContentContainerStyle,
-        (showEmpty || showError) ? { flexGrow: 1 } : null,
+        (showEmpty || showError || showOffline) ? { flexGrow: 1 } : null,
         contentContainerStyle,
       ]}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-      ListEmptyComponent={isTimeoutError && showError ? renderTimeoutError : showError ? renderError : renderEmpty}
+      ListEmptyComponent={showOffline ? renderOffline : isTimeoutError && showError ? renderTimeoutError : showError ? renderError : renderEmpty}
     />
   );
 
@@ -119,6 +152,20 @@ export function RefreshableList<ItemT>({
     );
   }
 
+  function renderOffline() {
+    return (
+      <FeedbackRoot>
+        <WithoutInternetIllustration width={illustrationSize.width} height={illustrationSize.height} />
+        <FeedbackText>{offlineMessage}</FeedbackText>
+        {onRefresh ? (
+          <RetryButton onPress={onRefresh}>
+            <RetryButtonText>TENTAR NOVAMENTE</RetryButtonText>
+          </RetryButton>
+        ) : null}
+      </FeedbackRoot>
+    );
+  }
+
   function renderError() {
     return (
       <FeedbackRoot>
@@ -126,6 +173,10 @@ export function RefreshableList<ItemT>({
       </FeedbackRoot>
     );
   }
+}
+
+function OfflineNotice({ message }: { message: string }) {
+  return <OfflineNoticeText>{message}</OfflineNoticeText>;
 }
 
 function getFeedbackIllustrationSize(width: number, height: number) {

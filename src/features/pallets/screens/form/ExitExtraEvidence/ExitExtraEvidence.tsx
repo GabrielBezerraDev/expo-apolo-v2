@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Alert } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,10 +13,13 @@ import { useFrame } from "@features/camera";
 import { setOcrScreenOrientation } from "@features/camera/services";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
+import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { useNetworkState } from "@shared/services/network";
 import { typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
 import { useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
+import { useRoadmapSync } from "../../../services/roadmapSync";
 import { usePallet } from "../../../providers/PalletProvider";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -25,7 +28,10 @@ type EvidenceKey = "truck" | "licensePlate" | "seal";
 export function ExitExtraEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
+  const { hasCheckedNetwork, isOnline } = useNetworkState();
+  const { syncOperation } = useRoadmapSync();
   const { height, width } = useWindowDimensions();
+  const [isFinishing, setIsFinishing] = useState(false);
   const portraitHeight = Math.max(width, height);
   const { exitExtraEvidencePhotos, offlineOperationId, resetEntry, route, shipGoodsPhotos } =
     usePallet();
@@ -130,11 +136,32 @@ export function ExitExtraEvidence() {
   };
 
   const finishExit = async () => {
-    await saveExitExtraEvidenceDraft({
-      currentStep: "completed",
-      status: "pending_sync",
-    });
-    navigation.navigate("OperationSuccess", { operation: "exit" });
+    if (isFinishing) return;
+
+    setIsFinishing(true);
+    try {
+      const operation = await saveExitExtraEvidenceDraft({
+        currentStep: "completed",
+        status: "pending_sync",
+      });
+      if (!operation) return;
+
+      const canSyncNow = hasCheckedNetwork && isOnline && hasApiBaseUrl();
+      if (!canSyncNow) {
+        navigation.navigate("OperationSuccess", { operation: "exit", syncStatus: "pending" });
+        return;
+      }
+
+      const syncedRoadmap = await syncOperation(operation.id);
+      if (syncedRoadmap) {
+        navigation.navigate("OperationSuccess", { operation: "exit", syncStatus: "synced" });
+        return;
+      }
+
+      navigation.navigate("OperationSyncError", { operationId: operation.id });
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   return (
@@ -168,7 +195,8 @@ export function ExitExtraEvidence() {
       <AppButton
         style={{ width: "100%", height: portraitHeight * 0.06, marginBottom: portraitHeight * 0.02 }}
         title="FINALIZAR SAÍDA"
-        disabled={!canFinishExit}
+        disabled={!canFinishExit || isFinishing}
+        loading={isFinishing}
         onPress={finishExit}
       />
     </ListScreenShell>

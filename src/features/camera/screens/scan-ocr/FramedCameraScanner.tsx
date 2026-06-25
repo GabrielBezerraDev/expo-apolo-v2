@@ -12,6 +12,7 @@ import {
 } from 'react-native-vision-camera';
 import { LottieAnimLoading } from '@shared/components/Feedback';
 import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
+import { buttonPressStyle } from '@shared/styles/pressFeedback';
 import type {
   CameraPermissionStatus,
   CameraDevice,
@@ -575,6 +576,7 @@ const ActionButton = styled(Button, {
   minWidth: 120,
   paddingHorizontal: 24,
   paddingVertical: 14,
+  pressStyle: buttonPressStyle,
   variants: {
     actionVariant: {
       cancel: { backgroundColor: '$mutedText' },

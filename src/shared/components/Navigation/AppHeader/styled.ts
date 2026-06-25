@@ -1,4 +1,5 @@
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const Root = styled(View, {
@@ -30,4 +31,5 @@ export const Actions = styled(View, { flexDirection: "row", alignItems: "center"
 
 export const HeaderIconButton = styled(Button, {
   unstyled: true,
+  pressStyle: buttonPressStyle,
 });

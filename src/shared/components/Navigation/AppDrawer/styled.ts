@@ -1,4 +1,5 @@
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const DrawerPanel = styled(View, {
@@ -34,6 +35,7 @@ export const DrawerCloseButton = styled(Button, {
   borderRadius: 999,
   height: 36,
   justifyContent: "center",
+  pressStyle: buttonPressStyle,
   width: 36,
 });
 
@@ -43,6 +45,7 @@ export const DrawerItem = styled(Button, {
   borderBottomColor: "$border",
   borderBottomWidth: 1,
   paddingVertical: 16,
+  pressStyle: buttonPressStyle,
 });
 
 export const DrawerItemText = styled(Text, {

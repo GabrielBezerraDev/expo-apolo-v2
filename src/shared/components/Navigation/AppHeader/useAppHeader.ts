@@ -18,7 +18,9 @@ export function useAppHeader({ onMenu }: UseAppHeaderParams) {
     setDrawerVisible(true);
   };
 
-  const closeDrawer = () => {}
+  const closeDrawer = () => {
+    setDrawerVisible(false);
+  };
 
   return {
     closeDrawer,

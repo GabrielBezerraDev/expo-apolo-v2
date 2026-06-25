@@ -9,6 +9,7 @@ import {
   OfflinePalletOperationStatus,
   OfflinePalletOperationType,
   OfflineShipGoodsData,
+  OfflineValidationIssue,
 } from "../../protocol";
 import { deletePalletOperationImageDirectory } from "../palletImageStorage";
 
@@ -25,6 +26,7 @@ type OfflinePalletOperationRow = {
   ship_goods_json: string | null;
   status: OfflinePalletOperationStatus;
   updated_at: string;
+  validation_issues_json: string | null;
 };
 
 const DATABASE_NAME = "valorlog_offline.db";
@@ -50,10 +52,12 @@ export async function getOfflinePalletOperationsDatabase() {
           ship_goods_json TEXT,
           exit_extra_evidence_json TEXT,
           last_error TEXT,
+          validation_issues_json TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
         );
       `);
+      await ensureColumn(database, "validation_issues_json", "TEXT");
       await database.execAsync(`
         DELETE FROM ${TABLE_NAME}
         WHERE roadmap IS NOT NULL
@@ -95,6 +99,7 @@ export async function upsertOfflinePalletOperation(
   });
   const shouldApplyPatch = !existing || existing.id === patch.id;
   const now = new Date().toISOString();
+  const nextStatus = shouldApplyPatch ? patch.status ?? existing?.status ?? "draft" : existing.status;
   const operation: OfflinePalletOperation = {
     createdAt: existing?.createdAt ?? now,
     currentStep: shouldApplyPatch ? patch.currentStep ?? existing?.currentStep ?? "form" : existing.currentStep,
@@ -106,8 +111,11 @@ export async function upsertOfflinePalletOperation(
     palletEvidenceData: shouldApplyPatch ? patch.palletEvidenceData ?? existing?.palletEvidenceData : existing.palletEvidenceData,
     roadmap: roadmap ?? existing?.roadmap ?? null,
     shipGoodsData: shouldApplyPatch ? patch.shipGoodsData ?? existing?.shipGoodsData : existing.shipGoodsData,
-    status: shouldApplyPatch ? patch.status ?? existing?.status ?? "draft" : existing.status,
+    status: nextStatus,
     updatedAt: shouldApplyPatch ? now : existing.updatedAt,
+    validationIssues: nextStatus === "validation_failed"
+      ? patch.validationIssues ?? existing?.validationIssues
+      : patch.validationIssues,
   };
 
   await database.runAsync(
@@ -122,9 +130,10 @@ export async function upsertOfflinePalletOperation(
       ship_goods_json,
       exit_extra_evidence_json,
       last_error,
+      validation_issues_json,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     operation.id,
     operation.roadmap ?? null,
     operation.operationType,
@@ -135,6 +144,7 @@ export async function upsertOfflinePalletOperation(
     stringify(operation.shipGoodsData),
     stringify(operation.exitExtraEvidenceData),
     operation.lastError ?? null,
+    stringify(operation.validationIssues),
     operation.createdAt,
     operation.updatedAt,
   );
@@ -205,17 +215,33 @@ export async function updateOfflinePalletOperationStatus({
   id,
   lastError = null,
   status,
+  validationIssues,
 }: {
   id: string;
   lastError?: string | null;
   status: OfflinePalletOperationStatus;
+  validationIssues?: OfflineValidationIssue[];
 }) {
   const database = await getOfflinePalletOperationsDatabase();
   const updatedAt = new Date().toISOString();
 
+  if (validationIssues) {
+    await database.runAsync(
+      `UPDATE ${TABLE_NAME}
+       SET status = ?, last_error = ?, validation_issues_json = ?, updated_at = ?
+       WHERE id = ?`,
+      status,
+      lastError,
+      stringify(validationIssues),
+      updatedAt,
+      id,
+    );
+    return;
+  }
+
   await database.runAsync(
     `UPDATE ${TABLE_NAME}
-     SET status = ?, last_error = ?, updated_at = ?
+     SET status = ?, last_error = ?, validation_issues_json = NULL, updated_at = ?
      WHERE id = ?`,
     status,
     lastError,
@@ -296,7 +322,19 @@ function mapRowToOperation(row: OfflinePalletOperationRow): OfflinePalletOperati
     shipGoodsData: parseJson<OfflineShipGoodsData>(row.ship_goods_json),
     status: row.status,
     updatedAt: row.updated_at,
+    validationIssues: parseJson<OfflineValidationIssue[]>(row.validation_issues_json),
   };
+}
+
+async function ensureColumn(
+  database: SQLite.SQLiteDatabase,
+  columnName: string,
+  columnType: string,
+) {
+  const columns = await database.getAllAsync<{ name: string }>(`PRAGMA table_info(${TABLE_NAME})`);
+  if (columns.some(column => column.name === columnName)) return;
+
+  await database.execAsync(`ALTER TABLE ${TABLE_NAME} ADD COLUMN ${columnName} ${columnType}`);
 }
 
 function createOfflinePalletOperationId(operationType: OfflinePalletOperationType, roadmap?: string | null) {

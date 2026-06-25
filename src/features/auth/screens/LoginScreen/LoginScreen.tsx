@@ -9,6 +9,7 @@ import { useAuthSession } from "@shared/services/authSession";
 import { useThemeMode, ThemeToggle } from "@shared/components/Actions/ThemeToggle";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import { LoginAnimatedHeader, ShinyConecthus } from "../../components/LoginAnimatedHeader";
 import { loginSchema } from "../../schemas";
@@ -41,6 +42,7 @@ const Remember = styled(Button, {
   flexDirection: "row",
   alignItems: "center",
   gap: 8,
+  pressStyle: buttonPressStyle,
 });
 const Checkbox = styled(View, {
   width: 20,

@@ -4,6 +4,7 @@ import { Button, styled, Text, View } from "tamagui";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { PhotoCarousel } from "@shared/components/Display";
 import { AppInput } from "@shared/components/Forms/AppInput";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import { resolveRoadmapPhotoUri } from "../../services/roadmapPhotoStorage";
 import type { Roadmap, RoadmapPalletPhotos } from "../../protocol";
@@ -163,4 +164,5 @@ const EmptyText = styled(Text, {
 
 const IconButton = styled(Button, {
   unstyled: true,
+  pressStyle: buttonPressStyle,
 });

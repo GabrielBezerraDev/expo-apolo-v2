@@ -4,6 +4,7 @@ import {
   OfflinePalletOperation,
   OfflinePalletOperationStep,
   OfflinePalletOperationStatus,
+  OfflineValidationIssue,
 } from "../../protocol";
 import {
   getOfflinePalletOperation,
@@ -38,6 +39,11 @@ type PersistOperationPhotoParams = {
   fileName: string;
   sourceUri: string;
   step: string;
+};
+
+type HydrateOperationByIdOptions = {
+  clearInvalidFields?: boolean;
+  reviewStage?: OfflinePalletOperationStep;
 };
 
 export function useOfflinePalletOperation() {
@@ -232,12 +238,16 @@ export function useOfflinePalletOperation() {
     return localUri;
   }, [exitExtraEvidencePhotos, persistOperationPhoto, saveExitExtraEvidenceDraft, setExitExtraEvidencePhotos]);
 
-  const hydrateOperationById = useCallback(async (operationId: string) => {
+  const hydrateOperationById = useCallback(async (operationId: string, options: HydrateOperationByIdOptions = {}) => {
     const operation = await getOfflinePalletOperation(operationId);
     if (!operation) return null;
 
-    hydrateOfflineOperation(operation);
-    return operation;
+    const operationToHydrate = options.clearInvalidFields
+      ? sanitizeOperationForReview(operation, options.reviewStage)
+      : operation;
+
+    hydrateOfflineOperation(operationToHydrate);
+    return operationToHydrate;
   }, [hydrateOfflineOperation]);
 
   return {
@@ -266,4 +276,132 @@ function mapPalletEvidence(evidence: PalletEvidenceItem[]): OfflinePalletEvidenc
       photos: pallet.photos,
     })),
   };
+}
+
+function sanitizeOperationForReview(
+  operation: OfflinePalletOperation,
+  reviewStage?: OfflinePalletOperationStep,
+): OfflinePalletOperation {
+  const issues = getReviewIssues(operation.validationIssues, reviewStage);
+  if (issues.length === 0) return operation;
+
+  const sanitizedOperation: OfflinePalletOperation = {
+    ...operation,
+    exitExtraEvidenceData: operation.exitExtraEvidenceData
+      ? { ...operation.exitExtraEvidenceData }
+      : undefined,
+    formData: operation.formData ? { ...operation.formData } : undefined,
+    palletEvidenceData: operation.palletEvidenceData
+      ? {
+          pallets: operation.palletEvidenceData.pallets.map(pallet => ({
+            ...pallet,
+            photos: [...pallet.photos],
+          })),
+        }
+      : undefined,
+    shipGoodsData: operation.shipGoodsData ? { ...operation.shipGoodsData } : undefined,
+  };
+
+  issues.forEach(issue => {
+    clearInvalidField(sanitizedOperation, issue);
+  });
+
+  return sanitizedOperation;
+}
+
+function getReviewIssues(
+  issues: OfflineValidationIssue[] | undefined,
+  reviewStage?: OfflinePalletOperationStep,
+) {
+  if (!issues?.length) return [];
+  if (!reviewStage) return issues;
+
+  return issues.filter(issue => issue.stage === reviewStage);
+}
+
+function clearInvalidField(operation: OfflinePalletOperation, issue: OfflineValidationIssue) {
+  if (!issue.field) {
+    clearInvalidFieldFallback(operation, issue);
+    return;
+  }
+
+  if (issue.field === "roadmap") {
+    operation.formData = { ...operation.formData, roadmap: "" };
+    operation.roadmap = "";
+    return;
+  }
+
+  if (issue.field === "palletsQuantity") {
+    operation.formData = { ...operation.formData, palletsQuantity: "" };
+    return;
+  }
+
+  if (issue.field === "batch") {
+    clearPalletBatch(operation, issue);
+    return;
+  }
+
+  if (issue.field === "photos") {
+    clearPalletPhotos(operation, issue);
+    return;
+  }
+
+  if (issue.field === "truck") {
+    operation.shipGoodsData = { ...operation.shipGoodsData, truck: null };
+    return;
+  }
+
+  if (issue.field === "licensePlate") {
+    operation.exitExtraEvidenceData = { ...operation.exitExtraEvidenceData, licensePlate: null };
+    return;
+  }
+
+  if (issue.field === "seal") {
+    operation.exitExtraEvidenceData = { ...operation.exitExtraEvidenceData, seal: null };
+  }
+}
+
+function clearInvalidFieldFallback(operation: OfflinePalletOperation, issue: OfflineValidationIssue) {
+  if (issue.stage === "form") {
+    operation.formData = { ...operation.formData, roadmap: "" };
+    operation.roadmap = "";
+    return;
+  }
+
+  if (issue.stage === "pallets_evidence") {
+    clearPalletBatch(operation, issue);
+  }
+}
+
+function clearPalletBatch(operation: OfflinePalletOperation, issue: OfflineValidationIssue) {
+  const pallets = operation.palletEvidenceData?.pallets;
+  if (!pallets?.length) return;
+
+  if (issue.palletIndex != null && pallets[issue.palletIndex]) {
+    pallets[issue.palletIndex] = { ...pallets[issue.palletIndex], batch: "" };
+    return;
+  }
+
+  if (issue.batch) {
+    const normalizedBatch = normalizeBatch(issue.batch);
+    operation.palletEvidenceData = {
+      pallets: pallets.map(pallet => normalizeBatch(pallet.batch) === normalizedBatch
+        ? { ...pallet, batch: "" }
+        : pallet),
+    };
+  }
+}
+
+function clearPalletPhotos(operation: OfflinePalletOperation, issue: OfflineValidationIssue) {
+  const pallets = operation.palletEvidenceData?.pallets;
+  if (!pallets?.length || issue.palletIndex == null || !pallets[issue.palletIndex]) return;
+
+  pallets[issue.palletIndex] = {
+    ...pallets[issue.palletIndex],
+    photos: Array.from({ length: 4 }, () => ""),
+  };
+}
+
+function normalizeBatch(value: string) {
+  return value.trim().toLowerCase();
 }

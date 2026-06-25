@@ -5,6 +5,7 @@ import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { LottieAnimLoading } from "@shared/components/Feedback";
 import { PhotoCarousel } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import type {
   OfflinePalletOperation,
@@ -53,7 +54,7 @@ export function PalletOperationSummary({ navigation, route }: Props) {
           <HeaderTitle>{operation.roadmap ?? "Sem roteiro"}</HeaderTitle>
           <HeaderText>{operation.operationType === "entry" ? "Entrada" : "Saída"}</HeaderText>
           <HeaderText>{summary.progressLabel}</HeaderText>
-          <StatusText>{operation.status === "pending_sync" ? "Pronto para envio" : "Em andamento"}</StatusText>
+          <StatusText>{getOperationStatusLabel(operation.status)}</StatusText>
         </HeaderCard>
 
         {summary.sections.map(section => (
@@ -174,6 +175,18 @@ function getStatusLabel(status: string) {
     complete: "Completo",
     not_started: "Não iniciado",
     pending: "Pendente",
+  };
+
+  return labels[status] ?? status;
+}
+
+function getOperationStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    draft: "Em andamento",
+    failed: "Falha no envio",
+    pending_sync: "Pronto para envio",
+    syncing: "Sincronizando",
+    validation_failed: "Revisar validação",
   };
 
   return labels[status] ?? status;
@@ -340,6 +353,7 @@ const DeleteButton = styled(Button, {
   borderWidth: 1,
   justifyContent: "center",
   minHeight: 50,
+  pressStyle: buttonPressStyle,
 });
 
 const DeleteText = styled(Text, {

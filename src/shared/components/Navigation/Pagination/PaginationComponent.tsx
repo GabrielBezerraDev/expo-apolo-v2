@@ -1,6 +1,7 @@
 import React from "react";
 import { Animated } from "react-native";
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import {
   ChevronLeft,
   ChevronRight,
@@ -138,6 +139,7 @@ const IconButton = styled(Button, {
   backgroundColor: "$white",
   justifyContent: "center",
   margin: 5,
+  pressStyle: buttonPressStyle,
   shadowColor: "$black",
   shadowOpacity: 0.3,
   shadowRadius: 2,

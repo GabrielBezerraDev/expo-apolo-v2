@@ -10,8 +10,9 @@ import { useFrame } from "@features/camera";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { useModal } from "@shared/components/Display/Modal";
 import { AppButton } from "@shared/components/Forms/AppButton";
-import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { hasApiBaseUrl, isApiNetworkError } from "@shared/services/apiClient";
 import { AppInput } from "@shared/components/Forms/AppInput";
+import { buttonPressStyle, primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { fontScale, typography } from "@shared/typography";
 import { useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
 import { getOfflinePalletOperationByRoadmap } from "../../../services/offlinePalletOperations";
@@ -73,6 +74,26 @@ export function FormScreenPallet() {
     );
   }, [closeModal, openModal]);
 
+  const openPendingValidationModal = useCallback(() => {
+    let modalId = "";
+
+    modalId = openModal(
+      <RoadmapScanWarningModal
+        roadmap=""
+        message="Sem conexão com a API. O roteiro foi salvo e será validado automaticamente na sincronização."
+        onClose={() => closeModal(modalId)}
+      />,
+      {
+        animationType: "slide",
+        heightPercent: 34,
+        maxHeightPercent: 54,
+        minHeight: 0,
+        title: "Validação pendente",
+        widthPercent: 88,
+      },
+    );
+  }, [closeModal, openModal]);
+
   const scanRoadmap = useCallback(() => {
     configureScanner({
       mode: "scanner",
@@ -80,12 +101,9 @@ export function FormScreenPallet() {
       orientation: "LandScape",
       onCapture: async (data) => {
         const scannedRoadmap = data.text.trim();
-        const canValidateRoadmap = hasApiBaseUrl() && roadmapApi.hasAuthToken;
-        const roadmapExists = canValidateRoadmap
-          ? await roadmapApi.roadmapExists(scannedRoadmap).catch(() => false)
-          : false;
+        const roadmapValidation = await validateScannedRoadmap({ roadmap: scannedRoadmap, roadmapApi });
 
-        if (roadmapExists) {
+        if (roadmapValidation === "exists") {
           clearScannedRoadmap();
           navigation.goBack();
           openRoadmapExistsModal(scannedRoadmap);
@@ -97,12 +115,16 @@ export function FormScreenPallet() {
         });
         await saveFormDraft({ roadmap: scannedRoadmap });
         navigation.goBack();
+
+        if (roadmapValidation === "skipped") {
+          requestAnimationFrame(openPendingValidationModal);
+        }
       },
       onCancel: () => navigator.goBack(),
       formatTextDataWithRegex: (data) => data.replace(/[^a-zA-Z0-9\s]/g, ""),
     });
     navigation.navigate('Scanner');
-  }, [clearScannedRoadmap, configureScanner, navigation, navigator, openRoadmapExistsModal, roadmapApi, saveFormDraft, setFormScreenPalletValue]);
+  }, [clearScannedRoadmap, configureScanner, navigation, navigator, openPendingValidationModal, openRoadmapExistsModal, roadmapApi, saveFormDraft, setFormScreenPalletValue]);
 
   const formSubtitle = useMemo(() => {
     if (!route) return "Escaneie o roteiro e informe a quantidade de paletes.";
@@ -220,22 +242,42 @@ export function FormScreenPallet() {
 }
 
 function RoadmapScanWarningModal({
+  message,
   onClose,
   roadmap,
 }: {
+  message?: string;
   onClose: () => void;
   roadmap: string;
 }) {
   return (
     <WarningModalRoot>
       <WarningModalText>
-        O roteiro {roadmap} já existe no sistema. Escaneie outro roteiro para continuar.
+        {message ?? `O roteiro ${roadmap} já existe no sistema. Escaneie outro roteiro para continuar.`}
       </WarningModalText>
       <WarningModalButton onPress={onClose}>
         <WarningModalButtonText>ENTENDI</WarningModalButtonText>
       </WarningModalButton>
     </WarningModalRoot>
   );
+}
+
+async function validateScannedRoadmap({
+  roadmap,
+  roadmapApi,
+}: {
+  roadmap: string;
+  roadmapApi: ReturnType<typeof useRoadmapApi>;
+}) {
+  if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) return "skipped";
+
+  try {
+    const exists = await roadmapApi.roadmapExists(roadmap);
+    return exists ? "exists" : "validated";
+  } catch (error) {
+    if (isApiNetworkError(error)) return "skipped";
+    throw error;
+  }
 }
 
 const FormScreenRoot = styled(View, {
@@ -282,6 +324,7 @@ const HelperText = styled(Text, {
 
 const IconButton = styled(Button, {
   unstyled: true,
+  pressStyle: buttonPressStyle,
 });
 
 const WarningModalRoot = styled(View, {
@@ -305,6 +348,7 @@ const WarningModalButton = styled(Button, {
   minHeight: 46,
   paddingHorizontal: 18,
   paddingVertical: 12,
+  pressStyle: primaryButtonPressStyle,
 });
 
 const WarningModalButtonText = styled(Text, {

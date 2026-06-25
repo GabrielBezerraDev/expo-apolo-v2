@@ -1,4 +1,5 @@
 import { Button, styled, Text } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const ButtonRoot = styled(Button, {
@@ -11,6 +12,7 @@ export const ButtonRoot = styled(Button, {
   flexDirection: 'row',
   gap: 8,
   borderColor: '$primary',
+  pressStyle: buttonPressStyle,
   variants: {
     buttonVariant: {
       primary: { backgroundColor: '$primary', borderWidth: 0 },

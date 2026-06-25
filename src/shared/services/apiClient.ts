@@ -45,6 +45,17 @@ export function isApiTimeoutError(error: unknown) {
   return error instanceof ApiError && error.status === 408;
 }
 
+export function isApiValidationError(error: unknown) {
+  return error instanceof ApiError && [400, 409, 422].includes(error.status);
+}
+
+export function isApiNetworkError(error: unknown) {
+  if (isApiTimeoutError(error)) return true;
+  if (error instanceof ApiError) return error.status === 0;
+
+  return error instanceof TypeError;
+}
+
 export async function apiPost<TResponse, TBody = unknown>(
   path: string,
   params: ApiBodyRequestParams<TBody> = {},

@@ -5,7 +5,8 @@ export type OfflinePalletOperationStatus =
   | "pending_sync"
   | "syncing"
   | "synced"
-  | "failed";
+  | "failed"
+  | "validation_failed";
 
 export type OfflinePalletOperationStep =
   | "form"
@@ -38,6 +39,14 @@ export type OfflineExitExtraEvidenceData = {
   seal?: string | null;
 };
 
+export type OfflineValidationIssue = {
+  batch?: string;
+  field?: "batch" | "licensePlate" | "palletsQuantity" | "photos" | "roadmap" | "seal" | "truck";
+  message: string;
+  palletIndex?: number;
+  stage: OfflinePalletOperationStep;
+};
+
 export type OfflinePalletOperation = {
   createdAt: string;
   currentStep: OfflinePalletOperationStep;
@@ -51,6 +60,7 @@ export type OfflinePalletOperation = {
   shipGoodsData?: OfflineShipGoodsData;
   status: OfflinePalletOperationStatus;
   updatedAt: string;
+  validationIssues?: OfflineValidationIssue[];
 };
 
 export type OfflinePalletOperationPatch = Partial<
@@ -64,6 +74,7 @@ export type OfflinePalletOperationPatch = Partial<
     | "roadmap"
     | "shipGoodsData"
     | "status"
+    | "validationIssues"
   >
 > & {
   id?: string;

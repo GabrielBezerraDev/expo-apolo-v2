@@ -1,4 +1,5 @@
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle, primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const ScannerRoot = styled(View, {
@@ -49,6 +50,7 @@ export const ScannerIconButton = styled(Button, {
   borderWidth: 1,
   height: 46,
   justifyContent: "center",
+  pressStyle: buttonPressStyle,
   width: 46,
 });
 
@@ -87,6 +89,7 @@ export const CaptureButtonOuter = styled(Button, {
   left: "50%",
   marginLeft: -41,
   position: "absolute",
+  pressStyle: buttonPressStyle,
   width: 82,
   zIndex: 10,
 });
@@ -118,6 +121,7 @@ export const PermissionButton = styled(Button, {
   backgroundColor: "$primary",
   borderRadius: 14,
   paddingHorizontal: 18,
+  pressStyle: primaryButtonPressStyle,
   paddingVertical: 14,
 });
 

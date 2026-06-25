@@ -1,4 +1,5 @@
 import { Button, ScrollView, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const ModalContainer = styled(View, {
@@ -65,6 +66,7 @@ export const ModalCloseButton = styled(Button, {
   borderRadius: 999,
   height: 32,
   justifyContent: "center",
+  pressStyle: buttonPressStyle,
   width: 32,
 });
 

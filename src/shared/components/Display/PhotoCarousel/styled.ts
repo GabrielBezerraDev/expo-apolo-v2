@@ -1,4 +1,5 @@
 import { Button, Image, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const CarouselRoot = styled(View, {
@@ -73,6 +74,7 @@ export const EditOverlay = styled(Button, {
   position: "absolute",
   right: 0,
   top: 0,
+  pressStyle: buttonPressStyle,
   zIndex: 1,
 });
 
@@ -87,6 +89,7 @@ export const ExpandButton = styled(Button, {
   height: 42,
   justifyContent: "center",
   position: "absolute",
+  pressStyle: buttonPressStyle,
   right: 12,
   width: 42,
   zIndex: 2,
@@ -121,6 +124,7 @@ export const ViewerCloseButton = styled(Button, {
   borderRadius: 999,
   height: 42,
   justifyContent: "center",
+  pressStyle: buttonPressStyle,
   width: 42,
 });
 

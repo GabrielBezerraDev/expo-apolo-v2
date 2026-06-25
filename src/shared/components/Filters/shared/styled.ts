@@ -1,4 +1,5 @@
 import { Button, ScrollView, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const FilterModalRoot = styled(View, {
@@ -23,6 +24,7 @@ export const FilterPickerButton = styled(Button, {
   backgroundColor: "$card",
   justifyContent: "center",
   paddingHorizontal: 14,
+  pressStyle: buttonPressStyle,
 });
 
 export const FilterPickerText = styled(Text, {
@@ -45,6 +47,7 @@ export const FilterOptionButton = styled(Button, {
   paddingHorizontal: 14,
   borderBottomWidth: 1,
   borderBottomColor: "$border",
+  pressStyle: buttonPressStyle,
   variants: {
     selected: {
       true: { backgroundColor: "$primaryLight" },
@@ -114,6 +117,7 @@ export const FilterChipRemoveButton = styled(Button, {
   alignItems: "center",
   justifyContent: "center",
   backgroundColor: "$primary",
+  pressStyle: buttonPressStyle,
 });
 
 export const FilterChipRemoveText = styled(Text, {

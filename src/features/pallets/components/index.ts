@@ -2,6 +2,7 @@ export * from "./ListScreenShell";
 export * from "./MovementCancelButton";
 export * from "./OfflinePalletDraftCard";
 export * from "./OfflinePalletDraftList";
+export * from "./OfflineSyncBootstrap";
 export * from "./OperationCard";
 export * from "./OperationListTabs";
 export * from "./PalletCard";
