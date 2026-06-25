@@ -2,6 +2,7 @@ import React from "react";
 import { X } from "lucide-react-native";
 import { Button, styled } from "tamagui";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 
 type Props = {
   onPress: () => void;
@@ -30,5 +31,6 @@ const CancelButton = styled(Button, {
   shadowOffset: { width: 0, height: 6 },
   shadowOpacity: 0.18,
   shadowRadius: 10,
+  pressStyle: buttonPressStyle,
   width: 50,
 });

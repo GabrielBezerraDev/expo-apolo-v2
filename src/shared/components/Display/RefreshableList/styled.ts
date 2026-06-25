@@ -1,4 +1,5 @@
 import { Button, styled, Text, View } from "tamagui";
+import { primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const FeedbackRoot = styled(View, {
@@ -23,6 +24,13 @@ export const ErrorText = styled(Text, {
   textAlign: "center",
 });
 
+export const OfflineNoticeText = styled(Text, {
+  ...typography.bodySmall,
+  color: "$text",
+  fontWeight: "800",
+  textAlign: "center",
+});
+
 export const RetryButton = styled(Button, {
   unstyled: true,
   alignItems: "center",
@@ -32,6 +40,7 @@ export const RetryButton = styled(Button, {
   minHeight: 46,
   paddingHorizontal: 18,
   paddingVertical: 12,
+  pressStyle: primaryButtonPressStyle,
 });
 
 export const RetryButtonText = styled(Text, {

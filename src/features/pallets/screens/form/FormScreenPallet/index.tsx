@@ -12,6 +12,7 @@ import { useModal } from "@shared/components/Display/Modal";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { hasApiBaseUrl, isApiNetworkError } from "@shared/services/apiClient";
 import { AppInput } from "@shared/components/Forms/AppInput";
+import { buttonPressStyle, primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { fontScale, typography } from "@shared/typography";
 import { useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
 import { getOfflinePalletOperationByRoadmap } from "../../../services/offlinePalletOperations";
@@ -323,6 +324,7 @@ const HelperText = styled(Text, {
 
 const IconButton = styled(Button, {
   unstyled: true,
+  pressStyle: buttonPressStyle,
 });
 
 const WarningModalRoot = styled(View, {
@@ -346,6 +348,7 @@ const WarningModalButton = styled(Button, {
   minHeight: 46,
   paddingHorizontal: 18,
   paddingVertical: 12,
+  pressStyle: primaryButtonPressStyle,
 });
 
 const WarningModalButtonText = styled(Text, {

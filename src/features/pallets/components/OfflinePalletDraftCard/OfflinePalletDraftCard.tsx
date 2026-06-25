@@ -1,5 +1,6 @@
 import React from "react";
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import { OfflinePalletOperation, OfflinePalletOperationStep, OfflineValidationIssue } from "../../protocol";
 import { buildOfflinePalletOperationSummary } from "../../services/offlinePalletOperations";
@@ -232,6 +233,7 @@ const ReviewStageButton = styled(Button, {
   marginTop: 2,
   paddingHorizontal: 12,
   paddingVertical: 7,
+  pressStyle: buttonPressStyle,
 });
 
 const ReviewStageText = styled(Text, {
@@ -275,6 +277,7 @@ const OpenText = styled(Text, {
 const OpenButton = styled(Button, {
   unstyled: true,
   paddingVertical: 6,
+  pressStyle: buttonPressStyle,
 });
 
 const RetryButton = styled(Button, {
@@ -284,6 +287,7 @@ const RetryButton = styled(Button, {
   borderWidth: 1,
   paddingHorizontal: 12,
   paddingVertical: 6,
+  pressStyle: buttonPressStyle,
 });
 
 const RetryText = styled(Text, {
@@ -298,6 +302,7 @@ const DeleteButton = styled(Button, {
   borderWidth: 1,
   paddingHorizontal: 12,
   paddingVertical: 6,
+  pressStyle: buttonPressStyle,
 });
 
 const DeleteText = styled(Text, {

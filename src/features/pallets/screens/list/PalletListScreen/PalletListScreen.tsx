@@ -12,6 +12,8 @@ import { RefreshableList } from "@shared/components/Display";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { hasApiBaseUrl, isApiTimeoutError } from "@shared/services/apiClient";
+import { useNetworkState } from "@shared/services/network";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { PalletReportStatusTabs } from "../../../components/PalletReportStatusTabs";
 import { QualityReportCard } from "../../../components/QualityReportCard";
@@ -29,6 +31,7 @@ export function PalletListScreen() {
 
 function PalletListScreenContent() {
   const { theme } = useThemeMode();
+  const { hasCheckedNetwork, isOnline } = useNetworkState();
   const [batchSearch, setBatchSearch] = useState("");
   const deferredBatchSearch = useDeferredValue(batchSearch.trim());
   const [reportType, setReportType] = useState<PalletReportType>("releasedPallet");
@@ -50,6 +53,7 @@ function PalletListScreenContent() {
 
   const reports = qualityReportQuery.data?.data ?? [];
   const canLoadReports = hasApiBaseUrl();
+  const isOfflineState = canLoadReports && hasCheckedNetwork && !isOnline;
   const errorMessage = canLoadReports
     ? qualityReportQuery.error?.message
     : "Configure EXPO_PUBLIC_API_URL para carregar os reports.";
@@ -95,7 +99,7 @@ function PalletListScreenContent() {
         leftIcon={<Search size={22} color={theme.primary} />}
         rightIcon={
           batchSearch ? (
-            <Button unstyled onPress={() => setBatchSearch("")} hitSlop={10}>
+            <Button unstyled pressStyle={buttonPressStyle} onPress={() => setBatchSearch("")} hitSlop={10}>
               <X size={22} color={theme.primary} />
             </Button>
           ) : null
@@ -109,6 +113,7 @@ function PalletListScreenContent() {
         errorMessage={errorMessage}
         isError={!canLoadReports || qualityReportQuery.isError}
         isLoading={qualityReportQuery.isLoading}
+        isOfflineState={isOfflineState}
         isRefreshing={refresh}
         isTimeoutError={isApiTimeoutError(qualityReportQuery.error)}
         keyExtractor={(item) => String(item.id)}

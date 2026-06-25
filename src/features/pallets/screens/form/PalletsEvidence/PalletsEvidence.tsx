@@ -14,6 +14,7 @@ import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { hasApiBaseUrl, isApiNetworkError } from "@shared/services/apiClient";
 import { useNetworkState } from "@shared/services/network";
+import { buttonPressStyle, primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { fontScale, typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
@@ -435,6 +436,7 @@ const PalletCardTitle = styled(Text, {
 
 const IconButton = styled(Button, {
   unstyled: true,
+  pressStyle: buttonPressStyle,
 });
 
 const WarningModalRoot = styled(View, {
@@ -458,6 +460,7 @@ const WarningModalButton = styled(Button, {
   minHeight: 46,
   paddingHorizontal: 18,
   paddingVertical: 12,
+  pressStyle: primaryButtonPressStyle,
 });
 
 const WarningModalButtonText = styled(Text, {

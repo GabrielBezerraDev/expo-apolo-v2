@@ -5,6 +5,7 @@ import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { LottieAnimLoading } from "@shared/components/Feedback";
 import { PhotoCarousel } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import type {
   OfflinePalletOperation,
@@ -352,6 +353,7 @@ const DeleteButton = styled(Button, {
   borderWidth: 1,
   justifyContent: "center",
   minHeight: 50,
+  pressStyle: buttonPressStyle,
 });
 
 const DeleteText = styled(Text, {

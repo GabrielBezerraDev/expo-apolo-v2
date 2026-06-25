@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Button, styled, Text, useWindowDimensions, View } from "tamagui";
 import NoDataIllustration from "@assets/svg/No data-bro.svg";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
+import { buttonPressStyle, primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import type { OfflinePalletOperation, OfflinePalletOperationStep } from "../../../protocol";
 import { getOfflinePalletOperation, useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
@@ -229,6 +230,7 @@ const ReviewButton = styled(Button, {
   minHeight: 46,
   paddingHorizontal: 18,
   paddingVertical: 10,
+  pressStyle: primaryButtonPressStyle,
   width: "100%",
 });
 
@@ -249,6 +251,7 @@ const HomeButton = styled(Button, {
   minHeight: 44,
   paddingHorizontal: 18,
   paddingVertical: 9,
+  pressStyle: buttonPressStyle,
   width: "100%",
 });
 

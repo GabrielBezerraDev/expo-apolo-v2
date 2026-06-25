@@ -6,6 +6,7 @@ import { Button, Image, styled, Text, useWindowDimensions, View } from "tamagui"
 import EntryPallets from "@assets/svg/EntryPallets.svg";
 import ExitPallets from "@assets/svg/ExitPallets.svg";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
+import { primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import { usePallet } from "../../../providers/PalletProvider";
 
@@ -140,9 +141,7 @@ const HomeButton = styled(Button, {
   minWidth: 172,
   paddingHorizontal: 18,
   paddingVertical: 8,
-  pressStyle: {
-    opacity: 0.84,
-  },
+  pressStyle: primaryButtonPressStyle,
 });
 
 const HomeButtonText = styled(Text, {
