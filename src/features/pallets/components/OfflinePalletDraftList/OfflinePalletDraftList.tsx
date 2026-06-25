@@ -1,9 +1,9 @@
 import React, { useCallback } from "react";
-import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { RefreshableList } from "@shared/components/Display";
+import { useFeedbackModal } from "@shared/components/Display/Modal";
 import { OfflinePalletOperation, OfflinePalletOperationStep, OfflinePalletOperationType } from "../../protocol";
 import { useOfflinePalletOperation } from "../../services/offlinePalletOperations";
 import { useRoadmapSync } from "../../services/roadmapSync";
@@ -18,9 +18,11 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function OfflinePalletDraftList({ operationType }: Props) {
   const navigation = useNavigation<Navigation>();
+  const { showConfirm } = useFeedbackModal();
   const { hydrateOperationById } = useOfflinePalletOperation();
   const { deleteDraft, drafts, isLoading, isRefreshing, refreshDrafts } = useOfflinePalletDrafts({ operationType });
   const { syncOperation } = useRoadmapSync();
+  
   const reviewStage = useCallback(async (item: OfflinePalletOperation, stage: OfflinePalletOperationStep) => {
     await hydrateOperationById(item.id, { clearInvalidFields: true, reviewStage: stage });
     navigateToReviewStage(navigation, stage, item.id);
@@ -45,18 +47,12 @@ export function OfflinePalletDraftList({ operationType }: Props) {
             await refreshDrafts();
           }}
           onDelete={() => {
-            Alert.alert(
-              "Excluir rascunho",
-              `Deseja excluir o rascunho ${item.roadmap ?? "sem roteiro"}?`,
-              [
-                { text: "Cancelar", style: "cancel" },
-                {
-                  text: "Excluir",
-                  style: "destructive",
-                  onPress: () => { void deleteDraft(item); },
-                },
-              ],
-            );
+            showConfirm({
+              title: "Excluir rascunho",
+              message: `Deseja excluir o rascunho ${item.roadmap ?? "sem roteiro"}?`,
+              confirmLabel: "Excluir",
+              onConfirm: () => { void deleteDraft(item); },
+            });
           }}
         />
       )}

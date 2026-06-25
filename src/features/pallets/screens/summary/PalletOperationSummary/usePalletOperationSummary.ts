@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
+import { useFeedbackModal } from "@shared/components/Display/Modal";
 import {
   OfflinePalletOperation,
   OfflinePalletOperationSummary,
@@ -23,6 +23,7 @@ type UsePalletOperationSummaryParams = {
 export function usePalletOperationSummary({ navigation, operationId }: UsePalletOperationSummaryParams) {
   const [operation, setOperation] = useState<OfflinePalletOperation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { showConfirm } = useFeedbackModal();
   const { hydrateOperationById } = useOfflinePalletOperation();
 
   const loadOperation = useCallback(() => getOfflinePalletOperation(operationId), [operationId]);
@@ -73,27 +74,21 @@ export function usePalletOperationSummary({ navigation, operationId }: UsePallet
   const deleteDraft = useCallback(() => {
     if (!operation) return;
 
-    Alert.alert(
-      "Excluir rascunho",
-      `Deseja excluir o rascunho ${operation.roadmap ?? "sem roteiro"}?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            await deleteOfflinePalletOperation(operation.id);
-            await deletePalletOperationImageDirectory({
-              operationId: operation.id,
-              operationType: operation.operationType,
-              roadmap: operation.roadmap,
-            });
-            navigation.goBack();
-          },
-        },
-      ],
-    );
-  }, [navigation, operation]);
+    showConfirm({
+      title: "Excluir rascunho",
+      message: `Deseja excluir o rascunho ${operation.roadmap ?? "sem roteiro"}?`,
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        await deleteOfflinePalletOperation(operation.id);
+        await deletePalletOperationImageDirectory({
+          operationId: operation.id,
+          operationType: operation.operationType,
+          roadmap: operation.roadmap,
+        });
+        navigation.goBack();
+      },
+    });
+  }, [navigation, operation, showConfirm]);
 
   return {
     continueDraft,

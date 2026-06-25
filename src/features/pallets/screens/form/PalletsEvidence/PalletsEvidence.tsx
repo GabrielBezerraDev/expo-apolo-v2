@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from "react";
-import { Alert } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
@@ -8,13 +7,13 @@ import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { setOcrScreenOrientation } from "@features/camera/services";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
-import { useModal } from "@shared/components/Display/Modal";
+import { useFeedbackModal } from "@shared/components/Display/Modal";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { hasApiBaseUrl, isApiNetworkError } from "@shared/services/apiClient";
 import { useNetworkState } from "@shared/services/network";
-import { buttonPressStyle, primaryButtonPressStyle } from "@shared/styles/pressFeedback";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { fontScale, typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
@@ -28,7 +27,7 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 export function PalletsEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
-  const { closeModal, openModal } = useModal();
+  const { showConfirm, showFeedback } = useFeedbackModal();
   const { hasCheckedNetwork, isOnline } = useNetworkState();
   const roadmapApi = useRoadmapApi();
   const { syncOperation } = useRoadmapSync();
@@ -55,42 +54,18 @@ export function PalletsEvidence() {
   );
 
   const openPalletValidationModal = useCallback((message: string) => {
-    let modalId = "";
-
-    modalId = openModal(
-      <PalletScanWarningModal
-        message={message}
-        onClose={() => closeModal(modalId)}
-      />,
-      {
-        animationType: "slide",
-        heightPercent: 34,
-        maxHeightPercent: 54,
-        minHeight: 0,
-        title: "Palete não autorizado",
-        widthPercent: 88,
-      },
-    );
-  }, [closeModal, openModal]);
+    showFeedback({
+      title: "Palete não autorizado",
+      message,
+    });
+  }, [showFeedback]);
 
   const openPendingValidationModal = useCallback(() => {
-    let modalId = "";
-
-    modalId = openModal(
-      <PalletScanWarningModal
-        message="Sem conexão com a API. O lote foi salvo e será validado automaticamente na sincronização."
-        onClose={() => closeModal(modalId)}
-      />,
-      {
-        animationType: "slide",
-        heightPercent: 34,
-        maxHeightPercent: 54,
-        minHeight: 0,
-        title: "Validação pendente",
-        widthPercent: 88,
-      },
-    );
-  }, [closeModal, openModal]);
+    showFeedback({
+      title: "Validação pendente",
+      message: "Sem conexão com a API. O lote foi salvo e será validado automaticamente na sincronização.",
+    });
+  }, [showFeedback]);
 
   const validateForm =
     palletEvidence.length > 0 &&
@@ -191,25 +166,20 @@ export function PalletsEvidence() {
       return;
     }
 
-    Alert.alert(
-      `Cancelar ${operationPallet === "entry" ? "entrada" : "saída"}`,
-      "Esta movimentação será salva como rascunho. Você poderá continuar depois. Deseja sair agora?",
-      [
-        { text: "Continuar preenchendo", style: "cancel" },
-        {
-          text: "Salvar rascunho e sair",
-          style: "destructive",
-          onPress: async () => {
-            await savePalletEvidenceDraft({ currentStep: "pallets_evidence" });
-            resetEntry();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Main" }],
-            });
-          },
-        },
-      ],
-    );
+    showConfirm({
+      title: `Cancelar ${operationPallet === "entry" ? "entrada" : "saída"}`,
+      message: "Esta movimentação será salva como rascunho. Você poderá continuar depois. Deseja sair agora?",
+      cancelLabel: "Continuar preenchendo",
+      confirmLabel: "Salvar rascunho e sair",
+      onConfirm: async () => {
+        await savePalletEvidenceDraft({ currentStep: "pallets_evidence" });
+        resetEntry();
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        });
+      },
+    });
   };
 
   const finishEntry = async () => {
@@ -335,23 +305,6 @@ function normalizeBatch(value: string) {
   return value.trim().toLowerCase();
 }
 
-function PalletScanWarningModal({
-  message,
-  onClose,
-}: {
-  message: string;
-  onClose: () => void;
-}) {
-  return (
-    <WarningModalRoot>
-      <WarningModalText>{message}</WarningModalText>
-      <WarningModalButton onPress={onClose}>
-        <WarningModalButtonText>ENTENDI</WarningModalButtonText>
-      </WarningModalButton>
-    </WarningModalRoot>
-  );
-}
-
 async function validateScannedBatch({
   batch,
   operationPallet,
@@ -437,34 +390,4 @@ const PalletCardTitle = styled(Text, {
 const IconButton = styled(Button, {
   unstyled: true,
   pressStyle: buttonPressStyle,
-});
-
-const WarningModalRoot = styled(View, {
-  gap: 18,
-  justifyContent: "center",
-});
-
-const WarningModalText = styled(Text, {
-  ...typography.bodyMedium,
-  color: "$text",
-  fontWeight: "700",
-  textAlign: "center",
-});
-
-const WarningModalButton = styled(Button, {
-  unstyled: true,
-  alignItems: "center",
-  backgroundColor: "$primary",
-  borderRadius: 12,
-  justifyContent: "center",
-  minHeight: 46,
-  paddingHorizontal: 18,
-  paddingVertical: 12,
-  pressStyle: primaryButtonPressStyle,
-});
-
-const WarningModalButtonText = styled(Text, {
-  ...typography.button,
-  color: "$white",
-  fontWeight: "900",
 });
