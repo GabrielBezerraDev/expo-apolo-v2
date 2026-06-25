@@ -1,5 +1,5 @@
 export { AppCard } from "./AppCard";
-export { ModalProvider, useModal } from "./Modal";
+export { ModalProvider, useFeedbackModal, useModal } from "./Modal";
 export { PhotoCarousel } from "./PhotoCarousel";
 export { RefreshableList } from "./RefreshableList";
 export type { ModalAnimation, ModalConfig, ModalContextType, ModalOptions, ModalPlacement } from "./Modal";

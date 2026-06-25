@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from "react";
-import { Alert } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -11,6 +10,7 @@ import {
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFrame } from "@features/camera";
 import { setOcrScreenOrientation } from "@features/camera/services";
+import { useFeedbackModal } from "@shared/components/Display/Modal";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
@@ -28,6 +28,7 @@ type EvidenceKey = "truck" | "licensePlate" | "seal";
 export function ExitExtraEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
+  const { showConfirm } = useFeedbackModal();
   const { hasCheckedNetwork, isOnline } = useNetworkState();
   const { syncOperation } = useRoadmapSync();
   const { height, width } = useWindowDimensions();
@@ -114,25 +115,20 @@ export function ExitExtraEvidence() {
       return;
     }
 
-    Alert.alert(
-      "Cancelar saída",
-      "Esta movimentação será salva como rascunho. Você poderá continuar depois. Deseja sair agora?",
-      [
-        { text: "Continuar preenchendo", style: "cancel" },
-        {
-          text: "Salvar rascunho e sair",
-          style: "destructive",
-          onPress: async () => {
-            await saveExitExtraEvidenceDraft({ currentStep: "exit_extra_evidence" });
-            resetEntry();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Main" }],
-            });
-          },
-        },
-      ],
-    );
+    showConfirm({
+      title: "Cancelar saída",
+      message: "Esta movimentação será salva como rascunho. Você poderá continuar depois. Deseja sair agora?",
+      cancelLabel: "Continuar preenchendo",
+      confirmLabel: "Salvar rascunho e sair",
+      onConfirm: async () => {
+        await saveExitExtraEvidenceDraft({ currentStep: "exit_extra_evidence" });
+        resetEntry();
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        });
+      },
+    });
   };
 
   const finishExit = async () => {
