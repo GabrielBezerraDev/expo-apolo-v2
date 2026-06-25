@@ -1,7 +1,6 @@
 // FramedCameraScanner.tsx
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  Alert,
   Platform,
   LayoutChangeEvent,
 } from 'react-native';
@@ -12,6 +11,7 @@ import {
 } from 'react-native-vision-camera';
 import { LottieAnimLoading } from '@shared/components/Feedback';
 import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
+import { useFeedbackModal } from '@shared/components/Display/Modal';
 import { buttonPressStyle } from '@shared/styles/pressFeedback';
 import type {
   CameraPermissionStatus,
@@ -33,6 +33,7 @@ export interface LiveOCRResult {
 export const FramedCameraScanner: React.FC = () => {
   const cameraRef = useRef<Camera>(null);
   const { theme } = useThemeMode();
+  const { showFeedback } = useFeedbackModal();
   const devices = useCameraDevices();
   const device = useMemo(() => {
     if (!devices) return undefined;
@@ -330,11 +331,14 @@ export const FramedCameraScanner: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Capture error:', err);
-      Alert.alert('Erro', err?.message || 'Não foi possível capturar a imagem');
+      showFeedback({
+        title: 'Erro',
+        message: err?.message || 'Não foi possível capturar a imagem',
+      });
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing, isPhotoMode, handleScannerCapture, computePhotoCropRect]);
+  }, [isCapturing, isPhotoMode, handleScannerCapture, computePhotoCropRect, showFeedback]);
 
   // -------------------------------------------------------------------------
   // Render
