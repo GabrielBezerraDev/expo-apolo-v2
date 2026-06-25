@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { hasApiBaseUrl, isApiValidationError } from "@shared/services/apiClient";
+import { useNetworkState } from "@shared/services/network";
 import {
   getOfflinePalletOperation,
   listPendingSyncPalletOperations,
@@ -13,12 +14,14 @@ export type RoadmapSyncState = "idle" | "syncing" | "synced" | "failed" | "skipp
 
 export function useRoadmapSync() {
   const roadmapApi = useRoadmapApi();
+  const { hasCheckedNetwork, isOnline } = useNetworkState();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<RoadmapSyncState>("idle");
+  const canUseNetwork = hasCheckedNetwork && isOnline;
 
   const syncOperation = useCallback(async (operationId: string) => {
-    if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) {
+    if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken || !canUseNetwork) {
       setState("skipped");
       return null;
     }
@@ -72,16 +75,16 @@ export function useRoadmapSync() {
       setState("failed");
       return null;
     }
-  }, [queryClient, roadmapApi]);
+  }, [canUseNetwork, queryClient, roadmapApi]);
 
   const syncPendingOperations = useCallback(async () => {
-    if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) return;
+    if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken || !canUseNetwork) return;
 
     const operations = await listPendingSyncPalletOperations();
     for (const operation of operations) {
       await syncOperation(operation.id);
     }
-  }, [roadmapApi.hasAuthToken, syncOperation]);
+  }, [canUseNetwork, roadmapApi.hasAuthToken, syncOperation]);
 
   return {
     error,

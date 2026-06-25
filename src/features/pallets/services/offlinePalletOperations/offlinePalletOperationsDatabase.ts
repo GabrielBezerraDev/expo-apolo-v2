@@ -211,17 +211,6 @@ export async function listPendingSyncPalletOperations() {
   return rows.map(mapRowToOperation);
 }
 
-export async function listValidationFailedPalletOperations() {
-  const database = await getOfflinePalletOperationsDatabase();
-  const rows = await database.getAllAsync<OfflinePalletOperationRow>(
-    `SELECT * FROM ${TABLE_NAME}
-     WHERE status = 'validation_failed'
-     ORDER BY updated_at DESC`,
-  );
-
-  return rows.map(mapRowToOperation);
-}
-
 export async function updateOfflinePalletOperationStatus({
   id,
   lastError = null,

@@ -1,33 +1,41 @@
-import React, { useEffect, useRef } from "react";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "@navigation/navigation.protocol";
-import { listValidationFailedPalletOperations } from "../../services/offlinePalletOperations";
+import React, { useCallback, useEffect, useRef } from "react";
+import { useNetworkState } from "@shared/services/network";
 import { useRoadmapSync } from "../../services/roadmapSync";
 
-type Navigation = NativeStackNavigationProp<RootStackParamList>;
-
 export function OfflineSyncBootstrap() {
-  const navigation = useNavigation<Navigation>();
+  const { hasCheckedNetwork, isOnline } = useNetworkState();
   const { syncPendingOperations } = useRoadmapSync();
   const hasStartedRef = useRef(false);
+  const previousIsOnlineRef = useRef<boolean | null>(null);
+  const syncInFlightRef = useRef(false);
+
+  const syncPendingOperationsSafely = useCallback(async () => {
+    if (!hasCheckedNetwork || !isOnline || syncInFlightRef.current) return;
+
+    syncInFlightRef.current = true;
+    try {
+      await syncPendingOperations();
+    } finally {
+      syncInFlightRef.current = false;
+    }
+  }, [hasCheckedNetwork, isOnline, syncPendingOperations]);
 
   useEffect(() => {
-    if (hasStartedRef.current) return;
+    if (!hasCheckedNetwork) return;
 
-    hasStartedRef.current = true;
+    const previousIsOnline = previousIsOnlineRef.current;
+    previousIsOnlineRef.current = isOnline;
 
-    async function runInitialSync() {
-      await syncPendingOperations();
-      const operationsToReview = await listValidationFailedPalletOperations();
-
-      if (operationsToReview.length > 0) {
-        navigation.navigate("OfflineSyncReview");
-      }
+    if (!hasStartedRef.current) {
+      hasStartedRef.current = true;
+      void syncPendingOperationsSafely();
+      return;
     }
 
-    void runInitialSync();
-  }, [navigation, syncPendingOperations]);
+    if (previousIsOnline === false && isOnline) {
+      void syncPendingOperationsSafely();
+    }
+  }, [hasCheckedNetwork, isOnline, syncPendingOperationsSafely]);
 
   return null;
 }

@@ -20,7 +20,6 @@ export type RootStackParamList = {
   PalletOperationSummary: { operationId: string };
   PalletHistory: { batch?: string; palletId: number };
   PalletPhotos: { batch?: string; palletId: number };
-  OfflineSyncReview: undefined;
   RoadmapPhotos: { roadmap: Roadmap };
   OperationSuccess: { operation: 'entry' | 'exit' };
 };

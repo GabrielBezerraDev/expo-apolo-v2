@@ -12,7 +12,6 @@ import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { NotificationBootstrap } from '@features/notifications';
 import { ExitExtraEvidence, FormScreenPallet, OperationSuccess, PalletsEvidence } from '@features/pallets/screens/form';
 import { PalletHistoryScreen, PalletPhotosScreen } from '@features/pallets/screens/details';
-import { OfflineSyncReviewScreen } from '@features/pallets/screens/sync';
 import { PalletOperationSummary } from '@features/pallets/screens/summary';
 import { RoadmapPhotosScreen } from '@features/pallets/screens/roadmap';
 import { PalletProvider } from '@features/pallets/providers';
@@ -83,7 +82,6 @@ function LoggedInStack() {
             <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />
             <Stack.Screen name="PalletHistory" component={PalletHistoryScreen} />
             <Stack.Screen name="PalletPhotos" component={PalletPhotosScreen} />
-            <Stack.Screen name="OfflineSyncReview" component={OfflineSyncReviewScreen} />
             <Stack.Screen name="RoadmapPhotos" component={RoadmapPhotosScreen} />
             <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
             <Stack.Screen name="Scanner" component={FramedCameraScanner} />
