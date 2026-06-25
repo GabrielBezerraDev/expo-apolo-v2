@@ -1,4 +1,5 @@
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const DateInputWrapper = styled(View, {
@@ -23,6 +24,7 @@ export const DateInputFrame = styled(Button, {
   paddingHorizontal: 14,
   width: "100%",
   gap: 10,
+  pressStyle: buttonPressStyle,
   variants: {
     hasError: {
       true: { borderColor: "$error" },

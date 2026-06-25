@@ -2,10 +2,18 @@ import type { RoadmapApi } from "../roadmapApi";
 import type {
   OfflinePalletEvidenceItem,
   OfflinePalletOperation,
+  OfflineValidationIssue,
 } from "../../protocol";
 import type { RoadmapType } from "../../protocol";
+import { isApiValidationError } from "@shared/services/apiClient";
 
 const PHOTOS_PER_PALLET = 4;
+
+export class OfflineOperationValidationError extends Error {
+  constructor(public readonly issues: OfflineValidationIssue[]) {
+    super(issues[0]?.message ?? "Operação precisa ser revisada antes da sincronização.");
+  }
+}
 
 export async function syncOfflinePalletOperation(roadmapApi: RoadmapApi, operation: OfflinePalletOperation) {
   const roadmap = operation.formData?.roadmap ?? operation.roadmap ?? "";
@@ -14,6 +22,7 @@ export async function syncOfflinePalletOperation(roadmapApi: RoadmapApi, operati
   const typeRoadmap = getRoadmapType(operation.operationType);
 
   validateOperation({ operation, pallets, palletsQuantity, roadmap });
+  await validateOperationOnline({ pallets, roadmapApi, typeRoadmap });
 
   const formData = buildRoadmapFormData({
     operation,
@@ -79,40 +88,81 @@ function validateOperation({
   palletsQuantity: number;
   roadmap: string;
 }) {
+  const issues: OfflineValidationIssue[] = [];
+
   if (!roadmap.trim()) {
-    throw new Error("Roteiro nao informado.");
+    issues.push({ field: "roadmap", message: "Roteiro não informado.", stage: "form" });
   }
 
   if (!Number.isInteger(palletsQuantity) || palletsQuantity <= 0) {
-    throw new Error("Quantidade de paletes invalida.");
+    issues.push({ field: "palletsQuantity", message: "Quantidade de paletes inválida.", stage: "form" });
   }
 
   if (pallets.length !== palletsQuantity) {
-    throw new Error("Quantidade de paletes nao confere com as evidencias.");
+    issues.push({ field: "palletsQuantity", message: "Quantidade de paletes não confere com as evidências.", stage: "form" });
   }
 
   pallets.forEach((pallet, index) => {
     if (!pallet.batch.trim()) {
-      throw new Error(`Lote do palete ${index + 1} nao informado.`);
+      issues.push({ field: "batch", message: `Lote do palete ${index + 1} não informado.`, palletIndex: index, stage: "pallets_evidence" });
     }
 
     if (pallet.photos.filter(Boolean).length !== PHOTOS_PER_PALLET) {
-      throw new Error(`Palete ${index + 1} precisa ter 4 fotos.`);
+      issues.push({ batch: pallet.batch, field: "photos", message: `Palete ${index + 1} precisa ter 4 fotos.`, palletIndex: index, stage: "pallets_evidence" });
     }
   });
 
   if (operation.operationType === "exit") {
     if (!operation.shipGoodsData?.truck) {
-      throw new Error("Foto da carga nao informada.");
+      issues.push({ field: "truck", message: "Foto da carga não informada.", stage: "exit_extra_evidence" });
     }
 
     if (!operation.exitExtraEvidenceData?.licensePlate) {
-      throw new Error("Foto da placa nao informada.");
+      issues.push({ field: "licensePlate", message: "Foto da placa não informada.", stage: "exit_extra_evidence" });
     }
 
     if (!operation.exitExtraEvidenceData?.seal) {
-      throw new Error("Foto do lacre nao informada.");
+      issues.push({ field: "seal", message: "Foto do lacre não informada.", stage: "exit_extra_evidence" });
     }
+  }
+
+  if (issues.length > 0) {
+    throw new OfflineOperationValidationError(issues);
+  }
+}
+
+async function validateOperationOnline({
+  pallets,
+  roadmapApi,
+  typeRoadmap,
+}: {
+  pallets: OfflinePalletEvidenceItem[];
+  roadmapApi: RoadmapApi;
+  typeRoadmap: RoadmapType;
+}) {
+  const issues: OfflineValidationIssue[] = [];
+
+  for (const pallet of pallets) {
+    try {
+      await roadmapApi.validatePallet({
+        batch: pallet.batch,
+        typeRoadmap,
+      });
+    } catch (error) {
+      if (!isApiValidationError(error)) throw error;
+
+      issues.push({
+        batch: pallet.batch,
+        field: "batch",
+        message: error instanceof Error ? error.message : "Palete não passou na validação.",
+        palletIndex: pallet.palletIndex,
+        stage: "pallets_evidence",
+      });
+    }
+  }
+
+  if (issues.length > 0) {
+    throw new OfflineOperationValidationError(issues);
   }
 }
 

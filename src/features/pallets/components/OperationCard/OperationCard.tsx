@@ -5,6 +5,7 @@ import { Button, styled, Text, View } from 'tamagui';
 import { AppCard } from '@shared/components/Display/AppCard';
 import { useModal } from '@shared/components/Display/Modal';
 import type { RootStackParamList } from '@navigation/navigation.protocol';
+import { primaryButtonPressStyle } from '@shared/styles/pressFeedback';
 import { typography } from '@shared/typography';
 import type { Roadmap } from '../../protocol';
 
@@ -96,6 +97,7 @@ const OptionButton = styled(Button, {
   minHeight: 46,
   paddingHorizontal: 18,
   paddingVertical: 12,
+  pressStyle: primaryButtonPressStyle,
 });
 
 const OptionButtonText = styled(Text, {

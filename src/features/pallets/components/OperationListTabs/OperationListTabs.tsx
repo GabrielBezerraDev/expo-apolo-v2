@@ -1,5 +1,6 @@
 import React from "react";
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export type OperationListTabValue = "operations" | "drafts";
@@ -36,6 +37,7 @@ const TabButton = styled(Button, {
   borderBottomWidth: 3,
   flex: 1,
   paddingVertical: 12,
+  pressStyle: buttonPressStyle,
   variants: {
     active: {
       true: { borderBottomColor: "$primary" },

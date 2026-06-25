@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Filter, PackageMinus } from "lucide-react-native";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
@@ -12,12 +12,12 @@ import {
 import { FilterChips } from "@shared/components/Filters";
 import { RefreshableList } from "@shared/components/Display";
 import { hasApiBaseUrl, isApiTimeoutError } from "@shared/services/apiClient";
+import { useNetworkState } from "@shared/services/network";
 import { OfflinePalletDraftList } from "../../../components/OfflinePalletDraftList";
 import { OperationCard, type OperationItem } from "../../../components/OperationCard";
 import { OperationListTabs, OperationListTabValue } from "../../../components/OperationListTabs";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { usePallet } from "../../../providers/PalletProvider";
-import { useRoadmapSync } from "../../../services/roadmapSync";
 import type { Roadmap } from "../../../protocol";
 import { useOperationListFilters, useRoadmapList } from "../hooks";
 
@@ -33,10 +33,10 @@ export function ExitListScreen() {
 
 function ExitListScreenContent() {
   const navigation = useNavigation<Navigation>();
+  const { hasCheckedNetwork, isOnline } = useNetworkState();
   const [activeTab, setActiveTab] = useState<OperationListTabValue>("operations");
   const { resetEntry, setOperationPallet } = usePallet();
   const { currentPage, itemsPerPage, sendToFirstPage, setPaginationMeta } = usePagination();
-  const { syncPendingOperations } = useRoadmapSync();
   const {
     appliedFilters,
     chips,
@@ -50,17 +50,12 @@ function ExitListScreenContent() {
   });
   const operations = (roadmapQuery.data?.data ?? []).map(mapRoadmapToExitOperation);
   const canLoadRoadmaps = hasApiBaseUrl();
+  const isOfflineState = canLoadRoadmaps && hasCheckedNetwork && !isOnline;
   const errorMessage = canLoadRoadmaps
     ? roadmapQuery.error?.message
     : "Configure EXPO_PUBLIC_API_URL para carregar as saídas.";
   const refresh = roadmapQuery.isRefetching && !roadmapQuery.isLoading;
   const refreshOperations = canLoadRoadmaps ? () => { void roadmapQuery.refetch(); } : undefined;
-
-  useFocusEffect(
-    useCallback(() => {
-      void syncPendingOperations();
-    }, [syncPendingOperations]),
-  );
 
   useEffect(() => {
     sendToFirstPage();
@@ -103,6 +98,7 @@ function ExitListScreenContent() {
             errorMessage={errorMessage}
             isError={!canLoadRoadmaps || roadmapQuery.isError}
             isLoading={roadmapQuery.isLoading}
+            isOfflineState={isOfflineState}
             isRefreshing={refresh}
             isTimeoutError={isApiTimeoutError(roadmapQuery.error)}
             keyExtractor={(item) => item.id}

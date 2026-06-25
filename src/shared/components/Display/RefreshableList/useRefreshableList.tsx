@@ -7,6 +7,7 @@ type UseRefreshableListParams = {
   emptyMessage?: string;
   errorMessage?: string;
   isError?: boolean;
+  isOfflineState?: boolean;
   isLoading?: boolean;
   isRefreshing?: boolean;
   loadingLabel?: string;
@@ -18,15 +19,17 @@ export function useRefreshableList({
   emptyMessage = "Nenhum registro encontrado.",
   errorMessage = "Não foi possível carregar os dados.",
   isError = false,
+  isOfflineState = false,
   isLoading = false,
   isRefreshing = false,
   loadingLabel = "Carregando",
   onRefresh,
 }: UseRefreshableListParams) {
   const { theme } = useThemeMode();
-  const showLoading = isLoading && !isRefreshing;
-  const showError = !showLoading && isError;
-  const showEmpty = !showLoading && !showError && dataLength === 0;
+  const showOffline = isOfflineState && dataLength === 0;
+  const showLoading = !showOffline && isLoading && !isRefreshing;
+  const showError = !showLoading && !showOffline && isError && dataLength === 0;
+  const showEmpty = !showLoading && !showError && !showOffline && dataLength === 0;
   const refreshControl = onRefresh ? (
     <RefreshControl
       refreshing={isRefreshing}
@@ -43,6 +46,7 @@ export function useRefreshableList({
     refreshControl,
     showEmpty,
     showError,
+    showOffline,
     showLoading,
   };
 }

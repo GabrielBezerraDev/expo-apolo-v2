@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Alert } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -12,13 +12,16 @@ import { useModal } from "@shared/components/Display/Modal";
 import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/Display";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
-import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { hasApiBaseUrl, isApiNetworkError } from "@shared/services/apiClient";
+import { useNetworkState } from "@shared/services/network";
+import { buttonPressStyle, primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { fontScale, typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
 import { usePallet } from "../../../providers/PalletProvider";
 import { useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
 import { type RoadmapApi, useRoadmapApi } from "../../../services/roadmapApi";
+import { useRoadmapSync } from "../../../services/roadmapSync";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,8 +29,11 @@ export function PalletsEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
   const { closeModal, openModal } = useModal();
+  const { hasCheckedNetwork, isOnline } = useNetworkState();
   const roadmapApi = useRoadmapApi();
+  const { syncOperation } = useRoadmapSync();
   const { theme } = useThemeMode();
+  const [isFinishing, setIsFinishing] = useState(false);
   const { width, height } = useWindowDimensions();
   const portraitWidth = Math.min(width, height);
   const portraitHeight = Math.max(width, height);
@@ -67,6 +73,25 @@ export function PalletsEvidence() {
     );
   }, [closeModal, openModal]);
 
+  const openPendingValidationModal = useCallback(() => {
+    let modalId = "";
+
+    modalId = openModal(
+      <PalletScanWarningModal
+        message="Sem conexão com a API. O lote foi salvo e será validado automaticamente na sincronização."
+        onClose={() => closeModal(modalId)}
+      />,
+      {
+        animationType: "slide",
+        heightPercent: 34,
+        maxHeightPercent: 54,
+        minHeight: 0,
+        title: "Validação pendente",
+        widthPercent: 88,
+      },
+    );
+  }, [closeModal, openModal]);
+
   const validateForm =
     palletEvidence.length > 0 &&
     palletEvidence.every(
@@ -89,11 +114,15 @@ export function PalletsEvidence() {
               evidence: palletEvidence,
               palletIndex,
             });
-            await validateScannedBatch({
+            const validationResult = await validateScannedBatch({
               batch: scannedBatch,
               operationPallet,
               roadmapApi,
             });
+
+            if (validationResult === "skipped") {
+              requestAnimationFrame(openPendingValidationModal);
+            }
           } catch (error) {
             const nextEvidence = palletEvidence.map((pallet, index) => {
               if (index !== palletIndex) return pallet;
@@ -128,7 +157,7 @@ export function PalletsEvidence() {
       });
       navigation.navigate("Scanner");
     },
-    [configureScanner, navigation, openPalletValidationModal, operationPallet, palletEvidence, roadmapApi, savePalletEvidenceDraft, setPalletEvidence],
+    [configureScanner, navigation, openPalletValidationModal, openPendingValidationModal, operationPallet, palletEvidence, roadmapApi, savePalletEvidenceDraft, setPalletEvidence],
   );
 
   const scanPhoto = useCallback(
@@ -184,14 +213,35 @@ export function PalletsEvidence() {
   };
 
   const finishEntry = async () => {
-    if (operationPallet === "exit") {
-      await savePalletEvidenceDraft({ currentStep: "exit_extra_evidence" });
-      navigation.navigate("ExitExtraEvidence");
-      return;
-    }
+    if (isFinishing) return;
 
-    await savePalletEvidenceDraft({ currentStep: "completed", status: "pending_sync" });
-    navigation.navigate("OperationSuccess", { operation: "entry" });
+    setIsFinishing(true);
+    try {
+      if (operationPallet === "exit") {
+        await savePalletEvidenceDraft({ currentStep: "exit_extra_evidence" });
+        navigation.navigate("ExitExtraEvidence");
+        return;
+      }
+
+      const operation = await savePalletEvidenceDraft({ currentStep: "completed", status: "pending_sync" });
+      if (!operation) return;
+
+      const canSyncNow = hasCheckedNetwork && isOnline && hasApiBaseUrl() && roadmapApi.hasAuthToken;
+      if (!canSyncNow) {
+        navigation.navigate("OperationSuccess", { operation: "entry", syncStatus: "pending" });
+        return;
+      }
+
+      const syncedRoadmap = await syncOperation(operation.id);
+      if (syncedRoadmap) {
+        navigation.navigate("OperationSuccess", { operation: "entry", syncStatus: "synced" });
+        return;
+      }
+
+      navigation.navigate("OperationSyncError", { operationId: operation.id });
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   return (
@@ -251,7 +301,8 @@ export function PalletsEvidence() {
         <AppButton
           style={{ width: "100%", height: portraitHeight * 0.06 }}
           title={operationPallet === "exit" ? "CONTINUAR" : "CONFIRMAR"}
-          disabled={!validateForm}
+          disabled={!validateForm || isFinishing}
+          loading={isFinishing}
           onPress={finishEntry}
         />
       </ScrollView>
@@ -314,12 +365,19 @@ async function validateScannedBatch({
     throw new Error("Lote do palete é obrigatório.");
   }
 
-  if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) return;
+  if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken) return "skipped";
 
-  await roadmapApi.validatePallet({
-    batch,
-    typeRoadmap: operationPallet === "entry" ? "ENTRY" : "EXIT",
-  });
+  try {
+    await roadmapApi.validatePallet({
+      batch,
+      typeRoadmap: operationPallet === "entry" ? "ENTRY" : "EXIT",
+    });
+  } catch (error) {
+    if (isApiNetworkError(error)) return "skipped";
+    throw error;
+  }
+
+  return "validated";
 }
 
 function getPalletValidationErrorMessage(error: unknown) {
@@ -378,6 +436,7 @@ const PalletCardTitle = styled(Text, {
 
 const IconButton = styled(Button, {
   unstyled: true,
+  pressStyle: buttonPressStyle,
 });
 
 const WarningModalRoot = styled(View, {
@@ -401,6 +460,7 @@ const WarningModalButton = styled(Button, {
   minHeight: 46,
   paddingHorizontal: 18,
   paddingVertical: 12,
+  pressStyle: primaryButtonPressStyle,
 });
 
 const WarningModalButtonText = styled(Text, {

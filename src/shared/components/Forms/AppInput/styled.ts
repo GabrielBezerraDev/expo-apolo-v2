@@ -1,4 +1,5 @@
 import { Button, Input, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const Wrapper = styled(View, { gap: 7 });
@@ -36,6 +37,7 @@ export const StyledInput = styled(Input, {
 
 export const InputIconButton = styled(Button, {
   unstyled: true,
+  pressStyle: buttonPressStyle,
 });
 
 

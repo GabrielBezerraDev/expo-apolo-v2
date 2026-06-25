@@ -1,5 +1,6 @@
 import React from "react";
 import { Button, styled, Text, View } from "tamagui";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import { PalletReportType } from "../../protocol";
 
@@ -29,6 +30,7 @@ const TabButton = styled(Button, {
   alignItems: "center",
   justifyContent: "center",
   paddingHorizontal: 10,
+  pressStyle: buttonPressStyle,
   variants: {
     active: {
       true: { backgroundColor: "$primary" },

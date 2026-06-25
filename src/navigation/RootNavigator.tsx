@@ -10,7 +10,7 @@ import { RootStackParamList } from '@navigation/navigation.protocol';
 import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { NotificationBootstrap } from '@features/notifications';
-import { ExitExtraEvidence, FormScreenPallet, OperationSuccess, PalletsEvidence } from '@features/pallets/screens/form';
+import { ExitExtraEvidence, FormScreenPallet, OperationSuccess, OperationSyncError, PalletsEvidence } from '@features/pallets/screens/form';
 import { PalletHistoryScreen, PalletPhotosScreen } from '@features/pallets/screens/details';
 import { PalletOperationSummary } from '@features/pallets/screens/summary';
 import { RoadmapPhotosScreen } from '@features/pallets/screens/roadmap';
@@ -84,6 +84,7 @@ function LoggedInStack() {
             <Stack.Screen name="PalletPhotos" component={PalletPhotosScreen} />
             <Stack.Screen name="RoadmapPhotos" component={RoadmapPhotosScreen} />
             <Stack.Screen name="OperationSuccess" component={OperationSuccess} />
+            <Stack.Screen name="OperationSyncError" component={OperationSyncError} />
             <Stack.Screen name="Scanner" component={FramedCameraScanner} />
           </Stack.Navigator>
         </PalletProvider>

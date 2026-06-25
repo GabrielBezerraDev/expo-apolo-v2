@@ -7,6 +7,7 @@ import { PhotoCarousel, type PhotoCarouselItem } from "@shared/components/Displa
 import { LottieAnimLoading } from "@shared/components/Feedback";
 import { AppHeader } from "@shared/components/Navigation/AppHeader";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
+import { primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import type { PalletPhotoStage, PalletPhotosByStage, PalletStagePhoto } from "../../../protocol";
 import { usePalletApi } from "../../../services";
@@ -211,6 +212,7 @@ const RetryButton = styled(Button, {
   minHeight: 46,
   paddingHorizontal: 18,
   paddingVertical: 12,
+  pressStyle: primaryButtonPressStyle,
 });
 
 const RetryButtonText = styled(Text, {
