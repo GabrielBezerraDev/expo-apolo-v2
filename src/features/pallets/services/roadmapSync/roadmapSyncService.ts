@@ -95,11 +95,11 @@ function validateOperation({
   }
 
   if (!Number.isInteger(palletsQuantity) || palletsQuantity <= 0) {
-    issues.push({ message: "Quantidade de paletes inválida.", stage: "form" });
+    issues.push({ field: "palletsQuantity", message: "Quantidade de paletes inválida.", stage: "form" });
   }
 
   if (pallets.length !== palletsQuantity) {
-    issues.push({ message: "Quantidade de paletes não confere com as evidências.", stage: "pallets_evidence" });
+    issues.push({ field: "palletsQuantity", message: "Quantidade de paletes não confere com as evidências.", stage: "form" });
   }
 
   pallets.forEach((pallet, index) => {
@@ -114,15 +114,15 @@ function validateOperation({
 
   if (operation.operationType === "exit") {
     if (!operation.shipGoodsData?.truck) {
-      issues.push({ field: "photos", message: "Foto da carga não informada.", stage: "exit_extra_evidence" });
+      issues.push({ field: "truck", message: "Foto da carga não informada.", stage: "exit_extra_evidence" });
     }
 
     if (!operation.exitExtraEvidenceData?.licensePlate) {
-      issues.push({ field: "photos", message: "Foto da placa não informada.", stage: "exit_extra_evidence" });
+      issues.push({ field: "licensePlate", message: "Foto da placa não informada.", stage: "exit_extra_evidence" });
     }
 
     if (!operation.exitExtraEvidenceData?.seal) {
-      issues.push({ field: "photos", message: "Foto do lacre não informada.", stage: "exit_extra_evidence" });
+      issues.push({ field: "seal", message: "Foto do lacre não informada.", stage: "exit_extra_evidence" });
     }
   }
 

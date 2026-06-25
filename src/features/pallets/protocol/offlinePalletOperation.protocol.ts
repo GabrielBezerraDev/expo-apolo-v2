@@ -41,7 +41,7 @@ export type OfflineExitExtraEvidenceData = {
 
 export type OfflineValidationIssue = {
   batch?: string;
-  field?: "batch" | "photos" | "roadmap";
+  field?: "batch" | "licensePlate" | "palletsQuantity" | "photos" | "roadmap" | "seal" | "truck";
   message: string;
   palletIndex?: number;
   stage: OfflinePalletOperationStep;

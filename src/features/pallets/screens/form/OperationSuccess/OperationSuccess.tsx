@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback } from "react";
 import { BackHandler } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -7,17 +7,15 @@ import EntryPallets from "@assets/svg/EntryPallets.svg";
 import ExitPallets from "@assets/svg/ExitPallets.svg";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { typography } from "@shared/typography";
-import { useRoadmapSync } from "../../../services/roadmapSync";
 import { usePallet } from "../../../providers/PalletProvider";
 
 type Props = NativeStackScreenProps<RootStackParamList, "OperationSuccess">;
 
 export function OperationSuccess({ navigation, route }: Props) {
-  const { offlineOperationId, resetEntry } = usePallet();
-  const { error, state, syncOperation } = useRoadmapSync();
-  const syncStartedRef = useRef(false);
+  const { resetEntry } = usePallet();
   const { width, height } = useWindowDimensions();
   const operation = route.params.operation;
+  const syncStatus = route.params.syncStatus;
   const isEntry = operation === "entry";
   const Illustration = isEntry ? EntryPallets : ExitPallets;
 
@@ -35,13 +33,6 @@ export function OperationSuccess({ navigation, route }: Props) {
       routes: [{ name: "Main" }],
     });
   }, [navigation, resetEntry]);
-
-  useEffect(() => {
-    if (!offlineOperationId || syncStartedRef.current) return;
-
-    syncStartedRef.current = true;
-    void syncOperation(offlineOperationId);
-  }, [offlineOperationId, syncOperation]);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,9 +64,9 @@ export function OperationSuccess({ navigation, route }: Props) {
           </MessageText>
         </MessageBox>
 
-        {state !== "idle" ? (
+        {syncStatus ? (
           <SyncText>
-            {getSyncMessage(state, error)}
+            {getSyncMessage(syncStatus)}
           </SyncText>
         ) : null}
 
@@ -89,12 +80,10 @@ export function OperationSuccess({ navigation, route }: Props) {
   );
 }
 
-function getSyncMessage(state: string, error: string | null) {
-  if (state === "syncing") return "Sincronizando com o servidor...";
-  if (state === "synced") return "Movimentação sincronizada.";
-  if (state === "failed") return error ?? "Movimentação salva localmente. Tentaremos sincronizar novamente.";
-  if (state === "skipped") return "Movimentação salva localmente para sincronizar depois.";
-  return "";
+function getSyncMessage(syncStatus: "pending" | "synced") {
+  if (syncStatus === "pending") return "Movimentação salva localmente para sincronizar quando a internet voltar.";
+
+  return "Movimentação sincronizada com o servidor.";
 }
 
 const Screen = styled(View, {

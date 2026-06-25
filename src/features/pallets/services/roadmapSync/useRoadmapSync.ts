@@ -62,7 +62,7 @@ export function useRoadmapSync() {
           id: operation.id,
           lastError: message,
           status: "validation_failed",
-          validationIssues: [{ message, stage: getValidationIssueStage(message, operation.operationType) }],
+          validationIssues: [{ field: getValidationIssueField(message), message, stage: getValidationIssueStage(message, operation.operationType) }],
         });
         setError(message);
         setState("failed");
@@ -102,4 +102,17 @@ function getValidationIssueStage(message: string, operationType: "entry" | "exit
   if (operationType === "exit" && normalizedMessage.includes("foto")) return "exit_extra_evidence";
 
   return "pallets_evidence";
+}
+
+function getValidationIssueField(message: string) {
+  const normalizedMessage = message.toLowerCase();
+
+  if (normalizedMessage.includes("roteiro")) return "roadmap";
+  if (normalizedMessage.includes("quantidade")) return "palletsQuantity";
+  if (normalizedMessage.includes("placa")) return "licensePlate";
+  if (normalizedMessage.includes("lacre")) return "seal";
+  if (normalizedMessage.includes("carga")) return "truck";
+  if (normalizedMessage.includes("palete") || normalizedMessage.includes("lote")) return "batch";
+
+  return undefined;
 }

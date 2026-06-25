@@ -22,7 +22,7 @@ export function OfflinePalletDraftList({ operationType }: Props) {
   const { deleteDraft, drafts, isLoading, isRefreshing, refreshDrafts } = useOfflinePalletDrafts({ operationType });
   const { syncOperation } = useRoadmapSync();
   const reviewStage = useCallback(async (item: OfflinePalletOperation, stage: OfflinePalletOperationStep) => {
-    await hydrateOperationById(item.id);
+    await hydrateOperationById(item.id, { clearInvalidFields: true, reviewStage: stage });
     navigateToReviewStage(navigation, stage, item.id);
   }, [hydrateOperationById, navigation]);
 

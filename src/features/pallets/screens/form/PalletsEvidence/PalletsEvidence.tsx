@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Alert } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,12 +13,14 @@ import { PhotoCarousel, type PhotoCaptureOrientation } from "@shared/components/
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { hasApiBaseUrl, isApiNetworkError } from "@shared/services/apiClient";
+import { useNetworkState } from "@shared/services/network";
 import { fontScale, typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
 import { usePallet } from "../../../providers/PalletProvider";
 import { useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
 import { type RoadmapApi, useRoadmapApi } from "../../../services/roadmapApi";
+import { useRoadmapSync } from "../../../services/roadmapSync";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,8 +28,11 @@ export function PalletsEvidence() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
   const { closeModal, openModal } = useModal();
+  const { hasCheckedNetwork, isOnline } = useNetworkState();
   const roadmapApi = useRoadmapApi();
+  const { syncOperation } = useRoadmapSync();
   const { theme } = useThemeMode();
+  const [isFinishing, setIsFinishing] = useState(false);
   const { width, height } = useWindowDimensions();
   const portraitWidth = Math.min(width, height);
   const portraitHeight = Math.max(width, height);
@@ -207,14 +212,35 @@ export function PalletsEvidence() {
   };
 
   const finishEntry = async () => {
-    if (operationPallet === "exit") {
-      await savePalletEvidenceDraft({ currentStep: "exit_extra_evidence" });
-      navigation.navigate("ExitExtraEvidence");
-      return;
-    }
+    if (isFinishing) return;
 
-    await savePalletEvidenceDraft({ currentStep: "completed", status: "pending_sync" });
-    navigation.navigate("OperationSuccess", { operation: "entry" });
+    setIsFinishing(true);
+    try {
+      if (operationPallet === "exit") {
+        await savePalletEvidenceDraft({ currentStep: "exit_extra_evidence" });
+        navigation.navigate("ExitExtraEvidence");
+        return;
+      }
+
+      const operation = await savePalletEvidenceDraft({ currentStep: "completed", status: "pending_sync" });
+      if (!operation) return;
+
+      const canSyncNow = hasCheckedNetwork && isOnline && hasApiBaseUrl() && roadmapApi.hasAuthToken;
+      if (!canSyncNow) {
+        navigation.navigate("OperationSuccess", { operation: "entry", syncStatus: "pending" });
+        return;
+      }
+
+      const syncedRoadmap = await syncOperation(operation.id);
+      if (syncedRoadmap) {
+        navigation.navigate("OperationSuccess", { operation: "entry", syncStatus: "synced" });
+        return;
+      }
+
+      navigation.navigate("OperationSyncError", { operationId: operation.id });
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   return (
@@ -274,7 +300,8 @@ export function PalletsEvidence() {
         <AppButton
           style={{ width: "100%", height: portraitHeight * 0.06 }}
           title={operationPallet === "exit" ? "CONTINUAR" : "CONFIRMAR"}
-          disabled={!validateForm}
+          disabled={!validateForm || isFinishing}
+          loading={isFinishing}
           onPress={finishEntry}
         />
       </ScrollView>

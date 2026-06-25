@@ -37,7 +37,6 @@ export function OfflinePalletDraftCard({ item, onDelete, onOpen, onReviewStage, 
           <ValidationBox>
             <ValidationTitle>Corrija as pendências abaixo antes de sincronizar.</ValidationTitle>
             {validationGroups.length > 0 ? validationGroups.map(group => {
-              console.log("GROUP: ",group);
               return (
               <ValidationGroup key={group.stage}>
                 <ValidationGroupTitle>{getStepLabel(group.stage)}</ValidationGroupTitle>

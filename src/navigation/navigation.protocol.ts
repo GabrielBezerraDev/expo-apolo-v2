@@ -21,5 +21,6 @@ export type RootStackParamList = {
   PalletHistory: { batch?: string; palletId: number };
   PalletPhotos: { batch?: string; palletId: number };
   RoadmapPhotos: { roadmap: Roadmap };
-  OperationSuccess: { operation: 'entry' | 'exit' };
+  OperationSuccess: { operation: 'entry' | 'exit'; syncStatus?: "pending" | "synced" };
+  OperationSyncError: { operationId: string };
 };
