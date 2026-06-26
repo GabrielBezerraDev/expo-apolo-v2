@@ -7,7 +7,7 @@ export type AppHeaderConfig = {
   showBack?: boolean;
   showMenu?: boolean;
   subtitle?: string;
-  title: string;
+  title?: string;
   visible?: boolean;
 };
 
