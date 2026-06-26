@@ -25489,6 +25489,13 @@
           "name": "c-gray900",
           "val": "#111111",
           "variable": ""
+        },
+        "transparent": {
+          "isVar": true,
+          "key": "$transparent",
+          "name": "c-transparent",
+          "val": "#00000000",
+          "variable": ""
         }
       },
       "space": {
@@ -25721,6 +25728,7 @@
         "gray400": "#dedede",
         "gray700": "#333333",
         "gray900": "#111111",
+        "transparent": "#00000000",
         "mode": "dark",
         "background": "#2b2a2a",
         "surface": "#1b1b1b",
@@ -25751,6 +25759,7 @@
         "gray400": "#dedede",
         "gray700": "#333333",
         "gray900": "#111111",
+        "transparent": "#00000000",
         "mode": "light",
         "background": "rgb(255, 255, 255)",
         "surface": "#f6f3f7",
@@ -25896,6 +25905,13 @@
         "key": "$orangeDark",
         "name": "c-orangeDark",
         "val": "#d94f00",
+        "variable": ""
+      },
+      "$color.transparent": {
+        "isVar": true,
+        "key": "$transparent",
+        "name": "c-transparent",
+        "val": "#00000000",
         "variable": ""
       },
       "$color.white": {

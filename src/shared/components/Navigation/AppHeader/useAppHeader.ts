@@ -1,17 +1,31 @@
 import { useState } from "react";
+import type { NativeStackHeaderProps } from "@react-navigation/native-stack";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
+import { useAppHeaderContext } from "./AppHeaderProvider";
 
 type UseAppHeaderParams = {
-  onMenu?: () => void;
+  navigation: NativeStackHeaderProps["navigation"];
 };
 
-export function useAppHeader({ onMenu }: UseAppHeaderParams) {
+export function useAppHeader({ navigation }: UseAppHeaderParams) {
   const { theme } = useThemeMode();
+  const { headerConfig } = useAppHeaderContext();
   const [drawerVisible, setDrawerVisible] = useState(false);
 
+  const handleBackPress = () => {
+    if (headerConfig.onBack) {
+      headerConfig.onBack();
+      return;
+    }
+
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
+
   const handleMenuPress = () => {
-    if (onMenu) {
-      onMenu();
+    if (headerConfig.onMenu) {
+      headerConfig.onMenu();
       return;
     }
 
@@ -25,7 +39,9 @@ export function useAppHeader({ onMenu }: UseAppHeaderParams) {
   return {
     closeDrawer,
     drawerVisible,
+    handleBackPress,
     handleMenuPress,
+    headerConfig,
     theme,
   };
 }

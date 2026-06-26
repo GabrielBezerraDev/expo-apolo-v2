@@ -1,7 +1,7 @@
 import React, { PropsWithChildren, ReactNode } from "react";
 import { styled, View } from "tamagui";
 import { FloatButton, FloatButtonAction } from "@shared/components/Actions/FloatButton";
-import { AppHeader } from "@shared/components/Navigation/AppHeader";
+import { useAppHeaderConfig } from "@shared/components/Navigation/AppHeader";
 
 type Props = PropsWithChildren<{
   title: string;
@@ -20,9 +20,10 @@ const TopRightActionSlot = styled(View, {
 
 
 export function ListScreenShell({ title, children, floatActions = [], topRightAction }: Props) {
+  useAppHeaderConfig({ title });
+
   return (
     <Screen>
-      <AppHeader title={title} subtitle="Olá, Operador X" />
       <Content>
         {children}
         {topRightAction ? <TopRightActionSlot>{topRightAction}</TopRightActionSlot> : null}

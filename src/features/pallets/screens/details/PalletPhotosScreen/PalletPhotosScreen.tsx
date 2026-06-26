@@ -1,11 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useQuery } from "@tanstack/react-query";
 import { Button, ScrollView, styled, Text, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { PhotoCarousel, type PhotoCarouselItem } from "@shared/components/Display";
 import { LottieAnimLoading } from "@shared/components/Feedback";
-import { AppHeader } from "@shared/components/Navigation/AppHeader";
+import { useAppHeaderConfig } from "@shared/components/Navigation/AppHeader";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
 import { primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
@@ -28,6 +28,7 @@ export function PalletPhotosScreen({ navigation, route }: Props) {
   });
   const response = photosQuery.data;
   const subtitle = response?.pallet.batch ?? route.params.batch;
+  const goBack = useCallback(() => navigation.goBack(), [navigation]);
   const stages = useMemo(() => normalizePhotoStages(response?.stages), [response?.stages]);
   const stickerItems = useMemo<PhotoCarouselItem[]>(() => [
     {
@@ -37,13 +38,15 @@ export function PalletPhotosScreen({ navigation, route }: Props) {
     },
   ], [response?.sticker?.filePath]);
 
+  useAppHeaderConfig({
+    title: "Fotos do palete",
+    subtitle: subtitle ? `Lote ${subtitle}` : undefined,
+    showBack: true,
+    onBack: goBack,
+  });
+
   return (
     <Screen>
-      <AppHeader
-        title="Fotos do palete"
-        subtitle={subtitle ? `Lote ${subtitle}` : undefined}
-        onBack={() => navigation.goBack()}
-      />
       <Content>
         {photosQuery.isLoading || !canLoadPhotos ? (
           <CenteredFrame>
