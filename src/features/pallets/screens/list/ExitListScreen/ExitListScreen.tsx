@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useDeferredValue, useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Filter, PackageMinus } from "lucide-react-native";
+import { Button } from "tamagui";
+import { Filter, PackageMinus, Search, X } from "lucide-react-native";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import {
   PaginationComponent,
@@ -11,8 +12,11 @@ import {
 } from "@shared/components/Navigation/Pagination";
 import { FilterChips } from "@shared/components/Filters";
 import { RefreshableList } from "@shared/components/Display";
+import { AppInput } from "@shared/components/Forms/AppInput";
+import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { hasApiBaseUrl, isApiTimeoutError } from "@shared/services/apiClient";
 import { useNetworkState } from "@shared/services/network";
+import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { OfflinePalletDraftList } from "../../../components/OfflinePalletDraftList";
 import { OperationCard, type OperationItem } from "../../../components/OperationCard";
 import { OperationListTabs, OperationListTabValue } from "../../../components/OperationListTabs";
@@ -33,8 +37,11 @@ export function ExitListScreen() {
 
 function ExitListScreenContent() {
   const navigation = useNavigation<Navigation>();
+  const { theme } = useThemeMode();
   const { hasCheckedNetwork, isOnline } = useNetworkState();
   const [activeTab, setActiveTab] = useState<OperationListTabValue>("operations");
+  const [operationSearch, setOperationSearch] = useState("");
+  const deferredOperationSearch = useDeferredValue(operationSearch.trim());
   const { resetEntry, setOperationPallet } = usePallet();
   const { currentPage, itemsPerPage, sendToFirstPage, setPaginationMeta } = usePagination();
   const {
@@ -44,6 +51,7 @@ function ExitListScreenContent() {
   } = useOperationListFilters({ modalTitle: "Filtrar saídas" });
   const roadmapQuery = useRoadmapList({
     appliedFilters,
+    filterSearch: deferredOperationSearch,
     page: currentPage,
     pageSize: itemsPerPage,
     typeRoadmap: "EXIT",
@@ -59,7 +67,7 @@ function ExitListScreenContent() {
 
   useEffect(() => {
     sendToFirstPage();
-  }, [appliedFilters, sendToFirstPage]);
+  }, [appliedFilters, deferredOperationSearch, sendToFirstPage]);
 
   useEffect(() => {
     const meta = roadmapQuery.data?.meta;
@@ -86,9 +94,23 @@ function ExitListScreenContent() {
         { Icon: Filter, label: "Filtro", onPress: openFilterModal },
       ]}
     >
+      <AppInput
+        value={operationSearch}
+        onChangeText={setOperationSearch}
+        placeholder="Filtrar por roteiro..."
+        autoCapitalize="characters"
+        leftIcon={<Search size={22} color={theme.primary} />}
+        rightIcon={
+          operationSearch ? (
+            <Button unstyled pressStyle={buttonPressStyle} onPress={() => setOperationSearch("")} hitSlop={10}>
+              <X size={22} color={theme.primary} />
+            </Button>
+          ) : null
+        }
+      />
       <OperationListTabs value={activeTab} operationsLabel="Saídas" onChange={setActiveTab} />
       {activeTab === "drafts" ? (
-        <OfflinePalletDraftList operationType="exit" />
+        <OfflinePalletDraftList operationType="exit" search={deferredOperationSearch} />
       ) : (
         <>
           <FilterChips chips={chips} />
