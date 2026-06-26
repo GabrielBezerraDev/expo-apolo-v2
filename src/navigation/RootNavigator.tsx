@@ -10,7 +10,7 @@ import { RootStackParamList } from '@navigation/navigation.protocol';
 import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { FrameProvider, FramedCameraScanner } from '@features/camera';
 import { NotificationBootstrap } from '@features/notifications';
-import { ExitExtraEvidence, FormScreenPallet, OperationSuccess, OperationSyncError, PalletsEvidence } from '@features/pallets/screens/form';
+import { ExitExtraEvidence, FormScreenRoadmap, OperationSuccess, OperationSyncError, PalletsEvidence } from '@features/pallets/screens/form';
 import { PalletHistoryScreen, PalletPhotosScreen } from '@features/pallets/screens/details';
 import { PalletOperationSummary } from '@features/pallets/screens/summary';
 import { RoadmapPhotosScreen } from '@features/pallets/screens/roadmap';
@@ -76,7 +76,7 @@ function LoggedInStack() {
         <PalletProvider>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Main" component={MainTabsNavigator} />
-            <Stack.Screen name="FormScreenPallet" component={FormScreenPallet} />
+            <Stack.Screen name="FormScreenRoadmap" component={FormScreenRoadmap} />
             <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
             <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
             <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />

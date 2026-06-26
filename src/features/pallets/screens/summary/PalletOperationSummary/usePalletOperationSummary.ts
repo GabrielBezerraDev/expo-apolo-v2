@@ -60,7 +60,7 @@ export function usePalletOperationSummary({ navigation, operationId }: UsePallet
     const routeByStep = {
       completed: undefined,
       exit_extra_evidence: "ExitExtraEvidence",
-      form: "FormScreenPallet",
+      form: "FormScreenRoadmap",
       pallets_evidence: "PalletsEvidence",
       ship_goods: "ExitExtraEvidence",
     } as const;

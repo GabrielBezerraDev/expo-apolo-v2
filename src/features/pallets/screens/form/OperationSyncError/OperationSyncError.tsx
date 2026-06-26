@@ -131,7 +131,7 @@ function getRouteByStage(stage: OfflinePalletOperationStep) {
   const routeByStage = {
     completed: undefined,
     exit_extra_evidence: "ExitExtraEvidence",
-    form: "FormScreenPallet",
+    form: "FormScreenRoadmap",
     pallets_evidence: "PalletsEvidence",
     ship_goods: "ExitExtraEvidence",
   } as const;
