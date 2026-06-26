@@ -83,7 +83,7 @@ function EntryListScreenContent() {
   const startEntry = () => {
     resetEntry();
     setOperationPallet("entry");
-    navigation.navigate("FormScreenPallet");
+    navigation.navigate("FormScreenRoadmap");
   };
 
   return (

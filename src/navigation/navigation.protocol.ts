@@ -14,7 +14,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   Scanner: undefined;
-  FormScreenPallet: undefined;
+  FormScreenRoadmap: undefined;
   PalletsEvidence: undefined;
   ExitExtraEvidence: undefined;
   PalletOperationSummary: { operationId: string };

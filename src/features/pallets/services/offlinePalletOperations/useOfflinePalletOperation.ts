@@ -49,7 +49,7 @@ type HydrateOperationByIdOptions = {
 export function useOfflinePalletOperation() {
   const {
     exitExtraEvidencePhotos,
-    getValeusScreenPallet,
+    getValuesScreenRoadmap,
     hydrateOfflineOperation,
     offlineOperationId,
     operationPallet,
@@ -68,8 +68,8 @@ export function useOfflinePalletOperation() {
     roadmap,
     status = "draft",
   }: SaveFormDraftParams = {}) => {
-    const resolvedRoadmap = roadmap ?? getValeusScreenPallet("roadmap") ?? route;
-    const resolvedQuantity = palletsQuantity ?? getValeusScreenPallet("palletsQuantity") ?? "";
+    const resolvedRoadmap = roadmap ?? getValuesScreenRoadmap("roadmap") ?? route;
+    const resolvedQuantity = palletsQuantity ?? getValuesScreenRoadmap("palletsQuantity") ?? "";
 
     if (!resolvedRoadmap.trim() && !offlineOperationId) return null;
 
@@ -90,7 +90,7 @@ export function useOfflinePalletOperation() {
       hydrateOfflineOperation(operation);
     }
     return operation;
-  }, [getValeusScreenPallet, hydrateOfflineOperation, offlineOperationId, operationPallet, route, setOfflineOperationId]);
+  }, [getValuesScreenRoadmap, hydrateOfflineOperation, offlineOperationId, operationPallet, route, setOfflineOperationId]);
 
   const savePalletEvidenceDraft = useCallback(async ({
     currentStep = "pallets_evidence",

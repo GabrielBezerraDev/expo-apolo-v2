@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const formScreenPalletSchema = z.object({
+export const formScreenRoadmapSchema = z.object({
   roadmap: z.string().min(1, "Escaneie o roteiro."),
   palletsQuantity: z
     .string()

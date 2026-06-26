@@ -17,13 +17,13 @@ import { useOfflinePalletOperation } from "../../../services/offlinePalletOperat
 import { getOfflinePalletOperationByRoadmap } from "../../../services/offlinePalletOperations";
 import { useRoadmapApi } from "../../../services/roadmapApi";
 import { usePallet } from "../../../providers/PalletProvider";
-import { FormScreenPalletType } from "../../../protocol";
+import { FormScreenRoadmapType } from "../../../protocol";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
-export function FormScreenPallet() {
+export function FormScreenRoadmap() {
   const navigation = useNavigation<Navigation>();
   const { configureScanner } = useFrame();
   const { showConfirm, showFeedback } = useFeedbackModal();
@@ -35,15 +35,15 @@ export function FormScreenPallet() {
     setPalletQuantity,
     startPalletCapture,
     resetEntry,
-    controlFormScreenPallet,
-    getValeusScreenPallet,
-    isValidFormScreenPalletValue,
+    controlFormScreenRoadmap,
+    getValuesScreenRoadmap,
+    isValidFormScreenRoadmapValue,
     offlineOperationId,
     operationPallet,
-    setFormScreenPalletValue,
+    setFormScreenRoadmapValue,
   } = usePallet();
   const { saveFormDraft } = useOfflinePalletOperation();
-  const { errors } = useFormState({ control: controlFormScreenPallet });
+  const { errors } = useFormState({ control: controlFormScreenRoadmap });
 
 
 
@@ -51,8 +51,8 @@ export function FormScreenPallet() {
   const { height } = useWindowDimensions();
   const operationLabel = operationPallet === "exit" ? "saída" : "entrada";
   const clearScannedRoadmap = useCallback(() => {
-    setFormScreenPalletValue("roadmap", "", { shouldValidate: true });
-  }, [setFormScreenPalletValue]);
+    setFormScreenRoadmapValue("roadmap", "", { shouldValidate: true });
+  }, [setFormScreenRoadmapValue]);
 
   const openRoadmapExistsModal = useCallback((scannedRoadmap: string) => {
     showFeedback({
@@ -84,7 +84,7 @@ export function FormScreenPallet() {
           return;
         }
 
-        setFormScreenPalletValue("roadmap", scannedRoadmap, {
+        setFormScreenRoadmapValue("roadmap", scannedRoadmap, {
           shouldValidate: true,
         });
         await saveFormDraft({ roadmap: scannedRoadmap });
@@ -98,7 +98,7 @@ export function FormScreenPallet() {
       formatTextDataWithRegex: (data) => data.replace(/[^a-zA-Z0-9\s]/g, ""),
     });
     navigation.navigate('Scanner');
-  }, [clearScannedRoadmap, configureScanner, navigation, navigator, openPendingValidationModal, openRoadmapExistsModal, roadmapApi, saveFormDraft, setFormScreenPalletValue]);
+  }, [clearScannedRoadmap, configureScanner, navigation, navigator, openPendingValidationModal, openRoadmapExistsModal, roadmapApi, saveFormDraft, setFormScreenRoadmapValue]);
 
   const formSubtitle = useMemo(() => {
     if (!route) return "Escaneie o roteiro e informe a quantidade de paletes.";
@@ -106,7 +106,7 @@ export function FormScreenPallet() {
   }, [route]);
 
   const confirm = async () => {
-    const currentRoadmap = getValeusScreenPallet("roadmap").trim();
+    const currentRoadmap = getValuesScreenRoadmap("roadmap").trim();
     const existingOperation = await getOfflinePalletOperationByRoadmap(currentRoadmap, operationPallet);
 
     if (existingOperation && existingOperation.currentStep !== "form") {
@@ -126,7 +126,7 @@ export function FormScreenPallet() {
   };
 
   const cancelMovement = () => {
-    const currentRoadmap = getValeusScreenPallet("roadmap").trim();
+    const currentRoadmap = getValuesScreenRoadmap("roadmap").trim();
 
     if (!currentRoadmap && !offlineOperationId) {
       resetEntry();
@@ -167,10 +167,10 @@ export function FormScreenPallet() {
             <HelperText>
               {formSubtitle}
             </HelperText>
-            <AppInput<FormScreenPalletType>
+            <AppInput<FormScreenRoadmapType>
               controllerReactFormsProps={{
                 name: "roadmap",
-                control: controlFormScreenPallet,
+                control: controlFormScreenRoadmap,
                 
               }}
               label="Roteiro"
@@ -184,10 +184,10 @@ export function FormScreenPallet() {
                 </IconButton>
               }
             />
-            <AppInput<FormScreenPalletType>
+            <AppInput<FormScreenRoadmapType>
               controllerReactFormsProps={{
                 name: "palletsQuantity",
-                control: controlFormScreenPallet,
+                control: controlFormScreenRoadmap,
               }}
               label="Quan. de paletes"
               value={palletQuantity}
@@ -199,7 +199,7 @@ export function FormScreenPallet() {
             <AppButton
               style={{width:'100%', height: height * 0.06}}
               title="CONFIRMAR"
-              disabled={!isValidFormScreenPalletValue}
+              disabled={!isValidFormScreenRoadmapValue}
               onPress={confirm}
             />
             <AppButton title="CANCELAR" variant="outline" onPress={cancelMovement} />
