@@ -9,12 +9,6 @@ export function useOperationListFilters({ modalTitle }: UseOperationListFiltersP
   const configs = useMemo<FilterConfig[]>(
     () => [
       {
-        key: "filterSearch",
-        label: "Roteiro ou lote",
-        type: "text",
-        placeholder: "Digite roteiro ou lote",
-      },
-      {
         key: "dateFilter",
         label: "Data",
         type: "date",

@@ -7,16 +7,17 @@ import type { RoadmapQueryParams, RoadmapType } from "../../../protocol";
 
 type UseRoadmapListParams = {
   appliedFilters: FilterValues;
+  filterSearch?: string;
   page: number;
   pageSize: number;
   typeRoadmap: RoadmapType;
 };
 
-export function useRoadmapList({ appliedFilters, page, pageSize, typeRoadmap }: UseRoadmapListParams) {
+export function useRoadmapList({ appliedFilters, filterSearch, page, pageSize, typeRoadmap }: UseRoadmapListParams) {
   const roadmapApi = useRoadmapApi();
   const queryParams = useMemo(
-    () => buildRoadmapQueryParams({ appliedFilters, page, pageSize, typeRoadmap }),
-    [appliedFilters, page, pageSize, typeRoadmap],
+    () => buildRoadmapQueryParams({ appliedFilters, filterSearch, page, pageSize, typeRoadmap }),
+    [appliedFilters, filterSearch, page, pageSize, typeRoadmap],
   );
 
   return useQuery({
@@ -28,18 +29,18 @@ export function useRoadmapList({ appliedFilters, page, pageSize, typeRoadmap }: 
 
 function buildRoadmapQueryParams({
   appliedFilters,
+  filterSearch,
   page,
   pageSize,
   typeRoadmap,
 }: UseRoadmapListParams): RoadmapQueryParams {
   const dateFilter = appliedFilters.dateFilter as DateFilterValue | undefined;
-  const filterSearch = appliedFilters.filterSearch;
 
   return {
     dateFilter: dateFilter?.startDate && dateFilter.endDate
       ? { initDate: dateFilter.startDate, endDate: dateFilter.endDate }
       : undefined,
-    filterSearch: typeof filterSearch === "string" ? filterSearch.trim() || undefined : undefined,
+    filterSearch: filterSearch?.trim() || undefined,
     page,
     pageSize,
     statusRoadmap: valuesToCsv(appliedFilters.status),
