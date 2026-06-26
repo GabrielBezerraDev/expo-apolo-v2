@@ -83,7 +83,7 @@ function ExitListScreenContent() {
   const startExit = () => {
     resetEntry();
     setOperationPallet("exit");
-    navigation.navigate("FormScreenPallet");
+    navigation.navigate("FormScreenRoadmap");
   };
 
   return (

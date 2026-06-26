@@ -8,8 +8,8 @@ import React, {
 import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
 import { Control, UseFormGetValues, UseFormSetValue, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { formScreenPalletSchema } from "../schemas";
-import { FormScreenPalletType, OfflinePalletOperation } from "../protocol";
+import { formScreenRoadmapSchema } from "../schemas";
+import { FormScreenRoadmapType, OfflinePalletOperation } from "../protocol";
 
 export type EntryPallet = {
   id: string;
@@ -47,10 +47,10 @@ type PalletContextValue = {
   setScanTarget: (target: EntryScanTarget | null) => void;
   startPalletCapture: () => boolean;
   resetEntry: () => void;
-  controlFormScreenPallet: Control<FormScreenPalletType>;
-  isValidFormScreenPalletValue: boolean;
-  setFormScreenPalletValue: UseFormSetValue<FormScreenPalletType>;
-  getValeusScreenPallet: UseFormGetValues<FormScreenPalletType>;
+  controlFormScreenRoadmap: Control<FormScreenRoadmapType>;
+  isValidFormScreenRoadmapValue: boolean;
+  setFormScreenRoadmapValue: UseFormSetValue<FormScreenRoadmapType>;
+  getValuesScreenRoadmap: UseFormGetValues<FormScreenRoadmapType>;
   operationPallet: OperationPallet;
   setOperationPallet: Dispatch<SetStateAction<OperationPallet>>;
   offlineOperationId: string | null;
@@ -97,33 +97,33 @@ export function PalletProvider({ children }: PropsWithChildren) {
     pallets.every((item) => item.lot.trim() && item.photos.every(Boolean));
 
   const {
-    control: controlFormScreenPallet,
-    reset: resetFormScreenPallet,
-    setValue: setFormScreenPalletValue,
-    getValues: getValeusScreenPallet,
-    formState: { isValid: isValidFormScreenPalletValue },
-  } = useForm<FormScreenPalletType>({
+    control: controlFormScreenRoadmap,
+    reset: resetFormScreenRoadmap,
+    setValue: setFormScreenRoadmapValue,
+    getValues: getValuesScreenRoadmap,
+    formState: { isValid: isValidFormScreenRoadmapValue },
+  } = useForm<FormScreenRoadmapType>({
     defaultValues: {
       roadmap: "",
       palletsQuantity: "",
     },
     mode: "onChange",
-    resolver: zodResolver(formScreenPalletSchema),
+    resolver: zodResolver(formScreenRoadmapSchema),
   });
 
   const updatePalletQuantity = useCallback(
     (value: string) => {
       setPalletQuantity(value);
-      setFormScreenPalletValue("palletsQuantity", value, {
+      setFormScreenRoadmapValue("palletsQuantity", value, {
         shouldValidate: true,
       });
     },
-    [setFormScreenPalletValue],
+    [setFormScreenRoadmapValue],
   );
 
   const startPalletCapture = useCallback(() => {
-    const currentRoute = getValeusScreenPallet("roadmap").trim();
-    const currentQuantity = Number(getValeusScreenPallet("palletsQuantity"));
+    const currentRoute = getValuesScreenRoadmap("roadmap").trim();
+    const currentQuantity = Number(getValuesScreenRoadmap("palletsQuantity"));
 
     if (!currentRoute || !Number.isInteger(currentQuantity) || currentQuantity <= 0) return false;
 
@@ -140,7 +140,7 @@ export function PalletProvider({ children }: PropsWithChildren) {
     setPalletEvidence(current => buildPalletEvidenceItems(currentQuantity, current));
 
     return true;
-  }, [getValeusScreenPallet]);
+  }, [getValuesScreenRoadmap]);
 
   const hydrateOfflineOperation = useCallback((operation: OfflinePalletOperation) => {
     const roadmap = operation.formData?.roadmap ?? operation.roadmap ?? "";
@@ -151,8 +151,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
     setOperationPallet(operation.operationType);
     setRoute(roadmap);
     setPalletQuantity(quantity);
-    setFormScreenPalletValue("roadmap", roadmap, { shouldValidate: true });
-    setFormScreenPalletValue("palletsQuantity", quantity, { shouldValidate: true });
+    setFormScreenRoadmapValue("roadmap", roadmap, { shouldValidate: true });
+    setFormScreenRoadmapValue("palletsQuantity", quantity, { shouldValidate: true });
     setPalletEvidence(
       buildPalletEvidenceItems(
         Number.isInteger(parsedHydratedQuantity) && parsedHydratedQuantity > 0
@@ -171,7 +171,7 @@ export function PalletProvider({ children }: PropsWithChildren) {
       licensePlate: operation.exitExtraEvidenceData?.licensePlate ?? null,
       seal: operation.exitExtraEvidenceData?.seal ?? null,
     });
-  }, [setFormScreenPalletValue]);
+  }, [setFormScreenRoadmapValue]);
 
   const resetEntry = useCallback(() => {
     setRoute("");
@@ -182,8 +182,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
     setOfflineOperationId(null);
     setShipGoodsPhotos(initialShipGoodsPhotos);
     setExitExtraEvidencePhotos(initialExitExtraEvidencePhotos);
-    resetFormScreenPallet({ roadmap: "", palletsQuantity: "" });
-  }, [resetFormScreenPallet]);
+    resetFormScreenRoadmap({ roadmap: "", palletsQuantity: "" });
+  }, [resetFormScreenRoadmap]);
 
   const value = useMemo<PalletContextValue>(
     () => ({
@@ -197,10 +197,10 @@ export function PalletProvider({ children }: PropsWithChildren) {
       setScanTarget,
       startPalletCapture,
       resetEntry,
-      controlFormScreenPallet,
-      setFormScreenPalletValue,
-      isValidFormScreenPalletValue,
-      getValeusScreenPallet,
+      controlFormScreenRoadmap,
+      setFormScreenRoadmapValue,
+      isValidFormScreenRoadmapValue,
+      getValuesScreenRoadmap,
       operationPallet,
       setOperationPallet,
       offlineOperationId,
@@ -223,10 +223,10 @@ export function PalletProvider({ children }: PropsWithChildren) {
       updatePalletQuantity,
       startPalletCapture,
       resetEntry,
-      controlFormScreenPallet,
-      setFormScreenPalletValue,
-      isValidFormScreenPalletValue,
-      getValeusScreenPallet,
+      controlFormScreenRoadmap,
+      setFormScreenRoadmapValue,
+      isValidFormScreenRoadmapValue,
+      getValuesScreenRoadmap,
       operationPallet,
       offlineOperationId,
       palletEvidence,

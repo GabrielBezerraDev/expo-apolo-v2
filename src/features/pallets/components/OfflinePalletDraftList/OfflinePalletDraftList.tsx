@@ -83,7 +83,7 @@ function navigateToReviewStage(
   operationId: string,
 ) {
   if (stage === "form") {
-    navigation.navigate("FormScreenPallet");
+    navigation.navigate("FormScreenRoadmap");
     return;
   }
 
