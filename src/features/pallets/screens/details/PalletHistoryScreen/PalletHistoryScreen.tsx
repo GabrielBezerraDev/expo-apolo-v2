@@ -1,10 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useQuery } from "@tanstack/react-query";
 import { Button, ScrollView, styled, Text, View } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { LottieAnimLoading } from "@shared/components/Feedback";
-import { AppHeader } from "@shared/components/Navigation/AppHeader";
+import { useAppHeaderConfig } from "@shared/components/Navigation/AppHeader";
 import { hasApiBaseUrl } from "@shared/services/apiClient";
 import { primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
@@ -34,14 +34,17 @@ export function PalletHistoryScreen({ navigation, route }: Props) {
     [historyQuery.data],
   );
   const batch = history[0]?.pallet?.batch ?? route.params.batch;
+  const goBack = useCallback(() => navigation.goBack(), [navigation]);
+
+  useAppHeaderConfig({
+    title: "Histórico do palete",
+    subtitle: batch ? `Lote ${batch}` : undefined,
+    showBack: true,
+    onBack: goBack,
+  });
 
   return (
     <Screen>
-      <AppHeader
-        title="Histórico do palete"
-        subtitle={batch ? `Lote ${batch}` : undefined}
-        onBack={() => navigation.goBack()}
-      />
       <Content>
         {historyQuery.isLoading || !canLoadHistory ? (
           <CenteredFrame>
