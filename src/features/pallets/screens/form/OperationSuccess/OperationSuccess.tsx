@@ -9,12 +9,14 @@ import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { primaryButtonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import { usePallet } from "../../../providers/PalletProvider";
+import { useAppHeaderConfig } from "@shared/components/Navigation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "OperationSuccess">;
 
 export function OperationSuccess({ navigation, route }: Props) {
   const { resetEntry } = usePallet();
   const { width, height } = useWindowDimensions();
+  useAppHeaderConfig({visible:false});
   const operation = route.params.operation;
   const syncStatus = route.params.syncStatus;
   const isEntry = operation === "entry";

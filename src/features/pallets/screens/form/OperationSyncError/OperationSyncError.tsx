@@ -10,6 +10,7 @@ import { typography } from "@shared/typography";
 import type { OfflinePalletOperation, OfflinePalletOperationStep } from "../../../protocol";
 import { getOfflinePalletOperation, useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
 import { usePallet } from "../../../providers/PalletProvider";
+import { useAppHeaderConfig } from "@shared/components/Navigation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "OperationSyncError">;
 
@@ -22,7 +23,9 @@ export function OperationSyncError({ navigation, route }: Props) {
   const contentWidth = Math.min(width * 0.86, 430);
   const failedStage = getFailedStage(operation);
   const messages = getErrorMessages(operation, failedStage);
-
+  
+  useAppHeaderConfig({visible:false});
+  
   useFocusEffect(
     useCallback(() => {
       let active = true;
