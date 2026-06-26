@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
@@ -12,16 +12,22 @@ import { useOfflinePalletDrafts } from "./useOfflinePalletDrafts";
 
 type Props = {
   operationType: OfflinePalletOperationType;
+  search?: string;
 };
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
-export function OfflinePalletDraftList({ operationType }: Props) {
+export function OfflinePalletDraftList({ operationType, search = "" }: Props) {
   const navigation = useNavigation<Navigation>();
   const { showConfirm } = useFeedbackModal();
   const { hydrateOperationById } = useOfflinePalletOperation();
   const { deleteDraft, drafts, isLoading, isRefreshing, refreshDrafts } = useOfflinePalletDrafts({ operationType });
   const { syncOperation } = useRoadmapSync();
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredDrafts = useMemo(
+    () => normalizedSearch ? drafts.filter(item => draftMatchesSearch(item, normalizedSearch)) : drafts,
+    [drafts, normalizedSearch],
+  );
   
   const reviewStage = useCallback(async (item: OfflinePalletOperation, stage: OfflinePalletOperationStep) => {
     await hydrateOperationById(item.id, { clearInvalidFields: true, reviewStage: stage });
@@ -30,8 +36,8 @@ export function OfflinePalletDraftList({ operationType }: Props) {
 
   return (
     <RefreshableList
-      data={drafts}
-      emptyMessage="Nenhum rascunho encontrado."
+      data={filteredDrafts}
+      emptyMessage={normalizedSearch ? "Nenhum rascunho encontrado para o lote informado." : "Nenhum rascunho encontrado."}
       isLoading={isLoading}
       isRefreshing={isRefreshing}
       keyExtractor={(item) => item.id}
@@ -58,6 +64,17 @@ export function OfflinePalletDraftList({ operationType }: Props) {
       )}
     />
   );
+}
+
+function draftMatchesSearch(item: OfflinePalletOperation, search: string) {
+  const values = [
+    item.roadmap,
+    item.formData?.roadmap,
+    ...(item.palletEvidenceData?.pallets.map(pallet => pallet.batch) ?? []),
+    ...(item.validationIssues?.map(issue => issue.batch) ?? []),
+  ];
+
+  return values.some(value => value?.toLowerCase().includes(search));
 }
 
 function navigateToReviewStage(
