@@ -8,6 +8,7 @@ import type { RoadmapType } from "../../protocol";
 import { isApiValidationError } from "@shared/services/apiClient";
 
 const PHOTOS_PER_PALLET = 4;
+const MAX_PALLETS_PER_OPERATION = 50;
 
 export class OfflineOperationValidationError extends Error {
   constructor(public readonly issues: OfflineValidationIssue[]) {
@@ -56,6 +57,7 @@ function buildRoadmapFormData({
 
   formData.append("roadmap", roadmap);
   formData.append("typeRoadmap", typeRoadmap);
+  formData.append("clientOperationId", operation.id);
   formData.append("palletsQuantity", String(palletsQuantity));
   formData.append(
     "photosPallets",
@@ -98,9 +100,23 @@ function validateOperation({
     issues.push({ field: "palletsQuantity", message: "Quantidade de paletes inválida.", stage: "form" });
   }
 
+  if (Number.isInteger(palletsQuantity) && palletsQuantity > MAX_PALLETS_PER_OPERATION) {
+    issues.push({ field: "palletsQuantity", message: "Quantidade máxima de paletes é 50.", stage: "form" });
+  }
+
   if (pallets.length !== palletsQuantity) {
     issues.push({ field: "palletsQuantity", message: "Quantidade de paletes não confere com as evidências.", stage: "form" });
   }
+
+  getDuplicatedBatches(pallets).forEach(({ batch, palletIndex }) => {
+    issues.push({
+      batch,
+      field: "batch",
+      message: "Este lote já foi informado em outro palete.",
+      palletIndex,
+      stage: "pallets_evidence",
+    });
+  });
 
   pallets.forEach((pallet, index) => {
     if (!pallet.batch.trim()) {
@@ -129,6 +145,26 @@ function validateOperation({
   if (issues.length > 0) {
     throw new OfflineOperationValidationError(issues);
   }
+}
+
+function getDuplicatedBatches(pallets: OfflinePalletEvidenceItem[]) {
+  const firstIndexByBatch = new Map<string, number>();
+  const duplicated: Array<{ batch: string; palletIndex: number }> = [];
+
+  pallets.forEach((pallet, index) => {
+    const normalizedBatch = pallet.batch.trim().toLowerCase();
+    if (!normalizedBatch) return;
+
+    const firstIndex = firstIndexByBatch.get(normalizedBatch);
+    if (firstIndex == null) {
+      firstIndexByBatch.set(normalizedBatch, index);
+      return;
+    }
+
+    duplicated.push({ batch: pallet.batch, palletIndex: pallet.palletIndex });
+  });
+
+  return duplicated;
 }
 
 async function validateOperationOnline({
