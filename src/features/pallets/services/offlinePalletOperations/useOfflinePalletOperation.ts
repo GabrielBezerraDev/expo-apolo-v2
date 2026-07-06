@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useAuthSession } from "@shared/services/authSession";
 import {
   OfflinePalletEvidenceData,
   OfflinePalletOperation,
@@ -47,6 +48,7 @@ type HydrateOperationByIdOptions = {
 };
 
 export function useOfflinePalletOperation() {
+  const { userId } = useAuthSession();
   const {
     exitExtraEvidencePhotos,
     getValuesScreenRoadmap,
@@ -80,6 +82,7 @@ export function useOfflinePalletOperation() {
         roadmap: resolvedRoadmap,
       },
       id: offlineOperationId ?? undefined,
+      lastModifiedUserId: userId,
       operationType: operationPallet,
       roadmap: resolvedRoadmap,
       status,
@@ -90,7 +93,7 @@ export function useOfflinePalletOperation() {
       hydrateOfflineOperation(operation);
     }
     return operation;
-  }, [getValuesScreenRoadmap, hydrateOfflineOperation, offlineOperationId, operationPallet, route, setOfflineOperationId]);
+  }, [getValuesScreenRoadmap, hydrateOfflineOperation, offlineOperationId, operationPallet, route, setOfflineOperationId, userId]);
 
   const savePalletEvidenceDraft = useCallback(async ({
     currentStep = "pallets_evidence",
@@ -104,6 +107,7 @@ export function useOfflinePalletOperation() {
     const updated = await upsertOfflinePalletOperation({
       currentStep,
       id: operation.id,
+      lastModifiedUserId: userId,
       operationType: operation.operationType,
       palletEvidenceData,
       roadmap: operation.roadmap,
@@ -112,7 +116,7 @@ export function useOfflinePalletOperation() {
 
     setOfflineOperationId(updated.id);
     return updated;
-  }, [palletEvidence, saveFormDraft, setOfflineOperationId]);
+  }, [palletEvidence, saveFormDraft, setOfflineOperationId, userId]);
 
   const persistPalletPhoto = useCallback(async ({ palletIndex, photoIndex, sourceUri }: PersistPalletPhotoParams) => {
     const operation = await ensureOperationExists(saveFormDraft);
@@ -173,6 +177,7 @@ export function useOfflinePalletOperation() {
     const updated = await upsertOfflinePalletOperation({
       currentStep,
       id: operation.id,
+      lastModifiedUserId: userId,
       operationType: operation.operationType,
       roadmap: operation.roadmap,
       shipGoodsData: { truck },
@@ -181,7 +186,7 @@ export function useOfflinePalletOperation() {
 
     setOfflineOperationId(updated.id);
     return updated;
-  }, [saveFormDraft, setOfflineOperationId, shipGoodsPhotos.truck]);
+  }, [saveFormDraft, setOfflineOperationId, shipGoodsPhotos.truck, userId]);
 
   const persistShipGoodsPhoto = useCallback(async (sourceUri: string) => {
     const previousUri = shipGoodsPhotos.truck;
@@ -210,6 +215,7 @@ export function useOfflinePalletOperation() {
       currentStep,
       exitExtraEvidenceData: { licensePlate, seal },
       id: operation.id,
+      lastModifiedUserId: userId,
       operationType: operation.operationType,
       roadmap: operation.roadmap,
       status,
@@ -217,7 +223,7 @@ export function useOfflinePalletOperation() {
 
     setOfflineOperationId(updated.id);
     return updated;
-  }, [exitExtraEvidencePhotos.licensePlate, exitExtraEvidencePhotos.seal, saveFormDraft, setOfflineOperationId]);
+  }, [exitExtraEvidencePhotos.licensePlate, exitExtraEvidencePhotos.seal, saveFormDraft, setOfflineOperationId, userId]);
 
   const persistExitExtraEvidencePhoto = useCallback(async (
     key: "licensePlate" | "seal",

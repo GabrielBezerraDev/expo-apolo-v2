@@ -1,12 +1,15 @@
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { hasApiBaseUrl, isApiValidationError } from "@shared/services/apiClient";
+import { useAuthSession } from "@shared/services/authSession";
 import { useNetworkState } from "@shared/services/network";
 import {
+  deleteOfflinePalletOperation,
   getOfflinePalletOperation,
   listPendingSyncPalletOperations,
   updateOfflinePalletOperationStatus,
 } from "../offlinePalletOperations";
+import { deletePalletOperationImageDirectory } from "../palletImageStorage";
 import { useRoadmapApi } from "../roadmapApi";
 import { OfflineOperationValidationError, syncOfflinePalletOperation } from "./roadmapSyncService";
 
@@ -14,6 +17,7 @@ export type RoadmapSyncState = "idle" | "syncing" | "synced" | "failed" | "skipp
 
 export function useRoadmapSync() {
   const roadmapApi = useRoadmapApi();
+  const { userId } = useAuthSession();
   const { hasCheckedNetwork, isOnline } = useNetworkState();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -32,13 +36,23 @@ export function useRoadmapSync() {
       return null;
     }
 
+    if (isModifiedByAnotherUser(operation.lastModifiedUserId, userId)) {
+      setState("skipped");
+      return null;
+    }
+
     setError(null);
     setState("syncing");
     await updateOfflinePalletOperationStatus({ id: operation.id, status: "syncing" });
 
     try {
       const roadmap = await syncOfflinePalletOperation(roadmapApi, operation);
-      await updateOfflinePalletOperationStatus({ id: operation.id, status: "synced" });
+      await deletePalletOperationImageDirectory({
+        operationId: operation.id,
+        operationType: operation.operationType,
+        roadmap: operation.roadmap,
+      }).catch(() => undefined);
+      await deleteOfflinePalletOperation(operation.id);
       await queryClient.invalidateQueries({ queryKey: ["roadmap"] });
       await queryClient.invalidateQueries({ queryKey: ["quality-report"] });
       setState("synced");
@@ -75,7 +89,7 @@ export function useRoadmapSync() {
       setState("failed");
       return null;
     }
-  }, [canUseNetwork, queryClient, roadmapApi]);
+  }, [canUseNetwork, queryClient, roadmapApi, userId]);
 
   const syncPendingOperations = useCallback(async () => {
     if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken || !canUseNetwork) return;
@@ -93,6 +107,10 @@ export function useRoadmapSync() {
     syncOperation,
     syncPendingOperations,
   };
+}
+
+function isModifiedByAnotherUser(lastModifiedUserId?: number | null, currentUserId?: number) {
+  return Boolean(lastModifiedUserId && currentUserId && lastModifiedUserId !== currentUserId);
 }
 
 function getValidationIssueStage(message: string, operationType: "entry" | "exit") {
