@@ -54,6 +54,7 @@ export type OfflinePalletOperation = {
   formData?: OfflinePalletFormData;
   id: string;
   lastError?: string | null;
+  lastModifiedUserId?: number | null;
   operationType: OfflinePalletOperationType;
   palletEvidenceData?: OfflinePalletEvidenceData;
   roadmap?: string | null;
@@ -70,6 +71,7 @@ export type OfflinePalletOperationPatch = Partial<
     | "exitExtraEvidenceData"
     | "formData"
     | "lastError"
+    | "lastModifiedUserId"
     | "palletEvidenceData"
     | "roadmap"
     | "shipGoodsData"

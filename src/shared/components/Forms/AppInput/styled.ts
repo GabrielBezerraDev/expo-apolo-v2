@@ -10,7 +10,7 @@ export const InputFrame = styled(View, {
   minHeight: 52,
   borderRadius: 14,
   borderWidth: 1,
-  backgroundColor: "$gray100",
+  backgroundColor: "$surface",
   flexDirection: "row",
   alignItems: "center",
   paddingHorizontal: 14,

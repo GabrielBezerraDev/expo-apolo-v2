@@ -20,6 +20,7 @@ type OfflinePalletOperationRow = {
   form_data_json: string | null;
   id: string;
   last_error: string | null;
+  last_modified_user_id: number | null;
   operation_type: OfflinePalletOperationType;
   pallet_evidence_json: string | null;
   roadmap: string | null;
@@ -52,11 +53,13 @@ export async function getOfflinePalletOperationsDatabase() {
           ship_goods_json TEXT,
           exit_extra_evidence_json TEXT,
           last_error TEXT,
+          last_modified_user_id INTEGER,
           validation_issues_json TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
         );
       `);
+      await ensureColumn(database, "last_modified_user_id", "INTEGER");
       await ensureColumn(database, "validation_issues_json", "TEXT");
       await database.execAsync(`
         DELETE FROM ${TABLE_NAME}
@@ -107,6 +110,7 @@ export async function upsertOfflinePalletOperation(
     formData: shouldApplyPatch ? patch.formData ?? existing?.formData : existing.formData,
     id: existing?.id ?? patch.id ?? createOfflinePalletOperationId(patch.operationType, roadmap),
     lastError: shouldApplyPatch ? patch.lastError ?? existing?.lastError ?? null : existing.lastError,
+    lastModifiedUserId: shouldApplyPatch ? patch.lastModifiedUserId ?? existing?.lastModifiedUserId ?? null : existing.lastModifiedUserId,
     operationType: existing?.operationType ?? patch.operationType,
     palletEvidenceData: shouldApplyPatch ? patch.palletEvidenceData ?? existing?.palletEvidenceData : existing.palletEvidenceData,
     roadmap: roadmap ?? existing?.roadmap ?? null,
@@ -130,10 +134,11 @@ export async function upsertOfflinePalletOperation(
       ship_goods_json,
       exit_extra_evidence_json,
       last_error,
+      last_modified_user_id,
       validation_issues_json,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     operation.id,
     operation.roadmap ?? null,
     operation.operationType,
@@ -144,6 +149,7 @@ export async function upsertOfflinePalletOperation(
     stringify(operation.shipGoodsData),
     stringify(operation.exitExtraEvidenceData),
     operation.lastError ?? null,
+    operation.lastModifiedUserId ?? null,
     stringify(operation.validationIssues),
     operation.createdAt,
     operation.updatedAt,
@@ -316,6 +322,7 @@ function mapRowToOperation(row: OfflinePalletOperationRow): OfflinePalletOperati
     formData: parseJson<OfflinePalletFormData>(row.form_data_json),
     id: row.id,
     lastError: row.last_error,
+    lastModifiedUserId: row.last_modified_user_id,
     operationType: row.operation_type,
     palletEvidenceData: parseJson<OfflinePalletEvidenceData>(row.pallet_evidence_json),
     roadmap: row.roadmap,

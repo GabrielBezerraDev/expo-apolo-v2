@@ -25,6 +25,7 @@ type AuthSessionContextValue = {
   logout: () => Promise<void>;
   refreshToken?: string;
   token?: string;
+  userId?: number;
 };
 
 const AuthSessionContext = createContext<AuthSessionContextValue | undefined>(undefined);
@@ -91,6 +92,7 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
       logout,
       refreshToken,
       token,
+      userId: getUserIdFromToken(token),
     }),
     [isLoading, login, logout, refreshToken, token],
   );
@@ -118,4 +120,28 @@ async function setStoredSessionItem(key: string, value: string) {
 
 async function removeStoredSessionItem(key: string) {
   return SecureStore.deleteItemAsync(key);
+}
+
+function getUserIdFromToken(token?: string) {
+  const payload = decodeJwtPayload(token);
+  const userId = payload?.payload?.id;
+  const normalizedUserId = typeof userId === "string" ? Number(userId) : userId;
+
+  return Number.isInteger(normalizedUserId) ? normalizedUserId : undefined;
+}
+
+function decodeJwtPayload(token?: string): { payload?: { id?: number | string } } | null {
+  const encodedPayload = token?.split(".")[1];
+  if (!encodedPayload || typeof globalThis.atob !== "function") return null;
+
+  try {
+    const base64 = encodedPayload
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+
+    return JSON.parse(globalThis.atob(base64));
+  } catch {
+    return null;
+  }
 }

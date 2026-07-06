@@ -86,7 +86,7 @@ export function AppInput<T extends FieldValues>({
           <StyledInput
             placeholderTextColor="$mutedText"
             secureTextEntry={hidden}
-            color="$black"
+            color="$text"
             height={inputHeight}
             autoCapitalize={autoCapitalize}
             keyboardType={keyboardType}
