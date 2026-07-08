@@ -94,7 +94,7 @@ export function PalletProvider({ children }: PropsWithChildren) {
     parsedQuantity > 0;
   const canConfirmPallets =
     pallets.length > 0 &&
-    pallets.every((item) => item.lot.trim() && item.photos.every(Boolean));
+    pallets.every((item) => item.lot.trim() && item.photos.every(Boolean)); 
 
   const {
     control: controlFormScreenRoadmap,
@@ -149,7 +149,7 @@ export function PalletProvider({ children }: PropsWithChildren) {
 
     setOfflineOperationId(operation.id);
     setOperationPallet(operation.operationType);
-    setRoute(roadmap);
+    setRoute(roadmap);  
     setPalletQuantity(quantity);
     setFormScreenRoadmapValue("roadmap", roadmap, { shouldValidate: true });
     setFormScreenRoadmapValue("palletsQuantity", quantity, { shouldValidate: true });
@@ -161,8 +161,8 @@ export function PalletProvider({ children }: PropsWithChildren) {
         operation.palletEvidenceData?.pallets.map(pallet => ({
           batch: pallet.batch,
           photos: pallet.photos,
-        })) ?? [],
-      ),
+        })) ?? []
+      )
     );
     setShipGoodsPhotos({
       truck: operation.shipGoodsData?.truck ?? null,
