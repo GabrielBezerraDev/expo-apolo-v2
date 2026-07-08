@@ -1,13 +1,12 @@
 import { Button, styled, Text, View } from "tamagui";
-import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 
 export const Card = styled(View, {
   backgroundColor: "$card",
-  borderRadius: 18,
   overflow: "hidden",
   borderColor: '$primary',
-  borderWidth: 1.6,
+  borderRadius: 20,
+  borderWidth: 0.1,
   shadowColor: "#000000",
   shadowOpacity: 0.6,
   shadowRadius: 8,
