@@ -6,7 +6,7 @@ import { appThemes, ThemeMode, ThemeModeContext } from '@shared/theme';
 
 export function AppThemeProvider({ children }: PropsWithChildren) {
   const systemMode = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>(systemMode === 'dark' ? 'dark' : 'light');
+  const [mode, setMode] = useState<ThemeMode>(() => systemMode === 'dark' ? 'dark' : 'light');
 
   const value = useMemo(
     () => ({
