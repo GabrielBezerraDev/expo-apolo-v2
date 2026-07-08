@@ -14,9 +14,10 @@
     },
     "android": {
       "package": "com.valorlogocrexpo",
-      "usesCleartextTraffic": false,
+      "usesCleartextTraffic": true,
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.REQUEST_INSTALL_PACKAGES"
       ]
     },
     "plugins": [
