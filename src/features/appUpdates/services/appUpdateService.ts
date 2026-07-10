@@ -90,7 +90,9 @@ export async function downloadAndInstallApk({
 }
 
 function getApkBucketUrl() {
-  const configuredUrl = DEFAULT_APK_BUCKET_URL;
+  const configuredUrl = process.env.EXPO_PUBLIC_APK_UPDATE_BUCKET_URL
+    ?? process.env.EXPO_PUBLIC_MINIO_VALORLOG_PUBLIC_URL
+    ?? DEFAULT_APK_BUCKET_URL;
   return normalizeBucketUrl(configuredUrl);
 }
 

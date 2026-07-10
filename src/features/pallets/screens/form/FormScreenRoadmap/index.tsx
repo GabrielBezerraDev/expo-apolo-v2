@@ -10,6 +10,7 @@ import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { useFeedbackModal } from "@shared/components/Display/Modal";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { hasApiBaseUrl, isApiNetworkError } from "@shared/services/apiClient";
+import { useAuthSession } from "@shared/services/authSession";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { fontScale, typography } from "@shared/typography";
@@ -28,6 +29,7 @@ export function FormScreenRoadmap() {
   const { configureScanner } = useFrame();
   const { showConfirm, showFeedback } = useFeedbackModal();
   const roadmapApi = useRoadmapApi();
+  const { userId } = useAuthSession();
   const { theme } = useThemeMode();
   const {
     route,
@@ -107,7 +109,9 @@ export function FormScreenRoadmap() {
 
   const confirm = async () => {
     const currentRoadmap = getValuesScreenRoadmap("roadmap").trim();
-    const existingOperation = await getOfflinePalletOperationByRoadmap(currentRoadmap, operationPallet);
+    const existingOperation = userId
+      ? await getOfflinePalletOperationByRoadmap(currentRoadmap, userId, operationPallet)
+      : null;
 
     if (existingOperation && existingOperation.currentStep !== "form") {
       navigation.navigate("PalletOperationSummary", { operationId: existingOperation.id });

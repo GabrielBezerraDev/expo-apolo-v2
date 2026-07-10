@@ -282,7 +282,7 @@ export const FramedCameraScanner: React.FC = () => {
   }, [isPhotoMode, hasPermission, device, isCapturing, pollIntervalMs, runOCRTick]);
 
   // -------------------------------------------------------------------------
-  // Final capture — uses the most recent live result + a high-quality photo
+  // Final capture — OCRs the high-quality cropped photo that will be submitted
   // -------------------------------------------------------------------------
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current || isCapturing) return;
@@ -319,15 +319,23 @@ export const FramedCameraScanner: React.FC = () => {
         photoPath, cropX, cropY, cropW, cropH,
       );
 
-      const liveData = latestResultRef.current;
+      const ocrResult = await recognizeTextFromImage(result.path);
+      const rawText = ocrResult?.text?.trim() || '';
+      const text = formatTextDataWithRegex.current
+        ? formatTextDataWithRegex.current(rawText)
+        : rawText;
+
+      if (!text) {
+        throw new Error('Não foi possível ler o código na foto capturada. Tente novamente.');
+      }
 
       await setOcrScreenOrientation('portrait').catch(() => undefined);
       handleScannerCapture({
         imageUri: result.path,
-        text: liveData?.text?.trim() || '',
-        fields: liveData?.fields || {},
-        matchedFields: liveData?.matchedFields || 0,
-        isStable: liveData?.isStable || false,
+        text,
+        fields: ocrResult?.fields || {},
+        matchedFields: ocrResult?.matchedFields || 0,
+        isStable: true,
       });
     } catch (err: any) {
       console.error('Capture error:', err);

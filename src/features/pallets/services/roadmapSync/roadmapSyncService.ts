@@ -23,7 +23,7 @@ export async function syncOfflinePalletOperation(roadmapApi: RoadmapApi, operati
   const typeRoadmap = getRoadmapType(operation.operationType);
 
   validateOperation({ operation, pallets, palletsQuantity, roadmap });
-  await validateOperationOnline({ pallets, roadmapApi, typeRoadmap });
+  await validateOperationOnline({ pallets, roadmap, roadmapApi, typeRoadmap });
 
   const formData = buildRoadmapFormData({
     operation,
@@ -169,10 +169,12 @@ function getDuplicatedBatches(pallets: OfflinePalletEvidenceItem[]) {
 
 async function validateOperationOnline({
   pallets,
+  roadmap,
   roadmapApi,
   typeRoadmap,
 }: {
   pallets: OfflinePalletEvidenceItem[];
+  roadmap: string;
   roadmapApi: RoadmapApi;
   typeRoadmap: RoadmapType;
 }) {
@@ -182,6 +184,7 @@ async function validateOperationOnline({
     try {
       await roadmapApi.validatePallet({
         batch: pallet.batch,
+        roadmap,
         typeRoadmap,
       });
     } catch (error) {
