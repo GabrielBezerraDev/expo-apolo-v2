@@ -3,13 +3,20 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Package, PackageOpen, Truck } from "lucide-react-native";
 import { MainTabsParamList } from "@navigation/navigation.protocol";
 import { OfflineSyncBootstrap } from "@features/pallets/components";
-import { EntryListScreen, ExitListScreen, PalletListScreen } from "@features/pallets/screens/list";
+import { OperationListScreen, PalletListScreen } from "@features/pallets/screens/list";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { OutlinedTabIcon } from "@shared/components/Navigation/OutlinedTabIcon";
 import { typography } from "@shared/typography";
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
 
+function EntryListTab() {
+  return <OperationListScreen operationType="entry" />;
+}
+
+function ExitListTab() {
+  return <OperationListScreen operationType="exit" />;
+}
 
 export function MainTabsNavigator() {
   const { theme } = useThemeMode();
@@ -36,7 +43,7 @@ export function MainTabsNavigator() {
     >
       <Tab.Screen
         name="EntryList"
-        component={EntryListScreen}
+        component={EntryListTab}
         options={{
           title: "Entrada",
           tabBarIcon: ({ color, focused }) => (
@@ -51,7 +58,7 @@ export function MainTabsNavigator() {
       />
       <Tab.Screen
         name="ExitList"
-        component={ExitListScreen}
+        component={ExitListTab}
         options={{
           title: "Saída",
           tabBarIcon: ({ color, focused }) => (

@@ -124,8 +124,7 @@ export async function upsertOfflinePalletOperation(
     createdAt: existing?.createdAt ?? now,
     currentStep: shouldApplyPatch ? patch.currentStep ?? existing?.currentStep ?? "form" : existing.currentStep,
     exitExtraEvidenceData: shouldApplyPatch ? patch.exitExtraEvidenceData ?? existing?.exitExtraEvidenceData : existing.exitExtraEvidenceData,
-    formData: shouldApply
-Theatch ? patch.formData ?? existing?.formData : existing.formData,
+    formData: shouldApplyPatch ? patch.formData ?? existing?.formData : existing.formData,
     id: existing?.id ?? createOfflinePalletOperationId(patch.operationType, patch.ownerUserId, roadmap),
     lastError: shouldApplyPatch ? patch.lastError ?? existing?.lastError ?? null : existing.lastError,
     lastModifiedUserId: shouldApplyPatch ? patch.lastModifiedUserId ?? existing?.lastModifiedUserId ?? null : existing.lastModifiedUserId,

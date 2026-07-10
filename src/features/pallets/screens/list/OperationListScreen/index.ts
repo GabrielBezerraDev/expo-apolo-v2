@@ -1,2 +1,1 @@
 export * from "./OperationListScreen";
-export * from "./PalletListScreen";
