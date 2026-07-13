@@ -17,10 +17,10 @@ export const Left = styled(View, { flexDirection: "row", alignItems: "center", g
 export const Logo = styled(View, {
   width: 99,
   height: 99,
+  flexShrink: 0,
   borderRadius: 12,
   alignItems: "center",
   justifyContent: "center",
-  overflow: "hidden",
 });
 
 export const Title = styled(Text, { ...typography.headingSmall, color: "$text" });
