@@ -1,5 +1,6 @@
 import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { useAuthSession } from "@shared/services/authSession";
 
 export type AppHeaderConfig = {
   onBack?: () => void;
@@ -34,11 +35,12 @@ const AppHeaderContext = createContext<AppHeaderContextValue | undefined>(undefi
 
 export function AppHeaderProvider({ children }: PropsWithChildren) {
   const [headerConfig, setHeaderConfigState] = useState<AppHeaderState>(defaultHeaderConfig);
-
+  const { user } = useAuthSession()
   const setHeaderConfig = useCallback((config: AppHeaderConfig) => {
     setHeaderConfigState({
       ...defaultHeaderConfig,
       ...config,
+      subtitle: `Bem-vindo ${user.name}`,
       visible: config.visible ?? true,
       showBack: config.showBack ?? false,
       showMenu: config.showMenu ?? true,
