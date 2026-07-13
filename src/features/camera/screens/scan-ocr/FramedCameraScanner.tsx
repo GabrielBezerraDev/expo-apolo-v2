@@ -337,11 +337,11 @@ export const FramedCameraScanner: React.FC = () => {
         matchedFields: ocrResult?.matchedFields || 0,
         isStable: true,
       });
-    } catch (err: any) {
-      console.error('Capture error:', err);
+    } catch (error) {
+      console.error('Capture error:', error);
       showFeedback({
         title: 'Erro',
-        message: err?.message || 'Não foi possível capturar a imagem',
+        message: getCameraErrorMessage(error),
       });
     } finally {
       setIsCapturing(false);
@@ -483,6 +483,38 @@ export const FramedCameraScanner: React.FC = () => {
     </ScannerRoot>
   );
 };
+
+function getCameraErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message.trim() : '';
+  const normalizedMessage = message.toLowerCase();
+
+  if (
+    message.startsWith('Não ') ||
+    message.startsWith('Nenhum ') ||
+    message.startsWith('Ocorreu ') ||
+    message.startsWith('A câmera ')
+  ) {
+    return message;
+  }
+
+  if (normalizedMessage.includes('not enough storage')) {
+    return 'Não há espaço de armazenamento suficiente.';
+  }
+
+  if (normalizedMessage.includes('not ready')) {
+    return 'A câmera ainda não está pronta. Aguarde e tente novamente.';
+  }
+
+  if (normalizedMessage.includes('permission')) {
+    return 'Não foi possível acessar a câmera. Verifique a permissão do aplicativo.';
+  }
+
+  if (normalizedMessage.includes('no text found')) {
+    return 'Nenhum texto foi encontrado na imagem.';
+  }
+
+  return 'Não foi possível capturar a imagem. Tente novamente.';
+}
 
 const absoluteFillStyle = {
   position: 'absolute' as const,

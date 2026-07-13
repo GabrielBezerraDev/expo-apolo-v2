@@ -6,6 +6,7 @@ import { Button, styled, Text, useWindowDimensions, View } from "tamagui";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@navigation/navigation.protocol";
 import { useAuthSession } from "@shared/services/authSession";
+import { ApiError } from "@shared/services/apiClient";
 import { useThemeMode, ThemeToggle } from "@shared/components/Actions/ThemeToggle";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
@@ -158,7 +159,11 @@ export function LoginScreen(_props: Props) {
 
       await login(normalizeAuthTokens(response));
     } catch (error) {
-      setLoginError(error instanceof Error ? error.message : "Não foi possível entrar.");
+      setLoginError(
+        error instanceof ApiError
+          ? error.message
+          : "Não foi possível entrar. Verifique seus dados e tente novamente.",
+      );
     }
   };
   const remember = watch("remember");

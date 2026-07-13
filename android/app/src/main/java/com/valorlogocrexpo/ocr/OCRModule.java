@@ -99,7 +99,7 @@ public class OCRModule extends ReactContextBaseJavaModule {
 
       Bitmap original = BitmapFactory.decodeFile(cleanPath);
       if (original == null) {
-        promise.reject("INVALID_IMAGE", "Could not load image: " + cleanPath);
+        promise.reject("INVALID_IMAGE", "Não foi possível carregar a imagem.");
         return;
       }
 
@@ -123,7 +123,7 @@ public class OCRModule extends ReactContextBaseJavaModule {
 
       Attempt best = pickBest(attempts);
       if (best == null || best.text.trim().isEmpty()) {
-        promise.reject("NO_TEXT_FOUND", "No text found in image");
+        promise.reject("NO_TEXT_FOUND", "Nenhum texto foi encontrado na imagem.");
         return;
       }
 
@@ -148,7 +148,7 @@ public class OCRModule extends ReactContextBaseJavaModule {
       String cleanPath = cleanPath(imagePath);
       Bitmap original = BitmapFactory.decodeFile(cleanPath);
       if (original == null) {
-        promise.reject("INVALID_IMAGE", "Could not load image: " + cleanPath);
+        promise.reject("INVALID_IMAGE", "Não foi possível carregar a imagem.");
         return;
       }
 
@@ -159,7 +159,7 @@ public class OCRModule extends ReactContextBaseJavaModule {
       int safeHeight = Math.min(height, original.getHeight() - safeY);
 
       if (safeWidth <= 0 || safeHeight <= 0) {
-        promise.reject("INVALID_CROP", "Crop rectangle outside image bounds");
+        promise.reject("INVALID_CROP", "Não foi possível recortar a imagem. Tente novamente.");
         return;
       }
 

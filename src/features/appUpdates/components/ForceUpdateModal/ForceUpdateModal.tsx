@@ -42,13 +42,9 @@ export function ForceUpdateModal({ currentVersion, downloadUrl, latestVersion }:
       });
       setStatus("error");
       setErrorMessage("Instalador fechado. Se a atualização não foi concluída, tente novamente.");
-    } catch (error) {
+    } catch {
       setStatus("error");
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Falha ao baixar ou instalar. Verifique a conexão e tente novamente.",
-      );
+      setErrorMessage("Falha ao baixar ou instalar. Verifique a conexão e tente novamente.");
     }
   };
 
@@ -85,7 +81,7 @@ export function ForceUpdateModal({ currentVersion, downloadUrl, latestVersion }:
 function getProgressText(status: UpdateStatus, progress: number) {
   if (status === "downloading") return `Baixando... ${progress}%`;
   if (status === "installing") return "Abrindo instalador nativo...";
-  if (status === "error") return "Erro no download";
+  if (status === "error") return "Erro ao baixar a atualização";
 
   return "";
 }
