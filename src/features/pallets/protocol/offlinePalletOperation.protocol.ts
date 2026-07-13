@@ -56,6 +56,7 @@ export type OfflinePalletOperation = {
   lastError?: string | null;
   lastModifiedUserId?: number | null;
   operationType: OfflinePalletOperationType;
+  ownerUserId: number;
   palletEvidenceData?: OfflinePalletEvidenceData;
   roadmap?: string | null;
   shipGoodsData?: OfflineShipGoodsData;
@@ -81,6 +82,7 @@ export type OfflinePalletOperationPatch = Partial<
 > & {
   id?: string;
   operationType: OfflinePalletOperationType;
+  ownerUserId: number;
 };
 
 export type OfflinePalletOperationSummaryStatus = "complete" | "pending" | "not_started";

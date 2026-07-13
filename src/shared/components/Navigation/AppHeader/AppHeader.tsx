@@ -1,7 +1,8 @@
 import React from "react";
+import { Image } from "react-native";
 import { ArrowLeft, Menu } from "lucide-react-native";
 import type { NativeStackHeaderProps } from "@react-navigation/native-stack";
-import { Image, View } from "tamagui";
+import { View } from "tamagui";
 import { AppDrawer } from "@shared/components/Navigation/AppDrawer";
 import { ThemeToggle } from "@shared/components/Actions/ThemeToggle";
 import { Actions, HeaderIconButton, Left, Logo, Root, Subtitle, Title } from "./styled";

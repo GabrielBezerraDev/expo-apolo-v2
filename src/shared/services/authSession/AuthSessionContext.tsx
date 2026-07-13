@@ -26,6 +26,7 @@ type AuthSessionContextValue = {
   refreshToken?: string;
   token?: string;
   userId?: number;
+  user?: any;
 };
 
 const AuthSessionContext = createContext<AuthSessionContextValue | undefined>(undefined);
@@ -93,6 +94,7 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
       refreshToken,
       token,
       userId: getUserIdFromToken(token),
+      user: getUserFromToken(token)
     }),
     [isLoading, login, logout, refreshToken, token],
   );
@@ -129,6 +131,12 @@ function getUserIdFromToken(token?: string) {
 
   return Number.isInteger(normalizedUserId) ? normalizedUserId : undefined;
 }
+
+function getUserFromToken(token?: string) {
+  const payload = decodeJwtPayload(token);
+  const user = payload?.payload;
+  return user ?? {}
+  }
 
 function decodeJwtPayload(token?: string): { payload?: { id?: number | string } } | null {
   const encodedPayload = token?.split(".")[1];

@@ -155,7 +155,12 @@ async function apiRequest<TResponse>(
       throw new ApiError("Tempo limite da requisição excedido.", 408);
     }
 
-    throw error;
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
+      0,
+    );
   } finally {
     clearTimeout(timeoutId);
   }
@@ -204,8 +209,31 @@ function appendQueryParam(params: URLSearchParams, key: string, value: unknown) 
 async function getErrorMessage(response: Response) {
   try {
     const body = await response.json();
-    return body?.message ?? body?.error ?? "Erro ao carregar dados da API.";
+    const message = body?.message ?? body?.error;
+
+    if (Array.isArray(message)) {
+      return message
+        .filter((item): item is string => typeof item === "string")
+        .map(translateLegacyApiMessage)
+        .join("\n") || "Não foi possível processar a solicitação.";
+    }
+
+    return typeof message === "string"
+      ? translateLegacyApiMessage(message)
+      : "Erro ao carregar dados da API.";
   } catch {
     return "Erro ao carregar dados da API.";
   }
+}
+
+function translateLegacyApiMessage(message: string) {
+  const translations: Record<string, string> = {
+    "Internal server error": "Erro interno do servidor.",
+    "Server error": "Erro interno do servidor.",
+    "Unauthorized": "Não autorizado.",
+    "User does not exist": "E-mail ou senha inválidos.",
+  };
+
+  const normalizedMessage = message.trim();
+  return translations[normalizedMessage] ?? normalizedMessage;
 }

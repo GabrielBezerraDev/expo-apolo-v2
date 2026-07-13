@@ -19,6 +19,7 @@ import { typography } from "@shared/typography";
 import { ListScreenShell } from "../../../components/ListScreenShell";
 import { MovementCancelButton } from "../../../components/MovementCancelButton";
 import { useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
+import { useRoadmapApi } from "../../../services/roadmapApi";
 import { useRoadmapSync } from "../../../services/roadmapSync";
 import { usePallet } from "../../../providers/PalletProvider";
 
@@ -30,6 +31,7 @@ export function ExitExtraEvidence() {
   const { configureScanner } = useFrame();
   const { showConfirm } = useFeedbackModal();
   const { hasCheckedNetwork, isOnline } = useNetworkState();
+  const roadmapApi = useRoadmapApi();
   const { syncOperation } = useRoadmapSync();
   const { height, width } = useWindowDimensions();
   const [isFinishing, setIsFinishing] = useState(false);
@@ -142,7 +144,7 @@ export function ExitExtraEvidence() {
       });
       if (!operation) return;
 
-      const canSyncNow = hasCheckedNetwork && isOnline && hasApiBaseUrl();
+      const canSyncNow = hasCheckedNetwork && isOnline && hasApiBaseUrl() && roadmapApi.hasAuthToken;
       if (!canSyncNow) {
         navigation.navigate("OperationSuccess", { operation: "exit", syncStatus: "pending" });
         return;

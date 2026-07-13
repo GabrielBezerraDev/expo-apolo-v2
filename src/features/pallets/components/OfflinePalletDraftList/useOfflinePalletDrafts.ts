@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { useAuthSession } from "@shared/services/authSession";
 import {
   OfflinePalletOperation,
   OfflinePalletOperationType,
@@ -15,14 +16,17 @@ type UseOfflinePalletDraftsParams = {
 };
 
 export function useOfflinePalletDrafts({ operationType }: UseOfflinePalletDraftsParams) {
+  const { userId } = useAuthSession();
   const [drafts, setDrafts] = useState<OfflinePalletOperation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadDrafts = useCallback(async () => {
-    const nextDrafts = await listOfflinePalletOperations(operationType);
+    const nextDrafts = userId
+      ? await listOfflinePalletOperations(operationType, userId)
+      : [];
     setDrafts(nextDrafts);
-  }, [operationType]);
+  }, [operationType, userId]);
 
   const refreshDrafts = useCallback(async () => {
     setIsRefreshing(true);
@@ -34,21 +38,27 @@ export function useOfflinePalletDrafts({ operationType }: UseOfflinePalletDrafts
   }, [loadDrafts]);
 
   const deleteDraft = useCallback(async (operation: OfflinePalletOperation) => {
-    await deleteOfflinePalletOperation(operation.id);
+    if (!userId) return;
+
+    await deleteOfflinePalletOperation(operation.id, userId);
     await deletePalletOperationImageDirectory({
       operationId: operation.id,
       operationType: operation.operationType,
       roadmap: operation.roadmap,
     });
     await loadDrafts();
-  }, [loadDrafts]);
+  }, [loadDrafts, userId]);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
 
       setIsLoading(true);
-      listOfflinePalletOperations(operationType)
+      const draftsPromise = userId
+        ? listOfflinePalletOperations(operationType, userId)
+        : Promise.resolve([]);
+
+      draftsPromise
         .then(nextDrafts => {
           if (active) setDrafts(nextDrafts);
         })
@@ -59,7 +69,7 @@ export function useOfflinePalletDrafts({ operationType }: UseOfflinePalletDrafts
       return () => {
         active = false;
       };
-    }, [operationType]),
+    }, [operationType, userId]),
   );
 
   return {

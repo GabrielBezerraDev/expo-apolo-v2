@@ -21,7 +21,7 @@ export async function savePalletOperationImage({
   step,
 }: SavePalletImageParams) {
   if (!FileSystem.documentDirectory) {
-    throw new Error("Local file storage is not available on this device.");
+    throw new Error("O armazenamento local de arquivos não está disponível neste dispositivo.");
   }
 
   const operationDirectory = sanitizePathPart(roadmap || operationId);

@@ -11,11 +11,13 @@ import type { OfflinePalletOperation, OfflinePalletOperationStep } from "../../.
 import { getOfflinePalletOperation, useOfflinePalletOperation } from "../../../services/offlinePalletOperations";
 import { usePallet } from "../../../providers/PalletProvider";
 import { useAppHeaderConfig } from "@shared/components/Navigation";
+import { useAuthSession } from "@shared/services/authSession";
 
 type Props = NativeStackScreenProps<RootStackParamList, "OperationSyncError">;
 
 export function OperationSyncError({ navigation, route }: Props) {
   const [operation, setOperation] = useState<OfflinePalletOperation | null>(null);
+  const { userId } = useAuthSession();
   const { hydrateOperationById } = useOfflinePalletOperation();
   const { resetEntry } = usePallet();
   const { width, height } = useWindowDimensions();
@@ -30,14 +32,18 @@ export function OperationSyncError({ navigation, route }: Props) {
     useCallback(() => {
       let active = true;
 
-      getOfflinePalletOperation(route.params.operationId).then(nextOperation => {
+      const operationPromise = userId
+        ? getOfflinePalletOperation(route.params.operationId, userId)
+        : Promise.resolve(null);
+
+      operationPromise.then(nextOperation => {
         if (active) setOperation(nextOperation);
       });
 
       return () => {
         active = false;
       };
-    }, [route.params.operationId]),
+    }, [route.params.operationId, userId]),
   );
 
   const goHome = useCallback(() => {

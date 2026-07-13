@@ -110,7 +110,6 @@ export function QualityReportCard({ item, reportType }: Props) {
       <Line>Variante: {pallet.variant ?? "-"}</Line>
       <Line>Quantidade: {pallet.quantity ?? "-"}</Line>
       <Line>Linha: {pallet.lineName ?? pallet.lineId ?? "-"}</Line>
-      {renderReportDetails(item, reportType)}
     </AppCard>
   );
 }

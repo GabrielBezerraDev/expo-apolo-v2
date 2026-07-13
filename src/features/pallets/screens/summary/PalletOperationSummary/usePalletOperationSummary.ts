@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
 import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useFeedbackModal } from "@shared/components/Display/Modal";
+import { useAuthSession } from "@shared/services/authSession";
 import {
   OfflinePalletOperation,
   OfflinePalletOperationSummary,
@@ -24,9 +26,13 @@ export function usePalletOperationSummary({ navigation, operationId }: UsePallet
   const [operation, setOperation] = useState<OfflinePalletOperation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { showConfirm } = useFeedbackModal();
+  const { userId } = useAuthSession();
   const { hydrateOperationById } = useOfflinePalletOperation();
 
-  const loadOperation = useCallback(() => getOfflinePalletOperation(operationId), [operationId]);
+  const loadOperation = useCallback(
+    () => userId ? getOfflinePalletOperation(operationId, userId) : Promise.resolve(null),
+    [operationId, userId],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -72,14 +78,14 @@ export function usePalletOperationSummary({ navigation, operationId }: UsePallet
   }, [hydrateOperationById, navigation, operationId, summary?.nextStep]);
 
   const deleteDraft = useCallback(() => {
-    if (!operation) return;
+    if (!operation || !userId) return;
 
     showConfirm({
       title: "Excluir rascunho",
       message: `Deseja excluir o rascunho ${operation.roadmap ?? "sem roteiro"}?`,
       confirmLabel: "Excluir",
       onConfirm: async () => {
-        await deleteOfflinePalletOperation(operation.id);
+        await deleteOfflinePalletOperation(operation.id, userId);
         await deletePalletOperationImageDirectory({
           operationId: operation.id,
           operationType: operation.operationType,
@@ -88,7 +94,7 @@ export function usePalletOperationSummary({ navigation, operationId }: UsePallet
         navigation.goBack();
       },
     });
-  }, [navigation, operation, showConfirm]);
+  }, [navigation, operation, showConfirm, userId]);
 
   return {
     continueDraft,

@@ -30,7 +30,12 @@ export function useRoadmapSync() {
       return null;
     }
 
-    const operation = await getOfflinePalletOperation(operationId);
+    if (!userId) {
+      setState("skipped");
+      return null;
+    }
+
+    const operation = await getOfflinePalletOperation(operationId, userId);
     if (!operation || operation.status === "synced") {
       setState("skipped");
       return null;
@@ -43,7 +48,7 @@ export function useRoadmapSync() {
 
     setError(null);
     setState("syncing");
-    await updateOfflinePalletOperationStatus({ id: operation.id, status: "syncing" });
+    await updateOfflinePalletOperationStatus({ id: operation.id, ownerUserId: userId, status: "syncing" });
 
     try {
       const roadmap = await syncOfflinePalletOperation(roadmapApi, operation);
@@ -52,7 +57,7 @@ export function useRoadmapSync() {
         operationType: operation.operationType,
         roadmap: operation.roadmap,
       }).catch(() => undefined);
-      await deleteOfflinePalletOperation(operation.id);
+      await deleteOfflinePalletOperation(operation.id, userId);
       await queryClient.invalidateQueries({ queryKey: ["roadmap"] });
       await queryClient.invalidateQueries({ queryKey: ["quality-report"] });
       setState("synced");
@@ -61,6 +66,7 @@ export function useRoadmapSync() {
       if (syncError instanceof OfflineOperationValidationError) {
         await updateOfflinePalletOperationStatus({
           id: operation.id,
+          ownerUserId: userId,
           lastError: syncError.message,
           status: "validation_failed",
           validationIssues: syncError.issues,
@@ -74,6 +80,7 @@ export function useRoadmapSync() {
         const message = syncError instanceof Error ? syncError.message : "Operação precisa ser revisada antes da sincronização.";
         await updateOfflinePalletOperationStatus({
           id: operation.id,
+          ownerUserId: userId,
           lastError: message,
           status: "validation_failed",
           validationIssues: [{ field: getValidationIssueField(message), message, stage: getValidationIssueStage(message, operation.operationType) }],
@@ -84,7 +91,7 @@ export function useRoadmapSync() {
       }
 
       const message = syncError instanceof Error ? syncError.message : "Falha ao sincronizar movimentacao.";
-      await updateOfflinePalletOperationStatus({ id: operation.id, lastError: message, status: "failed" });
+      await updateOfflinePalletOperationStatus({ id: operation.id, ownerUserId: userId, lastError: message, status: "failed" });
       setError(message);
       setState("failed");
       return null;
@@ -94,11 +101,13 @@ export function useRoadmapSync() {
   const syncPendingOperations = useCallback(async () => {
     if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken || !canUseNetwork) return;
 
-    const operations = await listPendingSyncPalletOperations();
+    if (!userId) return;
+
+    const operations = await listPendingSyncPalletOperations(userId);
     for (const operation of operations) {
       await syncOperation(operation.id);
     }
-  }, [canUseNetwork, roadmapApi.hasAuthToken, syncOperation]);
+  }, [canUseNetwork, roadmapApi.hasAuthToken, syncOperation, userId]);
 
   return {
     error,

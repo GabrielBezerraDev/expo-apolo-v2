@@ -77,6 +77,7 @@ export function PhotoCarousel({
         <PhotoFrame width={carouselWidth} height={photoHeight}>
           {hasPhoto ? (
             <Image
+              resizeMode={imageResizeMode}
               source={{ uri: item.uri ?? "" }}
               style={styles.image}
             />

@@ -92,6 +92,7 @@ export function PalletsEvidence() {
             const validationResult = await validateScannedBatch({
               batch: scannedBatch,
               operationPallet,
+              roadmap: route,
               roadmapApi,
             });
 
@@ -132,7 +133,7 @@ export function PalletsEvidence() {
       });
       navigation.navigate("Scanner");
     },
-    [configureScanner, navigation, openPalletValidationModal, openPendingValidationModal, operationPallet, palletEvidence, roadmapApi, savePalletEvidenceDraft, setPalletEvidence],
+    [configureScanner, navigation, openPalletValidationModal, openPendingValidationModal, operationPallet, palletEvidence, roadmapApi, route, savePalletEvidenceDraft, setPalletEvidence],
   );
 
   const scanPhoto = useCallback(
@@ -308,10 +309,12 @@ function normalizeBatch(value: string) {
 async function validateScannedBatch({
   batch,
   operationPallet,
+  roadmap,
   roadmapApi,
 }: {
   batch: string;
   operationPallet: "entry" | "exit";
+  roadmap: string;
   roadmapApi: RoadmapApi;
 }) {
   if (!batch) {
@@ -323,6 +326,7 @@ async function validateScannedBatch({
   try {
     await roadmapApi.validatePallet({
       batch,
+      roadmap,
       typeRoadmap: operationPallet === "entry" ? "ENTRY" : "EXIT",
     });
   } catch (error) {
