@@ -22,6 +22,7 @@ type OfflinePalletOperationRow = {
   last_error: string | null;
   last_modified_user_id: number | null;
   operation_type: OfflinePalletOperationType;
+  owner_user_id: number | null;
   pallet_evidence_json: string | null;
   roadmap: string | null;
   ship_goods_json: string | null;
@@ -54,21 +55,29 @@ export async function getOfflinePalletOperationsDatabase() {
           exit_extra_evidence_json TEXT,
           last_error TEXT,
           last_modified_user_id INTEGER,
+          owner_user_id INTEGER,
           validation_issues_json TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
         );
       `);
       await ensureColumn(database, "last_modified_user_id", "INTEGER");
+      await ensureColumn(database, "owner_user_id", "INTEGER");
       await ensureColumn(database, "validation_issues_json", "TEXT");
       await database.execAsync(`
+        UPDATE ${TABLE_NAME}
+        SET owner_user_id = last_modified_user_id
+        WHERE owner_user_id IS NULL AND last_modified_user_id IS NOT NULL;
+
         DELETE FROM ${TABLE_NAME}
         WHERE roadmap IS NOT NULL
+          AND owner_user_id IS NOT NULL
           AND EXISTS (
             SELECT 1
             FROM ${TABLE_NAME} newer
             WHERE newer.roadmap = ${TABLE_NAME}.roadmap
               AND newer.operation_type = ${TABLE_NAME}.operation_type
+              AND newer.owner_user_id = ${TABLE_NAME}.owner_user_id
               AND (
                 newer.updated_at > ${TABLE_NAME}.updated_at
                 OR (newer.updated_at = ${TABLE_NAME}.updated_at AND newer.id > ${TABLE_NAME}.id)
@@ -76,10 +85,11 @@ export async function getOfflinePalletOperationsDatabase() {
           );
 
         DROP INDEX IF EXISTS ${TABLE_NAME}_roadmap_unique;
+        DROP INDEX IF EXISTS ${TABLE_NAME}_operation_roadmap_unique;
 
-        CREATE UNIQUE INDEX IF NOT EXISTS ${TABLE_NAME}_operation_roadmap_unique
-        ON ${TABLE_NAME}(operation_type, roadmap)
-        WHERE roadmap IS NOT NULL;
+        CREATE UNIQUE INDEX IF NOT EXISTS ${TABLE_NAME}_owner_operation_roadmap_unique
+        ON ${TABLE_NAME}(owner_user_id, operation_type, roadmap)
+        WHERE roadmap IS NOT NULL AND owner_user_id IS NOT NULL;
       `);
       await cleanupExpiredOfflinePalletOperations(database);
 
@@ -98,28 +108,34 @@ export async function upsertOfflinePalletOperation(
   const existing = await getExistingOperation({
     id: patch.id,
     operationType: patch.operationType,
+    ownerUserId: patch.ownerUserId,
     roadmap,
   });
   const shouldApplyPatch = !existing || existing.id === patch.id;
   const now = new Date().toISOString();
-  const nextStatus = shouldApplyPatch ? patch.status ?? existing?.status ?? "draft" : existing.status;
+  const nextValidationIssues = shouldApplyPatch
+    ? resolveValidationIssues(existing, patch)
+    : existing.validationIssues;
+  const requestedStatus = shouldApplyPatch ? patch.status ?? existing?.status ?? "draft" : existing.status;
+  const nextStatus = nextValidationIssues?.length && requestedStatus !== "synced"
+    ? "validation_failed"
+    : requestedStatus;
   const operation: OfflinePalletOperation = {
     createdAt: existing?.createdAt ?? now,
     currentStep: shouldApplyPatch ? patch.currentStep ?? existing?.currentStep ?? "form" : existing.currentStep,
     exitExtraEvidenceData: shouldApplyPatch ? patch.exitExtraEvidenceData ?? existing?.exitExtraEvidenceData : existing.exitExtraEvidenceData,
     formData: shouldApplyPatch ? patch.formData ?? existing?.formData : existing.formData,
-    id: existing?.id ?? patch.id ?? createOfflinePalletOperationId(patch.operationType, roadmap),
+    id: existing?.id ?? createOfflinePalletOperationId(patch.operationType, patch.ownerUserId, roadmap),
     lastError: shouldApplyPatch ? patch.lastError ?? existing?.lastError ?? null : existing.lastError,
     lastModifiedUserId: shouldApplyPatch ? patch.lastModifiedUserId ?? existing?.lastModifiedUserId ?? null : existing.lastModifiedUserId,
     operationType: existing?.operationType ?? patch.operationType,
+    ownerUserId: existing?.ownerUserId ?? patch.ownerUserId,
     palletEvidenceData: shouldApplyPatch ? patch.palletEvidenceData ?? existing?.palletEvidenceData : existing.palletEvidenceData,
     roadmap: roadmap ?? existing?.roadmap ?? null,
     shipGoodsData: shouldApplyPatch ? patch.shipGoodsData ?? existing?.shipGoodsData : existing.shipGoodsData,
     status: nextStatus,
     updatedAt: shouldApplyPatch ? now : existing.updatedAt,
-    validationIssues: nextStatus === "validation_failed"
-      ? patch.validationIssues ?? existing?.validationIssues
-      : patch.validationIssues,
+    validationIssues: nextValidationIssues,
   };
 
   await database.runAsync(
@@ -135,10 +151,11 @@ export async function upsertOfflinePalletOperation(
       exit_extra_evidence_json,
       last_error,
       last_modified_user_id,
+      owner_user_id,
       validation_issues_json,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     operation.id,
     operation.roadmap ?? null,
     operation.operationType,
@@ -150,6 +167,7 @@ export async function upsertOfflinePalletOperation(
     stringify(operation.exitExtraEvidenceData),
     operation.lastError ?? null,
     operation.lastModifiedUserId ?? null,
+    operation.ownerUserId,
     stringify(operation.validationIssues),
     operation.createdAt,
     operation.updatedAt,
@@ -158,11 +176,12 @@ export async function upsertOfflinePalletOperation(
   return operation;
 }
 
-export async function getOfflinePalletOperation(id: string) {
+export async function getOfflinePalletOperation(id: string, ownerUserId: number) {
   const database = await getOfflinePalletOperationsDatabase();
   const row = await database.getFirstAsync<OfflinePalletOperationRow>(
-    `SELECT * FROM ${TABLE_NAME} WHERE id = ?`,
+    `SELECT * FROM ${TABLE_NAME} WHERE id = ? AND owner_user_id = ?`,
     id,
+    ownerUserId,
   );
 
   return row ? mapRowToOperation(row) : null;
@@ -170,6 +189,7 @@ export async function getOfflinePalletOperation(id: string) {
 
 export async function getOfflinePalletOperationByRoadmap(
   roadmap: string,
+  ownerUserId: number,
   operationType?: OfflinePalletOperationType,
 ) {
   const normalizedRoadmap = normalizeRoadmap(roadmap);
@@ -178,11 +198,11 @@ export async function getOfflinePalletOperationByRoadmap(
   const database = await getOfflinePalletOperationsDatabase();
   const operationTypeFilter = operationType ? "AND operation_type = ?" : "";
   const params = operationType
-    ? [normalizedRoadmap, operationType]
-    : [normalizedRoadmap];
+    ? [normalizedRoadmap, ownerUserId, operationType]
+    : [normalizedRoadmap, ownerUserId];
   const row = await database.getFirstAsync<OfflinePalletOperationRow>(
     `SELECT * FROM ${TABLE_NAME}
-     WHERE roadmap = ? ${operationTypeFilter} AND status != 'synced'
+     WHERE roadmap = ? AND owner_user_id = ? ${operationTypeFilter} AND status != 'synced'
      ORDER BY updated_at DESC
      LIMIT 1`,
     ...params,
@@ -191,26 +211,29 @@ export async function getOfflinePalletOperationByRoadmap(
   return row ? mapRowToOperation(row) : null;
 }
 
-export async function listOfflinePalletOperations(operationType: OfflinePalletOperationType) {
+export async function listOfflinePalletOperations(operationType: OfflinePalletOperationType, ownerUserId: number) {
   const database = await getOfflinePalletOperationsDatabase();
   const rows = await database.getAllAsync<OfflinePalletOperationRow>(
     `SELECT * FROM ${TABLE_NAME}
-     WHERE operation_type = ? AND status != 'synced'
+     WHERE operation_type = ? AND owner_user_id = ? AND status != 'synced'
      ORDER BY updated_at DESC`,
     operationType,
+    ownerUserId,
   );
 
   return rows.map(mapRowToOperation);
 }
 
-export async function listPendingSyncPalletOperations() {
+export async function listPendingSyncPalletOperations(ownerUserId: number) {
   const database = await getOfflinePalletOperationsDatabase();
   const staleSyncingBefore = new Date(Date.now() - STALE_SYNCING_MS).toISOString();
   const rows = await database.getAllAsync<OfflinePalletOperationRow>(
     `SELECT * FROM ${TABLE_NAME}
-     WHERE status IN ('pending_sync', 'failed')
-        OR (status = 'syncing' AND updated_at < ?)
+     WHERE owner_user_id = ?
+       AND (status IN ('pending_sync', 'failed')
+        OR (status = 'syncing' AND updated_at < ?))
      ORDER BY updated_at ASC`,
+    ownerUserId,
     staleSyncingBefore,
   );
 
@@ -219,11 +242,13 @@ export async function listPendingSyncPalletOperations() {
 
 export async function updateOfflinePalletOperationStatus({
   id,
+  ownerUserId,
   lastError = null,
   status,
   validationIssues,
 }: {
   id: string;
+  ownerUserId: number;
   lastError?: string | null;
   status: OfflinePalletOperationStatus;
   validationIssues?: OfflineValidationIssue[];
@@ -235,30 +260,48 @@ export async function updateOfflinePalletOperationStatus({
     await database.runAsync(
       `UPDATE ${TABLE_NAME}
        SET status = ?, last_error = ?, validation_issues_json = ?, updated_at = ?
-       WHERE id = ?`,
+       WHERE id = ? AND owner_user_id = ?`,
       status,
       lastError,
       stringify(validationIssues),
       updatedAt,
       id,
+      ownerUserId,
     );
     return;
   }
 
   await database.runAsync(
     `UPDATE ${TABLE_NAME}
-     SET status = ?, last_error = ?, validation_issues_json = NULL, updated_at = ?
-     WHERE id = ?`,
+     SET status = ?, last_error = ?, updated_at = ?
+     WHERE id = ? AND owner_user_id = ?`,
     status,
     lastError,
     updatedAt,
     id,
+    ownerUserId,
   );
 }
 
-export async function deleteOfflinePalletOperation(id: string) {
+function resolveValidationIssues(
+  existing: OfflinePalletOperation | null,
+  patch: OfflinePalletOperationPatch,
+) {
+  if (patch.validationIssues !== undefined) return patch.validationIssues;
+  if (existing?.status !== "validation_failed" || !patch.currentStep) {
+    return existing?.validationIssues;
+  }
+
+  return existing.validationIssues?.filter(issue => issue.stage !== patch.currentStep);
+}
+
+export async function deleteOfflinePalletOperation(id: string, ownerUserId: number) {
   const database = await getOfflinePalletOperationsDatabase();
-  await database.runAsync(`DELETE FROM ${TABLE_NAME} WHERE id = ?`, id);
+  await database.runAsync(
+    `DELETE FROM ${TABLE_NAME} WHERE id = ? AND owner_user_id = ?`,
+    id,
+    ownerUserId,
+  );
 }
 
 async function cleanupExpiredOfflinePalletOperations(database: SQLite.SQLiteDatabase) {
@@ -283,18 +326,21 @@ async function cleanupExpiredOfflinePalletOperations(database: SQLite.SQLiteData
 async function getExistingOperation({
   id,
   operationType,
+  ownerUserId,
   roadmap,
 }: {
   id?: string;
   operationType: OfflinePalletOperationType;
+  ownerUserId: number;
   roadmap?: string | null;
 }) {
   const database = await getOfflinePalletOperationsDatabase();
 
   if (id) {
     const row = await database.getFirstAsync<OfflinePalletOperationRow>(
-      `SELECT * FROM ${TABLE_NAME} WHERE id = ?`,
+      `SELECT * FROM ${TABLE_NAME} WHERE id = ? AND owner_user_id = ?`,
       id,
+      ownerUserId,
     );
 
     if (row) return mapRowToOperation(row);
@@ -303,9 +349,10 @@ async function getExistingOperation({
   if (roadmap) {
     const row = await database.getFirstAsync<OfflinePalletOperationRow>(
       `SELECT * FROM ${TABLE_NAME}
-       WHERE roadmap = ? AND operation_type = ? AND status != 'synced'`,
+       WHERE roadmap = ? AND operation_type = ? AND owner_user_id = ? AND status != 'synced'`,
       roadmap,
       operationType,
+      ownerUserId,
     );
 
     if (row) return mapRowToOperation(row);
@@ -324,6 +371,7 @@ function mapRowToOperation(row: OfflinePalletOperationRow): OfflinePalletOperati
     lastError: row.last_error,
     lastModifiedUserId: row.last_modified_user_id,
     operationType: row.operation_type,
+    ownerUserId: row.owner_user_id as number,
     palletEvidenceData: parseJson<OfflinePalletEvidenceData>(row.pallet_evidence_json),
     roadmap: row.roadmap,
     shipGoodsData: parseJson<OfflineShipGoodsData>(row.ship_goods_json),
@@ -344,9 +392,13 @@ async function ensureColumn(
   await database.execAsync(`ALTER TABLE ${TABLE_NAME} ADD COLUMN ${columnName} ${columnType}`);
 }
 
-function createOfflinePalletOperationId(operationType: OfflinePalletOperationType, roadmap?: string | null) {
+function createOfflinePalletOperationId(
+  operationType: OfflinePalletOperationType,
+  ownerUserId: number,
+  roadmap?: string | null,
+) {
   const suffix = roadmap ? sanitizeIdPart(roadmap) : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  return `${operationType}-${suffix}`;
+  return `${ownerUserId}-${operationType}-${suffix}`;
 }
 
 function normalizeRoadmap(value?: string | null) {

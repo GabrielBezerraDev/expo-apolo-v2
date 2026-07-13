@@ -67,6 +67,7 @@ export type RoadmapQueryParams = {
 
 export type RoadmapPalletValidationRequest = {
   batch: string;
+  roadmap?: string;
   typeRoadmap: RoadmapType;
 };
 

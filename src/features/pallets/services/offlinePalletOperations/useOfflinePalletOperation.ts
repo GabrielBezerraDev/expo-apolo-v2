@@ -73,7 +73,7 @@ export function useOfflinePalletOperation() {
     const resolvedRoadmap = roadmap ?? getValuesScreenRoadmap("roadmap") ?? route;
     const resolvedQuantity = palletsQuantity ?? getValuesScreenRoadmap("palletsQuantity") ?? "";
 
-    if (!resolvedRoadmap.trim() && !offlineOperationId) return null;
+    if (!userId || (!resolvedRoadmap.trim() && !offlineOperationId)) return null;
 
     const operation = await upsertOfflinePalletOperation({
       currentStep,
@@ -84,6 +84,7 @@ export function useOfflinePalletOperation() {
       id: offlineOperationId ?? undefined,
       lastModifiedUserId: userId,
       operationType: operationPallet,
+      ownerUserId: userId,
       roadmap: resolvedRoadmap,
       status,
     });
@@ -109,6 +110,7 @@ export function useOfflinePalletOperation() {
       id: operation.id,
       lastModifiedUserId: userId,
       operationType: operation.operationType,
+      ownerUserId: operation.ownerUserId,
       palletEvidenceData,
       roadmap: operation.roadmap,
       status,
@@ -179,6 +181,7 @@ export function useOfflinePalletOperation() {
       id: operation.id,
       lastModifiedUserId: userId,
       operationType: operation.operationType,
+      ownerUserId: operation.ownerUserId,
       roadmap: operation.roadmap,
       shipGoodsData: { truck },
       status,
@@ -217,6 +220,7 @@ export function useOfflinePalletOperation() {
       id: operation.id,
       lastModifiedUserId: userId,
       operationType: operation.operationType,
+      ownerUserId: operation.ownerUserId,
       roadmap: operation.roadmap,
       status,
     });
@@ -245,7 +249,9 @@ export function useOfflinePalletOperation() {
   }, [exitExtraEvidencePhotos, persistOperationPhoto, saveExitExtraEvidenceDraft, setExitExtraEvidencePhotos]);
 
   const hydrateOperationById = useCallback(async (operationId: string, options: HydrateOperationByIdOptions = {}) => {
-    const operation = await getOfflinePalletOperation(operationId);
+    if (!userId) return null;
+
+    const operation = await getOfflinePalletOperation(operationId, userId);
     if (!operation) return null;
 
     const operationToHydrate = options.clearInvalidFields
@@ -254,7 +260,7 @@ export function useOfflinePalletOperation() {
 
     hydrateOfflineOperation(operationToHydrate);
     return operationToHydrate;
-  }, [hydrateOfflineOperation]);
+  }, [hydrateOfflineOperation, userId]);
 
   return {
     hydrateOperationById,

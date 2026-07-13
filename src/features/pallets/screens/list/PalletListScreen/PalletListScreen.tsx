@@ -56,7 +56,7 @@ function PalletListScreenContent() {
   const isOfflineState = canLoadReports && hasCheckedNetwork && !isOnline;
   const errorMessage = canLoadReports
     ? qualityReportQuery.error?.message
-    : "Configure EXPO_PUBLIC_API_URL para carregar os reports.";
+    : "Não foi possível carregar os relatórios. Verifique a configuração da API.";
   const refresh = qualityReportQuery.isRefetching && !qualityReportQuery.isLoading;
   const refreshReports = canLoadReports ? () => { void qualityReportQuery.refetch(); } : undefined;
   useEffect(() => {

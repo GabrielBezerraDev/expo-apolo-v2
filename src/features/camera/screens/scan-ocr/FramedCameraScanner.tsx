@@ -64,7 +64,6 @@ export const FramedCameraScanner: React.FC = () => {
   const isProcessingRef = useRef(false);
   const consecutiveSameReads = useRef(0);
   const lastTextRef = useRef<string>('');
-  const latestResultRef = useRef<LiveOCRResult | null>(null);
 
   const requestPermission = useCallback(async () => {
     const status = await Camera.requestCameraPermission();
@@ -134,7 +133,6 @@ export const FramedCameraScanner: React.FC = () => {
     isPollingRef.current = false;
     consecutiveSameReads.current = 0;
     lastTextRef.current = '';
-    latestResultRef.current = null;
     setLiveResult(null);
   }, [mode, orientation, ratios]);
 
@@ -248,7 +246,6 @@ export const FramedCameraScanner: React.FC = () => {
       const isStable = consecutiveSameReads.current >= stableReadsRequired;
 
       const result: LiveOCRResult = { text, fields, matchedFields, isStable };
-      latestResultRef.current = result;
       setLiveResult(result);
 
     } catch {
@@ -282,10 +279,14 @@ export const FramedCameraScanner: React.FC = () => {
   }, [isPhotoMode, hasPermission, device, isCapturing, pollIntervalMs, runOCRTick]);
 
   // -------------------------------------------------------------------------
-  // Final capture — uses the most recent live result + a high-quality photo
+  // Final capture — keeps the confirmed live text and captures its cropped photo
   // -------------------------------------------------------------------------
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current || isCapturing) return;
+
+    const stableLiveResult = liveResult?.isStable && liveResult.text.trim()
+      ? liveResult
+      : null;
 
     try {
       setIsCapturing(true);
@@ -319,26 +320,42 @@ export const FramedCameraScanner: React.FC = () => {
         photoPath, cropX, cropY, cropW, cropH,
       );
 
-      const liveData = latestResultRef.current;
+      let text = stableLiveResult?.text.trim() || '';
+      let fields = stableLiveResult?.fields || {};
+      let matchedFields = stableLiveResult?.matchedFields || 0;
+
+      if (!text) {
+        const ocrResult = await recognizeTextFromImage(result.path);
+        const rawText = ocrResult?.text?.trim() || '';
+        text = formatTextDataWithRegex.current
+          ? formatTextDataWithRegex.current(rawText)
+          : rawText;
+        fields = ocrResult?.fields || {};
+        matchedFields = ocrResult?.matchedFields || 0;
+      }
+
+      if (!text) {
+        throw new Error('Não foi possível ler o código na foto capturada. Tente novamente.');
+      }
 
       await setOcrScreenOrientation('portrait').catch(() => undefined);
       handleScannerCapture({
         imageUri: result.path,
-        text: liveData?.text?.trim() || '',
-        fields: liveData?.fields || {},
-        matchedFields: liveData?.matchedFields || 0,
-        isStable: liveData?.isStable || false,
+        text,
+        fields,
+        matchedFields,
+        isStable: true,
       });
-    } catch (err: any) {
-      console.error('Capture error:', err);
+    } catch (error) {
+      console.error('Capture error:', error);
       showFeedback({
         title: 'Erro',
-        message: err?.message || 'Não foi possível capturar a imagem',
+        message: getCameraErrorMessage(error),
       });
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing, isPhotoMode, handleScannerCapture, computePhotoCropRect, showFeedback]);
+  }, [isCapturing, isPhotoMode, liveResult, handleScannerCapture, computePhotoCropRect, showFeedback]);
 
   // -------------------------------------------------------------------------
   // Render
@@ -475,6 +492,38 @@ export const FramedCameraScanner: React.FC = () => {
     </ScannerRoot>
   );
 };
+
+function getCameraErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message.trim() : '';
+  const normalizedMessage = message.toLowerCase();
+
+  if (
+    message.startsWith('Não ') ||
+    message.startsWith('Nenhum ') ||
+    message.startsWith('Ocorreu ') ||
+    message.startsWith('A câmera ')
+  ) {
+    return message;
+  }
+
+  if (normalizedMessage.includes('not enough storage')) {
+    return 'Não há espaço de armazenamento suficiente.';
+  }
+
+  if (normalizedMessage.includes('not ready')) {
+    return 'A câmera ainda não está pronta. Aguarde e tente novamente.';
+  }
+
+  if (normalizedMessage.includes('permission')) {
+    return 'Não foi possível acessar a câmera. Verifique a permissão do aplicativo.';
+  }
+
+  if (normalizedMessage.includes('no text found')) {
+    return 'Nenhum texto foi encontrado na imagem.';
+  }
+
+  return 'Não foi possível capturar a imagem. Tente novamente.';
+}
 
 const absoluteFillStyle = {
   position: 'absolute' as const,

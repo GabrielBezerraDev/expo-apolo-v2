@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "ValorlogOcrExpo",
+    "name": "Apollo",
     "slug": "valorlog-ocr-expo",
     "version": "1.0.0",
+    "icon": "./src/assets/apollo-icon.png",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,22 +15,28 @@
     },
     "android": {
       "package": "com.valorlogocrexpo",
-      "usesCleartextTraffic": false,
+      "icon": "./src/assets/apollo-icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/apollo-icon-foreground.png",
+        "backgroundColor": "#fff4fc"
+      },
+      "usesCleartextTraffic": true,
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.REQUEST_INSTALL_PACKAGES"
       ]
     },
     "plugins": [
       [
         "expo-camera",
         {
-          "cameraPermission": "Permita que o Valorlog use a câmera para escanear etiquetas."
+            "cameraPermission": "Permita que o Apollo use a câmera para escanear etiquetas."
         }
       ],
       [
         "react-native-vision-camera",
         {
-          "cameraPermissionText": "Permita que o Valorlog use a câmera para escanear etiquetas."
+            "cameraPermissionText": "Permita que o Apollo use a câmera para escanear etiquetas."
         }
       ],
       "@react-native-community/datetimepicker",
