@@ -29,6 +29,7 @@ const Screen = styled(View, {
   backgroundColor: "$background",
   paddingHorizontal: 24,
   paddingBottom: 18,
+  paddingTop: 18
 });
 const TopActions = styled(View, { alignItems: "flex-end", paddingTop:20 });
 const Form = styled(View, { gap: 16, flex: 4, alignItems: 'center', justifyContent: 'center', width: '100%' });
@@ -183,9 +184,6 @@ export function LoginScreen(_props: Props) {
 
   return (
     <Screen>
-      <TopActions>
-        <ThemeToggle />
-      </TopActions>
       <LoginAnimatedHeader />
       <Form>
         <AppInput<LoginFormData>

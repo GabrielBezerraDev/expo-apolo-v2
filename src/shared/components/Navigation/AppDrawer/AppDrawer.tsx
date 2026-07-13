@@ -41,12 +41,6 @@ export function AppDrawer({ visible, onClose }: Props) {
 
             <DrawerSubtitle>Atalhos do sistema</DrawerSubtitle>
 
-            <DrawerItem>
-              <DrawerItemText>Perfil</DrawerItemText>
-            </DrawerItem>
-            <DrawerItem>
-              <DrawerItemText>Configurações</DrawerItemText>
-            </DrawerItem>
             <DrawerItem onPress={handleLogout}>
               <DrawerItemText>Sair</DrawerItemText>
             </DrawerItem>
