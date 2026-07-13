@@ -64,7 +64,6 @@ export const FramedCameraScanner: React.FC = () => {
   const isProcessingRef = useRef(false);
   const consecutiveSameReads = useRef(0);
   const lastTextRef = useRef<string>('');
-  const latestResultRef = useRef<LiveOCRResult | null>(null);
 
   const requestPermission = useCallback(async () => {
     const status = await Camera.requestCameraPermission();
@@ -134,7 +133,6 @@ export const FramedCameraScanner: React.FC = () => {
     isPollingRef.current = false;
     consecutiveSameReads.current = 0;
     lastTextRef.current = '';
-    latestResultRef.current = null;
     setLiveResult(null);
   }, [mode, orientation, ratios]);
 
@@ -248,7 +246,6 @@ export const FramedCameraScanner: React.FC = () => {
       const isStable = consecutiveSameReads.current >= stableReadsRequired;
 
       const result: LiveOCRResult = { text, fields, matchedFields, isStable };
-      latestResultRef.current = result;
       setLiveResult(result);
 
     } catch {
@@ -282,10 +279,14 @@ export const FramedCameraScanner: React.FC = () => {
   }, [isPhotoMode, hasPermission, device, isCapturing, pollIntervalMs, runOCRTick]);
 
   // -------------------------------------------------------------------------
-  // Final capture — OCRs the high-quality cropped photo that will be submitted
+  // Final capture — keeps the confirmed live text and captures its cropped photo
   // -------------------------------------------------------------------------
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current || isCapturing) return;
+
+    const stableLiveResult = liveResult?.isStable && liveResult.text.trim()
+      ? liveResult
+      : null;
 
     try {
       setIsCapturing(true);
@@ -319,11 +320,19 @@ export const FramedCameraScanner: React.FC = () => {
         photoPath, cropX, cropY, cropW, cropH,
       );
 
-      const ocrResult = await recognizeTextFromImage(result.path);
-      const rawText = ocrResult?.text?.trim() || '';
-      const text = formatTextDataWithRegex.current
-        ? formatTextDataWithRegex.current(rawText)
-        : rawText;
+      let text = stableLiveResult?.text.trim() || '';
+      let fields = stableLiveResult?.fields || {};
+      let matchedFields = stableLiveResult?.matchedFields || 0;
+
+      if (!text) {
+        const ocrResult = await recognizeTextFromImage(result.path);
+        const rawText = ocrResult?.text?.trim() || '';
+        text = formatTextDataWithRegex.current
+          ? formatTextDataWithRegex.current(rawText)
+          : rawText;
+        fields = ocrResult?.fields || {};
+        matchedFields = ocrResult?.matchedFields || 0;
+      }
 
       if (!text) {
         throw new Error('Não foi possível ler o código na foto capturada. Tente novamente.');
@@ -333,8 +342,8 @@ export const FramedCameraScanner: React.FC = () => {
       handleScannerCapture({
         imageUri: result.path,
         text,
-        fields: ocrResult?.fields || {},
-        matchedFields: ocrResult?.matchedFields || 0,
+        fields,
+        matchedFields,
         isStable: true,
       });
     } catch (error) {
@@ -346,7 +355,7 @@ export const FramedCameraScanner: React.FC = () => {
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing, isPhotoMode, handleScannerCapture, computePhotoCropRect, showFeedback]);
+  }, [isCapturing, isPhotoMode, liveResult, handleScannerCapture, computePhotoCropRect, showFeedback]);
 
   // -------------------------------------------------------------------------
   // Render
