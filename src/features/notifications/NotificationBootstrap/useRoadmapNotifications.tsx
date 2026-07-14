@@ -50,7 +50,6 @@ export function useRoadmapNotifications() {
           showCloseButton: true,
           title: `Atualização no palete ${notification.batch ?? ""}`.trim(),
           widthPercent: 92,
-          timeModal: 1000000
         },
       );
     };
