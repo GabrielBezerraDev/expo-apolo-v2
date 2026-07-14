@@ -5,6 +5,7 @@ type SavePalletImageParams = {
   fileName: string;
   operationType: "entry" | "exit";
   operationId: string;
+  ownerUserId: number;
   roadmap?: string | null;
   sourceUri: string;
   step: string;
@@ -16,6 +17,7 @@ export async function savePalletOperationImage({
   fileName,
   operationType,
   operationId,
+  ownerUserId,
   roadmap,
   sourceUri,
   step,
@@ -24,8 +26,7 @@ export async function savePalletOperationImage({
     throw new Error("O armazenamento local de arquivos não está disponível neste dispositivo.");
   }
 
-  const operationDirectory = sanitizePathPart(roadmap || operationId);
-  const directory = `${LOCAL_DATA_DIR}/${operationType}/${operationDirectory}/${sanitizePathPart(step)}`;
+  const directory = `${LOCAL_DATA_DIR}/users/${ownerUserId}/${operationType}/${sanitizePathPart(operationId)}/${sanitizePathPart(step)}`;
   await ensureDirectory(directory);
 
   const manipulated = await ImageManipulator.manipulateAsync(sourceUri, [], {
@@ -43,17 +44,20 @@ export async function savePalletOperationImage({
 export async function deletePalletOperationImageDirectory({
   operationId,
   operationType,
+  ownerUserId,
   roadmap,
 }: {
   operationId: string;
   operationType: "entry" | "exit";
+  ownerUserId?: number | null;
   roadmap?: string | null;
 }) {
   if (!FileSystem.documentDirectory) return;
 
-  const operationDirectory = sanitizePathPart(roadmap || operationId);
   const directories = new Set([
-    `${LOCAL_DATA_DIR}/${operationType}/${operationDirectory}`,
+    ...(ownerUserId
+      ? [`${LOCAL_DATA_DIR}/users/${ownerUserId}/${operationType}/${sanitizePathPart(operationId)}`]
+      : []),
     `${LOCAL_DATA_DIR}/${operationType}/${sanitizePathPart(operationId)}`,
   ]);
 

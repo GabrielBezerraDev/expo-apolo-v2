@@ -7,6 +7,9 @@ type RememberedCredentials = {
 
 const REMEMBERED_EMAIL_KEY = "valorlog.rememberedEmail";
 const REMEMBERED_PASSWORD_KEY = "valorlog.rememberedPassword";
+const SECURE_STORE_OPTIONS: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+};
 
 export async function getRememberedCredentials() {
   const [email, password] = await Promise.all([
@@ -14,18 +17,15 @@ export async function getRememberedCredentials() {
     SecureStore.getItemAsync(REMEMBERED_PASSWORD_KEY),
   ]);
 
-  if (!email || !password) {
-    await clearRememberedCredentials();
-    return null;
-  }
-
-  return { email, password } satisfies RememberedCredentials;
+  return email
+    ? { email, password: password ?? "" } satisfies RememberedCredentials
+    : null;
 }
 
 export async function saveRememberedCredentials({ email, password }: RememberedCredentials) {
   await Promise.all([
-    SecureStore.setItemAsync(REMEMBERED_EMAIL_KEY, email),
-    SecureStore.setItemAsync(REMEMBERED_PASSWORD_KEY, password),
+    SecureStore.setItemAsync(REMEMBERED_EMAIL_KEY, email, SECURE_STORE_OPTIONS),
+    SecureStore.setItemAsync(REMEMBERED_PASSWORD_KEY, password, SECURE_STORE_OPTIONS),
   ]);
 }
 

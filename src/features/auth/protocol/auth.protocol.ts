@@ -1,3 +1,5 @@
+import type { AuthTokens } from "@shared/services/authSession";
+
 export type LoginRequest = {
   email: string;
   password: string;
@@ -7,11 +9,6 @@ export type LoginResponse = {
   accessToken?: string;
   refreshToken?: string;
   token?: string;
-};
-
-export type AuthTokens = {
-  refreshToken?: string;
-  token: string;
 };
 
 export function normalizeAuthTokens(response: LoginResponse): AuthTokens {

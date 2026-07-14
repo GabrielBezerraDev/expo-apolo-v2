@@ -9,14 +9,14 @@ const SOCKET_BASE_URL = process.env.EXPO_PUBLIC_SOCKET_URL ?? "";
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
 
 export function SocketProvider({ children }: PropsWithChildren) {
-  const { token } = useAuthSession();
+  const { canUseRemoteApi, token } = useAuthSession();
   const [isConnected, setIsConnected] = useState(false);
   const [socket, setSocket] = useState<AppSocket | null>(null);
 
   useEffect(() => {
     const socketUrl = getSocketUrl();
 
-    if (!token || !socketUrl) {
+    if (!canUseRemoteApi || !token || !socketUrl) {
       setIsConnected(false);
       setSocket(null);
       return;
@@ -43,7 +43,7 @@ export function SocketProvider({ children }: PropsWithChildren) {
       setIsConnected(false);
       setSocket(null);
     };
-  }, [token]);
+  }, [canUseRemoteApi, token]);
 
   const value = useMemo<SocketContextValue>(
     () => ({

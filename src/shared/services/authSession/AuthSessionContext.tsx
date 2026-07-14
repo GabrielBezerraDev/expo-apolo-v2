@@ -7,96 +7,291 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { AppState } from "react-native";
+import { useNetworkState } from "@shared/services/network";
+import type {
+  AuthRevalidationReason,
+  AuthSessionMode,
+  AuthSessionRecord,
+  AuthUser,
+} from "./authSession.protocol";
+import { registerAuthenticatedRequestRejectedHandler } from "./authSessionEvents";
+import { getAuthTokenExpiresAt, isAuthTokenExpired } from "./authToken";
+import {
+  clearOfflineAuthBlock,
+  isOfflineAuthBlocked,
+} from "./offlineAuthBlock";
 
-const AUTH_TOKEN_STORAGE_KEY = "valorlog.authToken";
-const AUTH_REFRESH_TOKEN_STORAGE_KEY = "valorlog.refreshToken";
+const ACTIVE_SESSION_STORAGE_KEY = "apollo.activeAuthSession";
+const LEGACY_AUTH_TOKEN_STORAGE_KEY = "valorlog.authToken";
+const LEGACY_AUTH_REFRESH_TOKEN_STORAGE_KEY = "valorlog.refreshToken";
+const MAX_OFFLINE_AUTH_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
+const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
 
-type AuthSessionTokens = {
-  refreshToken?: string;
-  token: string;
+type PersistedAuthSession = AuthSessionRecord & {
+  version: 1;
 };
 
 type AuthSessionContextValue = {
+  canUseRemoteApi: boolean;
+  forgetCurrentUser: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (tokens: AuthSessionTokens) => Promise<void>;
+  login: (session: AuthSessionRecord) => Promise<void>;
   logout: () => Promise<void>;
+  offlineValidUntil?: number;
   refreshToken?: string;
+  revalidationEmail?: string;
+  revalidationReason?: AuthRevalidationReason;
+  sessionMode?: AuthSessionMode;
   token?: string;
+  user?: AuthUser;
   userId?: number;
-  user?: any;
 };
 
 const AuthSessionContext = createContext<AuthSessionContextValue | undefined>(undefined);
 
-type AuthSessionProviderProps = PropsWithChildren;
+type AuthSessionProviderProps = PropsWithChildren<{
+  onForgetOfflineUser: (userId: number) => Promise<void>;
+  onInvalidateOfflineUser: (userId: number) => Promise<void>;
+}>;
 
-export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
+export function AuthSessionProvider({
+  children,
+  onForgetOfflineUser,
+  onInvalidateOfflineUser,
+}: AuthSessionProviderProps) {
   const queryClient = useQueryClient();
+  const { isOnline } = useNetworkState();
   const [isLoading, setIsLoading] = useState(true);
-  const [refreshToken, setRefreshToken] = useState<string | undefined>();
-  const [token, setToken] = useState<string | undefined>();
+  const [revalidationEmail, setRevalidationEmail] = useState<string | undefined>();
+  const [revalidationReason, setRevalidationReason] = useState<AuthRevalidationReason | undefined>();
+  const [session, setSession] = useState<AuthSessionRecord | undefined>();
+  const [timeReference, setTimeReference] = useState(() => Date.now());
+  const sessionRef = useRef<AuthSessionRecord | undefined>(undefined);
+
+  const updateSession = useCallback((nextSession?: AuthSessionRecord) => {
+    sessionRef.current = nextSession;
+    setSession(nextSession);
+  }, []);
+
+  const requireRevalidation = useCallback(async (
+    reason: AuthRevalidationReason,
+    rejectedToken?: string,
+  ) => {
+    const currentSession = sessionRef.current;
+    if (!currentSession || (rejectedToken && currentSession.tokens.token !== rejectedToken)) return;
+
+    setRevalidationEmail(currentSession.user.email);
+    setRevalidationReason(reason);
+    updateSession(undefined);
+    queryClient.clear();
+
+    try {
+      await onInvalidateOfflineUser(currentSession.user.id);
+    } finally {
+      await removeActiveSessionIfTokenMatches(currentSession.tokens.token).catch(() => undefined);
+    }
+  }, [onInvalidateOfflineUser, queryClient, updateSession]);
 
   useEffect(() => {
     let active = true;
 
     async function loadStoredSession() {
       try {
-        const storedToken = await getStoredSessionItem(AUTH_TOKEN_STORAGE_KEY);
-        const storedRefreshToken = await getStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY);
+        const serialized = await SecureStore.getItemAsync(ACTIVE_SESSION_STORAGE_KEY);
+        const storedSession = parsePersistedAuthSession(serialized);
 
         if (!active) return;
 
-        setToken(storedToken ?? undefined);
-        setRefreshToken(storedRefreshToken || undefined);
+        const storedSessionIsBlocked = storedSession
+          ? await isOfflineAuthBlocked(storedSession.user.id)
+          : false;
+
+        if (!active) return;
+
+        if (storedSession && storedSessionIsBlocked) {
+          setRevalidationEmail(storedSession.user.email);
+          setRevalidationReason("server_rejected_session");
+          await SecureStore.deleteItemAsync(ACTIVE_SESSION_STORAGE_KEY).catch(() => undefined);
+        } else if (storedSession && isWithinOfflineWindow(storedSession, Date.now())) {
+          updateSession(storedSession);
+        } else if (storedSession) {
+          setRevalidationEmail(storedSession.user.email);
+          setRevalidationReason("offline_access_expired");
+          await onInvalidateOfflineUser(storedSession.user.id).catch(() => undefined);
+          await SecureStore.deleteItemAsync(ACTIVE_SESSION_STORAGE_KEY).catch(() => undefined);
+        } else if (serialized) {
+          await SecureStore.deleteItemAsync(ACTIVE_SESSION_STORAGE_KEY).catch(() => undefined);
+        }
+
+        await removeLegacySession().catch(() => undefined);
+      } catch {
+        if (active) updateSession(undefined);
       } finally {
         if (active) setIsLoading(false);
       }
     }
 
-    loadStoredSession();
+    void loadStoredSession();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [onInvalidateOfflineUser, updateSession]);
 
-  const login = useCallback(async (tokens: AuthSessionTokens) => {
-    await setStoredSessionItem(AUTH_TOKEN_STORAGE_KEY, tokens.token);
+  useEffect(() => {
+    if (!session) return;
 
-    if (tokens.refreshToken) {
-      await setStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY, tokens.refreshToken);
-    } else {
-      await removeStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY);
+    const remaining = session.offlineValidUntil - Date.now();
+    if (remaining <= 0) {
+      void requireRevalidation("offline_access_expired").catch(() => undefined);
+      return;
     }
 
-    setToken(tokens.token);
-    setRefreshToken(tokens.refreshToken);
-  }, []);
+    const timeout = setTimeout(() => {
+      void requireRevalidation("offline_access_expired").catch(() => undefined);
+    }, remaining);
+
+    return () => clearTimeout(timeout);
+  }, [requireRevalidation, session]);
+
+  useEffect(() => {
+    const token = session?.tokens.token;
+    if (!token) return;
+
+    const expiresAt = getAuthTokenExpiresAt(token);
+    if (!expiresAt) return;
+
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) {
+      setTimeReference(Date.now());
+      return;
+    }
+
+    const timeout = setTimeout(() => setTimeReference(Date.now()), remaining);
+    return () => clearTimeout(timeout);
+  }, [session?.tokens.token]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", nextState => {
+      const currentSession = sessionRef.current;
+      setTimeReference(Date.now());
+      if (
+        nextState === "active" &&
+        currentSession &&
+        !isWithinOfflineWindow(currentSession, Date.now())
+      ) {
+        void requireRevalidation("offline_access_expired").catch(() => undefined);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [requireRevalidation]);
+
+  useEffect(
+    () => registerAuthenticatedRequestRejectedHandler(rejectedToken => {
+      void requireRevalidation("server_rejected_session", rejectedToken).catch(() => undefined);
+    }),
+    [requireRevalidation],
+  );
+
+  const login = useCallback(async (nextSession: AuthSessionRecord) => {
+    if (Date.now() >= nextSession.offlineValidUntil) {
+      throw new Error("A autorização offline recebida já está expirada.");
+    }
+
+    const previousSession = sessionRef.current;
+    sessionRef.current = nextSession;
+
+    try {
+      const persistedSession: PersistedAuthSession = {
+        ...nextSession,
+        version: 1,
+      };
+      await SecureStore.setItemAsync(
+        ACTIVE_SESSION_STORAGE_KEY,
+        JSON.stringify(persistedSession),
+        { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY },
+      );
+      if (nextSession.mode === "online") {
+        await clearOfflineAuthBlock(nextSession.user.id);
+      }
+    } catch (error) {
+      await removeActiveSessionIfTokenMatches(nextSession.tokens.token).catch(() => undefined);
+      sessionRef.current = previousSession;
+      throw error;
+    }
+
+    setRevalidationEmail(undefined);
+    setRevalidationReason(undefined);
+    setTimeReference(Date.now());
+    queryClient.clear();
+    updateSession(nextSession);
+  }, [queryClient, updateSession]);
 
   const logout = useCallback(async () => {
-    await removeStoredSessionItem(AUTH_TOKEN_STORAGE_KEY);
-    await removeStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY);
+    const previousSession = sessionRef.current;
+    sessionRef.current = undefined;
 
-    setToken(undefined);
-    setRefreshToken(undefined);
+    try {
+      await Promise.all([
+        SecureStore.deleteItemAsync(ACTIVE_SESSION_STORAGE_KEY),
+        removeLegacySession(),
+      ]);
+    } catch (error) {
+      sessionRef.current = previousSession;
+      throw error;
+    }
+
+    setSession(undefined);
+    setRevalidationEmail(undefined);
+    setRevalidationReason(undefined);
     queryClient.clear();
   }, [queryClient]);
 
+  const forgetCurrentUser = useCallback(async () => {
+    const currentSession = sessionRef.current;
+    if (!currentSession) return;
+
+    let forgetError: unknown;
+    try {
+      await onForgetOfflineUser(currentSession.user.id);
+      await clearOfflineAuthBlock(currentSession.user.id);
+    } catch (error) {
+      forgetError = error;
+    }
+
+    await logout();
+    if (forgetError) throw forgetError;
+  }, [logout, onForgetOfflineUser]);
+
+  const canUseRemoteApi = Boolean(
+    session &&
+    isOnline &&
+    !isAuthTokenExpired(session.tokens.token, timeReference),
+  );
   const value = useMemo<AuthSessionContextValue>(
     () => ({
-      isAuthenticated: Boolean(token),
+      canUseRemoteApi,
+      forgetCurrentUser,
+      isAuthenticated: Boolean(session),
       isLoading,
       login,
       logout,
-      refreshToken,
-      token,
-      userId: getUserIdFromToken(token),
-      user: getUserFromToken(token)
+      offlineValidUntil: session?.offlineValidUntil,
+      refreshToken: session?.tokens.refreshToken,
+      revalidationEmail,
+      revalidationReason,
+      sessionMode: session ? (canUseRemoteApi ? "online" : "offline") : undefined,
+      token: session?.tokens.token,
+      user: session?.user,
+      userId: session?.user.id,
     }),
-    [isLoading, login, logout, refreshToken, token],
+    [canUseRemoteApi, forgetCurrentUser, isLoading, login, logout, revalidationEmail, revalidationReason, session],
   );
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;
@@ -112,44 +307,65 @@ export function useAuthSession() {
   return context;
 }
 
-async function getStoredSessionItem(key: string) {
-  return SecureStore.getItemAsync(key);
-}
-
-async function setStoredSessionItem(key: string, value: string) {
-  return SecureStore.setItemAsync(key, value);
-}
-
-async function removeStoredSessionItem(key: string) {
-  return SecureStore.deleteItemAsync(key);
-}
-
-function getUserIdFromToken(token?: string) {
-  const payload = decodeJwtPayload(token);
-  const userId = payload?.payload?.id;
-  const normalizedUserId = typeof userId === "string" ? Number(userId) : userId;
-
-  return Number.isInteger(normalizedUserId) ? normalizedUserId : undefined;
-}
-
-function getUserFromToken(token?: string) {
-  const payload = decodeJwtPayload(token);
-  const user = payload?.payload;
-  return user ?? {}
-  }
-
-function decodeJwtPayload(token?: string): { payload?: { id?: number | string } } | null {
-  const encodedPayload = token?.split(".")[1];
-  if (!encodedPayload || typeof globalThis.atob !== "function") return null;
+function parsePersistedAuthSession(serialized: string | null): AuthSessionRecord | null {
+  if (!serialized) return null;
 
   try {
-    const base64 = encodedPayload
-      .replace(/-/g, "+")
-      .replace(/_/g, "/")
-      .padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+    const value = JSON.parse(serialized) as Partial<PersistedAuthSession>;
+    if (
+      value.version !== 1 ||
+      typeof value.lastOnlineValidatedAt !== "number" ||
+      typeof value.offlineValidUntil !== "number" ||
+      value.offlineValidUntil <= value.lastOnlineValidatedAt ||
+      value.offlineValidUntil - value.lastOnlineValidatedAt > MAX_OFFLINE_AUTH_DURATION_MS ||
+      (value.mode !== "offline" && value.mode !== "online") ||
+      !isAuthUser(value.user) ||
+      !isAuthTokens(value.tokens)
+    ) {
+      return null;
+    }
 
-    return JSON.parse(globalThis.atob(base64));
+    return {
+      lastOnlineValidatedAt: value.lastOnlineValidatedAt,
+      mode: value.mode,
+      offlineValidUntil: value.offlineValidUntil,
+      tokens: value.tokens,
+      user: value.user,
+    };
   } catch {
     return null;
+  }
+}
+
+function isAuthUser(value: unknown): value is AuthUser {
+  if (!isRecord(value)) return false;
+  return typeof value.id === "number" && Number.isInteger(value.id) && value.id > 0;
+}
+
+function isAuthTokens(value: unknown): value is AuthSessionRecord["tokens"] {
+  if (!isRecord(value) || typeof value.token !== "string" || !value.token) return false;
+  return value.refreshToken == null || typeof value.refreshToken === "string";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isWithinOfflineWindow(session: AuthSessionRecord, now: number) {
+  return now + MAX_CLOCK_SKEW_MS >= session.lastOnlineValidatedAt && now < session.offlineValidUntil;
+}
+
+async function removeLegacySession() {
+  await Promise.all([
+    SecureStore.deleteItemAsync(LEGACY_AUTH_TOKEN_STORAGE_KEY),
+    SecureStore.deleteItemAsync(LEGACY_AUTH_REFRESH_TOKEN_STORAGE_KEY),
+  ]);
+}
+
+async function removeActiveSessionIfTokenMatches(expectedToken: string) {
+  const serialized = await SecureStore.getItemAsync(ACTIVE_SESSION_STORAGE_KEY);
+  const storedSession = parsePersistedAuthSession(serialized);
+  if (!storedSession || storedSession.tokens.token === expectedToken) {
+    await SecureStore.deleteItemAsync(ACTIVE_SESSION_STORAGE_KEY);
   }
 }

@@ -23,7 +23,14 @@ type Props = {
 };
 
 export function AppDrawer({ visible, onClose }: Props) {
-  const { backdropStyle, closeDrawer, handleLogout, panelStyle, theme } = useAppDrawer({ onClose, visible });
+  const {
+    backdropStyle,
+    closeDrawer,
+    handleForgetCurrentUser,
+    handleLogout,
+    panelStyle,
+    theme,
+  } = useAppDrawer({ onClose, visible });
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={closeDrawer}>
@@ -43,6 +50,9 @@ export function AppDrawer({ visible, onClose }: Props) {
 
             <DrawerItem onPress={handleLogout}>
               <DrawerItemText>Sair</DrawerItemText>
+            </DrawerItem>
+            <DrawerItem onPress={handleForgetCurrentUser}>
+              <DrawerItemText>Esquecer acesso offline</DrawerItemText>
             </DrawerItem>
           </DrawerPanel>
         </AnimatedView>

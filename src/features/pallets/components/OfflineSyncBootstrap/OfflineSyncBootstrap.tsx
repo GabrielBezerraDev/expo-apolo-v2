@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useRef } from "react";
+import { useAuthSession } from "@shared/services/authSession";
 import { useNetworkState } from "@shared/services/network";
 import { useRoadmapSync } from "../../services/roadmapSync";
 
 export function OfflineSyncBootstrap() {
+  const { canUseRemoteApi } = useAuthSession();
   const { hasCheckedNetwork, isOnline } = useNetworkState();
   const { syncPendingOperations } = useRoadmapSync();
   const hasStartedRef = useRef(false);
@@ -10,7 +12,7 @@ export function OfflineSyncBootstrap() {
   const syncInFlightRef = useRef(false);
 
   const syncPendingOperationsSafely = useCallback(async () => {
-    if (!hasCheckedNetwork || !isOnline || syncInFlightRef.current) return;
+    if (!hasCheckedNetwork || !isOnline || !canUseRemoteApi || syncInFlightRef.current) return;
 
     syncInFlightRef.current = true;
     try {
@@ -18,7 +20,7 @@ export function OfflineSyncBootstrap() {
     } finally {
       syncInFlightRef.current = false;
     }
-  }, [hasCheckedNetwork, isOnline, syncPendingOperations]);
+  }, [canUseRemoteApi, hasCheckedNetwork, isOnline, syncPendingOperations]);
 
   useEffect(() => {
     if (!hasCheckedNetwork) return;

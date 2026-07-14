@@ -5,22 +5,21 @@ import { Check } from "lucide-react-native";
 import { Button, styled, Text, useWindowDimensions, View } from "tamagui";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@navigation/navigation.protocol";
-import { useAuthSession } from "@shared/services/authSession";
 import { ApiError } from "@shared/services/apiClient";
-import { useThemeMode, ThemeToggle } from "@shared/components/Actions/ThemeToggle";
+import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { AppButton } from "@shared/components/Forms/AppButton";
 import { AppInput } from "@shared/components/Forms/AppInput";
 import { buttonPressStyle } from "@shared/styles/pressFeedback";
 import { typography } from "@shared/typography";
 import { LoginAnimatedHeader, ShinyConecthus } from "../../components/LoginAnimatedHeader";
 import { loginSchema } from "../../schemas";
-import { LoginFormData, normalizeAuthTokens } from "../../protocol";
+import { LoginFormData } from "../../protocol";
 import {
   clearRememberedCredentials,
   getRememberedCredentials,
-  saveRememberedCredentials,
+  OfflineAuthError,
 } from "../../services";
-import { useLoginMutation } from "./useLoginMutation";
+import { useOfflineAwareLogin } from "./useOfflineAwareLogin";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
@@ -108,8 +107,12 @@ const PoweredText = styled(Text, {
 
 export function LoginScreen(_props: Props) {
   const [loginError, setLoginError] = useState("");
-  const { login } = useAuthSession();
-  const loginMutation = useLoginMutation();
+  const {
+    authenticate,
+    isPending,
+    revalidationEmail,
+    revalidationReason,
+  } = useOfflineAwareLogin();
   const { theme } = useThemeMode();
   const { height } = useWindowDimensions();
   const {
@@ -131,37 +134,44 @@ export function LoginScreen(_props: Props) {
       .then((credentials) => {
         if (!active || !credentials) return;
 
-        setValue("email", credentials.email, { shouldValidate: true });
-        setValue("password", credentials.password, { shouldValidate: true });
-        setValue("remember", true, { shouldValidate: true });
+        const email = revalidationEmail ?? credentials.email;
+        setValue("email", email, { shouldValidate: true });
+
+        if (
+          credentials.password &&
+          credentials.email.trim().toLowerCase() === email.trim().toLowerCase()
+        ) {
+          setValue("password", credentials.password, { shouldValidate: true });
+          setValue("remember", true, { shouldValidate: true });
+        }
       })
       .catch(() => undefined);
 
     return () => {
       active = false;
     };
-  }, [setValue]);
+  }, [revalidationEmail, setValue]);
+
+  useEffect(() => {
+    if (revalidationEmail) {
+      setValue("email", revalidationEmail, { shouldValidate: true });
+    }
+
+    if (revalidationReason === "offline_access_expired") {
+      setLoginError("Seu acesso offline expirou. Conecte-se à internet para validar o usuário novamente.");
+    } else if (revalidationReason === "server_rejected_session") {
+      setLoginError("Sua sessão foi recusada pelo servidor. Faça login online novamente.");
+    }
+  }, [revalidationEmail, revalidationReason, setValue]);
 
   const submit = async (data: LoginFormData) => {
     setLoginError("");
 
     try {
-      const email = data.email.trim();
-      const response = await loginMutation.mutateAsync({
-        email,
-        password: data.password,
-      });
-
-      await persistCredentialsPreference({
-        email,
-        password: data.password,
-        remember: data.remember,
-      });
-
-      await login(normalizeAuthTokens(response));
+      await authenticate(data);
     } catch (error) {
       setLoginError(
-        error instanceof ApiError
+        error instanceof ApiError || error instanceof OfflineAuthError
           ? error.message
           : "Não foi possível entrar. Verifique seus dados e tente novamente.",
       );
@@ -213,14 +223,14 @@ export function LoginScreen(_props: Props) {
             <Checkbox checked={remember}>
               {remember ? <Check size={14} color={theme.white} /> : null}
             </Checkbox>
-            <SmallText>Lembrar de mim</SmallText>
+            <SmallText>Lembrar e-mail e senha</SmallText>
           </Remember>
           <LinkText>Esqueci minha senha</LinkText>
         </Inline>
         <AppButton
           style={{ width: "100%", height: height * 0.06 }}
           title="ENTRAR"
-          loading={isSubmitting || loginMutation.isPending}
+          loading={isSubmitting || isPending}
           onPress={handleSubmit(submit)}
         />
       </Form>
@@ -233,21 +243,4 @@ export function LoginScreen(_props: Props) {
       </FooterRow>
     </Screen>
   );
-}
-
-async function persistCredentialsPreference({
-  email,
-  password,
-  remember,
-}: {
-  email: string;
-  password: string;
-  remember: boolean;
-}) {
-  if (remember) {
-    await saveRememberedCredentials({ email, password });
-    return;
-  }
-
-  await clearRememberedCredentials();
 }

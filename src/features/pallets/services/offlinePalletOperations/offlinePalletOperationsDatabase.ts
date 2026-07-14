@@ -316,6 +316,7 @@ async function cleanupExpiredOfflinePalletOperations(database: SQLite.SQLiteData
     await deletePalletOperationImageDirectory({
       operationId: row.id,
       operationType: row.operation_type,
+      ownerUserId: row.owner_user_id,
       roadmap: row.roadmap,
     }).catch(() => undefined);
 

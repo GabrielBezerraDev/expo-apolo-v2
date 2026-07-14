@@ -44,6 +44,7 @@ export function useOfflinePalletDrafts({ operationType }: UseOfflinePalletDrafts
     await deletePalletOperationImageDirectory({
       operationId: operation.id,
       operationType: operation.operationType,
+      ownerUserId: operation.ownerUserId,
       roadmap: operation.roadmap,
     });
     await loadDrafts();

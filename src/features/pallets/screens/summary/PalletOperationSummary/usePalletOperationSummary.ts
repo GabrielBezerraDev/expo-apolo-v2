@@ -89,6 +89,7 @@ export function usePalletOperationSummary({ navigation, operationId }: UsePallet
         await deletePalletOperationImageDirectory({
           operationId: operation.id,
           operationType: operation.operationType,
+          ownerUserId: operation.ownerUserId,
           roadmap: operation.roadmap,
         });
         navigation.goBack();

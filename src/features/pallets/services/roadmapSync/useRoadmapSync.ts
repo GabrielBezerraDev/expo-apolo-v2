@@ -17,12 +17,12 @@ export type RoadmapSyncState = "idle" | "syncing" | "synced" | "failed" | "skipp
 
 export function useRoadmapSync() {
   const roadmapApi = useRoadmapApi();
-  const { userId } = useAuthSession();
+  const { canUseRemoteApi, userId } = useAuthSession();
   const { hasCheckedNetwork, isOnline } = useNetworkState();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<RoadmapSyncState>("idle");
-  const canUseNetwork = hasCheckedNetwork && isOnline;
+  const canUseNetwork = hasCheckedNetwork && isOnline && canUseRemoteApi;
 
   const syncOperation = useCallback(async (operationId: string) => {
     if (!hasApiBaseUrl() || !roadmapApi.hasAuthToken || !canUseNetwork) {
@@ -55,6 +55,7 @@ export function useRoadmapSync() {
       await deletePalletOperationImageDirectory({
         operationId: operation.id,
         operationType: operation.operationType,
+        ownerUserId: operation.ownerUserId,
         roadmap: operation.roadmap,
       }).catch(() => undefined);
       await deleteOfflinePalletOperation(operation.id, userId);

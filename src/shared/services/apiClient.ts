@@ -1,5 +1,9 @@
 import { useMemo } from "react";
-import { useAuthSession } from "@shared/services/authSession";
+import {
+  isAuthTokenExpired,
+  notifyAuthenticatedRequestRejected,
+  useAuthSession,
+} from "@shared/services/authSession";
 
 type ApiRequestParams = {
   query?: Record<string, unknown>;
@@ -68,39 +72,46 @@ export async function apiPost<TResponse, TBody = unknown>(
 }
 
 export function useApiClient(): ApiClient {
-  const { token } = useAuthSession();
+  const { canUseRemoteApi, token } = useAuthSession();
+  const authToken = canUseRemoteApi ? token : undefined;
 
   return useMemo(
     () => ({
       get: <TResponse>(path: string, params: ApiRequestParams = {}) =>
-        apiRequest<TResponse>(path, {
-          authToken: token,
-          method: "GET",
-          query: params.query,
-        }),
-      hasAuthToken: Boolean(token),
+        authToken
+          ? apiRequest<TResponse>(path, {
+              authToken,
+              method: "GET",
+              query: params.query,
+            })
+          : rejectUnavailableRemoteSession<TResponse>(),
+      hasAuthToken: Boolean(authToken),
       post: <TResponse, TBody = unknown>(
         path: string,
         params: ApiBodyRequestParams<TBody> = {},
       ) =>
-        apiRequest<TResponse>(path, {
-          authToken: token,
-          body: params.body,
-          method: "POST",
-          query: params.query,
-        }),
+        authToken
+          ? apiRequest<TResponse>(path, {
+              authToken,
+              body: params.body,
+              method: "POST",
+              query: params.query,
+            })
+          : rejectUnavailableRemoteSession<TResponse>(),
       postFormData: <TResponse>(
         path: string,
         params: ApiBodyRequestParams<FormData> = {},
       ) =>
-        apiRequest<TResponse>(path, {
-          authToken: token,
-          body: params.body,
-          method: "POST",
-          query: params.query,
-        }),
+        authToken
+          ? apiRequest<TResponse>(path, {
+              authToken,
+              body: params.body,
+              method: "POST",
+              query: params.query,
+            })
+          : rejectUnavailableRemoteSession<TResponse>(),
     }),
-    [token],
+    [authToken],
   );
 }
 
@@ -146,10 +157,22 @@ async function apiRequest<TResponse>(
     });
 
     if (!response.ok) {
-      throw new ApiError(await getErrorMessage(response), response.status);
+      const error = new ApiError(await getErrorMessage(response), response.status);
+      if (
+        response.status === 401 &&
+        params.authToken &&
+        !isAuthTokenExpired(params.authToken)
+      ) {
+        notifyAuthenticatedRequestRejected(params.authToken);
+      }
+      throw error;
     }
 
-    return response.json() as Promise<TResponse>;
+    try {
+      return await response.json() as TResponse;
+    } catch {
+      throw new ApiError("O servidor retornou uma resposta inválida.", response.status);
+    }
   } catch (error) {
     if (didTimeout) {
       throw new ApiError("Tempo limite da requisição excedido.", 408);
@@ -164,6 +187,12 @@ async function apiRequest<TResponse>(
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+function rejectUnavailableRemoteSession<TResponse>() {
+  return Promise.reject<TResponse>(
+    new ApiError("A sessão online não está disponível. Faça login online novamente.", 0),
+  );
 }
 
 function isFormDataBody(body: unknown): body is FormData {

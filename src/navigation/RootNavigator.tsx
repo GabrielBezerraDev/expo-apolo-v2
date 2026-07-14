@@ -11,6 +11,11 @@ import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { FrameProvider, FramedCameraScanner } from "@features/camera";
 import { NotificationBootstrap } from "@features/notifications";
 import {
+  clearRememberedCredentials,
+  forgetOfflineAuthUser,
+  invalidateOfflineAuthUser,
+} from "@features/auth";
+import {
   ExitExtraEvidence,
   FormScreenRoadmap,
   OperationSuccess,
@@ -51,12 +56,22 @@ export function RootNavigator() {
   };
 
   return (
-    <AuthSessionProvider>
+    <AuthSessionProvider
+      onForgetOfflineUser={forgetOfflineUserAndCredentials}
+      onInvalidateOfflineUser={invalidateOfflineAuthUser}
+    >
       <NavigationContainer theme={navTheme}>
         <RootNavigatorContent />
       </NavigationContainer>
     </AuthSessionProvider>
   );
+}
+
+async function forgetOfflineUserAndCredentials(userId: number) {
+  await Promise.all([
+    forgetOfflineAuthUser(userId),
+    clearRememberedCredentials(),
+  ]);
 }
 
 function RootNavigatorContent() {
