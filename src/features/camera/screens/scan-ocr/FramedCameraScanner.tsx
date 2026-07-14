@@ -59,8 +59,10 @@ export const FramedCameraScanner: React.FC = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [liveResult, setLiveResult] = useState<LiveOCRResult | null>(null);
   const [cameraLayout, setCameraLayout] = useState({ width: 0, height: 0 });
+  const cameraLayoutRef = useRef(cameraLayout);
 
   // Refs avoid re-creating the poll loop on every render
+  const isCapturingRef = useRef(false);
   const isPollingRef = useRef(false);
   const isProcessingRef = useRef(false);
   const consecutiveSameReads = useRef(0);
@@ -102,6 +104,7 @@ export const FramedCameraScanner: React.FC = () => {
   const frameRatiosRef = useRef(ratios);
   const frameRevisionRef = useRef(0);
   const isResizingRef = useRef(false);
+  const hasFrameResizeChangedRef = useRef(false);
   const resizeStartRatiosRef = useRef(ratios);
   
   const {
@@ -114,24 +117,43 @@ export const FramedCameraScanner: React.FC = () => {
   const FRAME_H = PREVIEW_H * frameRatios.heightRatio;
   const FRAME_X = (PREVIEW_W - FRAME_W) / 2;
   const FRAME_Y = (PREVIEW_H - FRAME_H) / 2;
+  const minFrameWidthRatio = Math.max(
+    MIN_FRAME_WIDTH_RATIO,
+    MIN_FRAME_PIXEL_SIZE / PREVIEW_W,
+  );
+  const minFrameHeightRatio = Math.max(
+    MIN_FRAME_HEIGHT_RATIO,
+    MIN_FRAME_PIXEL_SIZE / PREVIEW_H,
+  );
+  const maxFrameWidthRatio = Math.max(
+    minFrameWidthRatio,
+    Math.min(MAX_FRAME_WIDTH_RATIO, 1 - RESIZE_HANDLE_KNOB_SIZE / PREVIEW_W),
+  );
+  const maxFrameHeightRatio = Math.max(
+    minFrameHeightRatio,
+    Math.min(MAX_FRAME_HEIGHT_RATIO, 1 - RESIZE_HANDLE_KNOB_SIZE / PREVIEW_H),
+  );
 
   const handleCameraLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
+    const current = cameraLayoutRef.current;
+    if (current.width === width && current.height === height) return;
 
-    setCameraLayout(current => {
-      if (current.width === width && current.height === height) return current;
-      return { width, height };
-    });
+    cameraLayoutRef.current = { width, height };
+    frameRevisionRef.current += 1;
+    consecutiveSameReads.current = 0;
+    lastTextRef.current = '';
+    setLiveResult(null);
+    setCameraLayout({ width, height });
   }, []);
 
   const beginFrameResize = useCallback(() => {
+    if (isCapturingRef.current) return;
+
     resizeStartRatiosRef.current = frameRatiosRef.current;
-    frameRevisionRef.current += 1;
+    hasFrameResizeChangedRef.current = false;
     isResizingRef.current = true;
     setIsResizing(true);
-    setLiveResult(null);
-    consecutiveSameReads.current = 0;
-    lastTextRef.current = '';
   }, []);
 
   const updateFrameResize = useCallback((
@@ -144,13 +166,13 @@ export const FramedCameraScanner: React.FC = () => {
     const next = {
       widthRatio: clamp(
         start.widthRatio + horizontalDirection * ((translationX * 2) / PREVIEW_W),
-        MIN_FRAME_WIDTH_RATIO,
-        MAX_FRAME_WIDTH_RATIO,
+        minFrameWidthRatio,
+        maxFrameWidthRatio,
       ),
       heightRatio: clamp(
         start.heightRatio + verticalDirection * ((translationY * 2) / PREVIEW_H),
-        MIN_FRAME_HEIGHT_RATIO,
-        MAX_FRAME_HEIGHT_RATIO,
+        minFrameHeightRatio,
+        maxFrameHeightRatio,
       ),
     };
 
@@ -161,26 +183,41 @@ export const FramedCameraScanner: React.FC = () => {
       return;
     }
 
+    if (!hasFrameResizeChangedRef.current) {
+      hasFrameResizeChangedRef.current = true;
+      setLiveResult(null);
+      consecutiveSameReads.current = 0;
+      lastTextRef.current = '';
+    }
+
     frameRatiosRef.current = next;
     frameRevisionRef.current += 1;
     setFrameRatios(next);
-  }, [PREVIEW_H, PREVIEW_W]);
+  }, [maxFrameHeightRatio, maxFrameWidthRatio, minFrameHeightRatio, minFrameWidthRatio, PREVIEW_H, PREVIEW_W]);
 
   const finishFrameResize = useCallback(() => {
     if (!isResizingRef.current) return;
 
     isResizingRef.current = false;
     setIsResizing(false);
-    setRatios(frameRatiosRef.current);
+    if (hasFrameResizeChangedRef.current) {
+      setRatios(frameRatiosRef.current);
+    }
   }, [setRatios]);
 
   const resizeResponders = useMemo(() => {
     const createResponder = (horizontalDirection: number, verticalDirection: number) =>
       PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_event, gestureState) =>
+          !isCapturingRef.current && (
+            Math.abs(gestureState.dx) >= RESIZE_GESTURE_THRESHOLD ||
+            Math.abs(gestureState.dy) >= RESIZE_GESTURE_THRESHOLD
+          ),
         onPanResponderGrant: beginFrameResize,
         onPanResponderMove: (_event, gestureState) => {
+          if (isCapturingRef.current) return;
+
           updateFrameResize(
             horizontalDirection,
             verticalDirection,
@@ -374,13 +411,15 @@ export const FramedCameraScanner: React.FC = () => {
   // Final capture — keeps the confirmed live text and captures its cropped photo
   // -------------------------------------------------------------------------
   const handleCapture = useCallback(async () => {
-    if (!cameraRef.current || isCapturing || isResizingRef.current) return;
+    if (!cameraRef.current || isCapturingRef.current || isResizingRef.current) return;
 
     const stableLiveResult = liveResult?.isStable && liveResult.text.trim()
       ? liveResult
       : null;
+    const captureFrameRevision = frameRevisionRef.current;
 
     try {
+      isCapturingRef.current = true;
       setIsCapturing(true);
       isPollingRef.current = false; // stop live loop during capture
 
@@ -402,6 +441,10 @@ export const FramedCameraScanner: React.FC = () => {
           isStable: true,
         });
         return;
+      }
+
+      if (captureFrameRevision !== frameRevisionRef.current) {
+        throw new Error('A área de leitura foi alterada. Tente capturar novamente.');
       }
 
       const { cropX, cropY, cropW, cropH } = computePhotoCropRect(
@@ -426,6 +469,10 @@ export const FramedCameraScanner: React.FC = () => {
         matchedFields = ocrResult?.matchedFields || 0;
       }
 
+      if (captureFrameRevision !== frameRevisionRef.current) {
+        throw new Error('A área de leitura foi alterada. Tente capturar novamente.');
+      }
+
       if (!text) {
         throw new Error('Não foi possível ler o código na foto capturada. Tente novamente.');
       }
@@ -445,6 +492,7 @@ export const FramedCameraScanner: React.FC = () => {
         message: getCameraErrorMessage(error),
       });
     } finally {
+      isCapturingRef.current = false;
       setIsCapturing(false);
     }
   }, [isCapturing, isPhotoMode, liveResult, handleScannerCapture, computePhotoCropRect, showFeedback]);
@@ -637,7 +685,8 @@ function getCameraErrorMessage(error: unknown) {
     message.startsWith('Não ') ||
     message.startsWith('Nenhum ') ||
     message.startsWith('Ocorreu ') ||
-    message.startsWith('A câmera ')
+    message.startsWith('A câmera ') ||
+    message.startsWith('A área ')
   ) {
     return message;
   }
@@ -674,6 +723,9 @@ const MAX_FRAME_WIDTH_RATIO = 0.96;
 const MIN_FRAME_HEIGHT_RATIO = 0.05;
 const MAX_FRAME_HEIGHT_RATIO = 0.9;
 const RESIZE_HANDLE_SIZE = 44;
+const RESIZE_HANDLE_KNOB_SIZE = 20;
+const MIN_FRAME_PIXEL_SIZE = RESIZE_HANDLE_KNOB_SIZE + 8;
+const RESIZE_GESTURE_THRESHOLD = 4;
 
 const ScannerRoot = styled(View, {
   backgroundColor: '$black',
@@ -716,8 +768,8 @@ const ResizeHandleKnob = styled(View, {
   backgroundColor: '$white',
   borderRadius: 999,
   borderWidth: 3,
-  height: 20,
-  width: 20,
+  height: RESIZE_HANDLE_KNOB_SIZE,
+  width: RESIZE_HANDLE_KNOB_SIZE,
 });
 
 const HelpBox = styled(View, {
@@ -779,6 +831,7 @@ const Actions = styled(View, {
   justifyContent: 'space-around',
   paddingHorizontal: 40,
   position: 'absolute',
+  zIndex: 30,
 });
 
 const ActionButton = styled(Button, {
