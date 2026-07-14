@@ -67,10 +67,10 @@ function uniqueLineOptions(reports: QualityReport[]) {
   const lineMap = new Map<number, string>();
 
   reports.forEach(report => {
-    const lineId = report.pallet?.lineId;
-    if (!lineId) return;
+    const lineId = report.pallet?.line?.id ?? report.pallet?.lineId;
+    if (lineId == null) return;
 
-    lineMap.set(lineId, report.pallet.lineName ?? `Linha ${lineId}`);
+    lineMap.set(lineId, report.pallet?.line?.name ?? `Linha ${lineId}`);
   });
 
   return Array.from(lineMap.entries()).map(([value, label]) => ({ label, value }));
