@@ -53,7 +53,7 @@ export function ForceUpdateModal({ currentVersion, downloadUrl, latestVersion }:
       <Title>Atualização obrigatória</Title>
       <VersionText>Nova versão: {latestVersion}</VersionText>
       <Description>
-        Sua versão atual é {currentVersion}. Para continuar usando o Valorlog, instale a nova versão.
+        Sua versão atual é {currentVersion}. Para continuar usando o Apollo, instale a nova versão.
       </Description>
 
       {status !== "idle" ? (
