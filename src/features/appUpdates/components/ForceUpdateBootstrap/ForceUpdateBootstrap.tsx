@@ -24,6 +24,7 @@ export function ForceUpdateBootstrap() {
         maxWidth: 460,
         minHeight: 0,
         preventClose: true,
+        priority: 100,
         showCloseButton: false,
         showHeader: false,
         widthPercent: 90,

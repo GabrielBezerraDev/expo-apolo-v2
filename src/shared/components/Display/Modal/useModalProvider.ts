@@ -11,7 +11,7 @@ export function useModalProvider() {
     idCounter.current += 1;
     const id = `modal-${Date.now()}-${idCounter.current}`;
 
-    setModals(current => [...current, { id, component, options }]);
+    setModals(current => sortModals([...current, { id, component, options }]));
     return id;
   }, []);
 
@@ -29,12 +29,22 @@ export function useModalProvider() {
   }, []);
 
   const closeAllModals = useCallback(() => {
-    setModals(current => current.map(modal => ({ ...modal, closing: true })));
+    setModals(current =>
+      current.map(modal =>
+        modal.options?.preventClose ? modal : { ...modal, closing: true },
+      ),
+    );
   }, []);
 
   const updateModal = useCallback((id: string, options: Partial<ModalOptions>) => {
     setModals(current =>
-      current.map(modal => (modal.id === id ? { ...modal, options: { ...modal.options, ...options } } : modal)),
+      sortModals(
+        current.map(modal =>
+          modal.id === id
+            ? { ...modal, options: { ...modal.options, ...options } }
+            : modal,
+        ),
+      ),
     );
   }, []);
 
@@ -67,4 +77,10 @@ export function useModalProvider() {
     removeModal,
     value,
   };
+}
+
+function sortModals(modals: ModalConfig[]) {
+  return modals.sort(
+    (first, second) => (first.options?.priority ?? 0) - (second.options?.priority ?? 0),
+  );
 }

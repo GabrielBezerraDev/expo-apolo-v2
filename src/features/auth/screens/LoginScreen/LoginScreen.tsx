@@ -150,20 +150,32 @@ export function LoginScreen(_props: Props) {
         email,
         password: data.password,
       });
-
-      await persistCredentialsPreference({
+      const nextStatus = await login(normalizeAuthTokens(response), {
         email,
-        password: data.password,
-        remember: data.remember,
+        shouldRemember: data.remember,
       });
 
-      await login(normalizeAuthTokens(response));
+      try {
+        if (nextStatus === "passwordChangeRequired") {
+          await clearRememberedCredentials();
+        } else {
+          await persistCredentialsPreference({
+            email,
+            password: data.password,
+            remember: data.remember,
+          });
+        }
+      } catch {
+        await clearRememberedCredentials().catch(() => undefined);
+      }
     } catch (error) {
       setLoginError(
         error instanceof ApiError
           ? error.message
           : "Não foi possível entrar. Verifique seus dados e tente novamente.",
       );
+    } finally {
+      loginMutation.reset();
     }
   };
   const remember = watch("remember");

@@ -9,6 +9,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@navigation/navigation.protocol";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { FrameProvider, FramedCameraScanner } from "@features/camera";
+import { PasswordChangeBootstrap } from "@features/auth";
 import { NotificationBootstrap } from "@features/notifications";
 import {
   ExitExtraEvidence,
@@ -26,10 +27,7 @@ import { RoadmapPhotosScreen } from "@features/pallets/screens/roadmap";
 import { PalletProvider } from "@features/pallets/providers";
 import { LottieAnimLoading } from "@shared/components/Feedback";
 import { AppHeader, AppHeaderProvider } from "@shared/components/Navigation/AppHeader";
-import {
-  AuthSessionProvider,
-  useAuthSession,
-} from "@shared/services/authSession";
+import { useAuthSession } from "@shared/services/authSession";
 import { AuthNavigator } from "./AuthNavigator";
 import { MainTabsNavigator } from "./MainTabsNavigator";
 import { SocketProvider } from "@shared/services/socket";
@@ -51,18 +49,16 @@ export function RootNavigator() {
   };
 
   return (
-    <AuthSessionProvider>
-      <NavigationContainer theme={navTheme}>
-        <RootNavigatorContent />
-      </NavigationContainer>
-    </AuthSessionProvider>
+    <NavigationContainer theme={navTheme}>
+      <RootNavigatorContent />
+    </NavigationContainer>
   );
 }
 
 function RootNavigatorContent() {
-  const { isAuthenticated, isLoading } = useAuthSession();
+  const { status } = useAuthSession();
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <View flex={1} alignItems="center" justifyContent="center">
         <LottieAnimLoading label="Carregando aplicativo" />
@@ -70,11 +66,20 @@ function RootNavigatorContent() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (status === "signedOut") {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Auth" component={AuthNavigator} />
       </Stack.Navigator>
+    );
+  }
+
+  if (status === "passwordChangeRequired") {
+    return (
+      <View flex={1} alignItems="center" justifyContent="center" backgroundColor="$background">
+        <PasswordChangeBootstrap />
+        <LottieAnimLoading label="Atualizando segurança da conta" />
+      </View>
     );
   }
 

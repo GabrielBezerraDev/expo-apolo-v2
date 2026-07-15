@@ -13,7 +13,7 @@ type ApiBodyRequestParams<TBody> = ApiRequestParams & {
 type ApiRequestOptions = ApiRequestParams & {
   authToken?: string;
   body?: unknown;
-  method: "DELETE" | "GET" | "POST";
+  method: "DELETE" | "GET" | "PATCH" | "POST";
 };
 
 export type ApiClient = {
@@ -23,6 +23,10 @@ export type ApiClient = {
   ) => Promise<TResponse>;
   get: <TResponse>(path: string, params?: ApiRequestParams) => Promise<TResponse>;
   hasAuthToken: boolean;
+  patch: <TResponse, TBody = unknown>(
+    path: string,
+    params?: ApiBodyRequestParams<TBody>,
+  ) => Promise<TResponse>;
   post: <TResponse, TBody = unknown>(
     path: string,
     params?: ApiBodyRequestParams<TBody>,
@@ -94,6 +98,16 @@ export function useApiClient(): ApiClient {
           query: params.query,
         }),
       hasAuthToken: Boolean(token),
+      patch: <TResponse, TBody = unknown>(
+        path: string,
+        params: ApiBodyRequestParams<TBody> = {},
+      ) =>
+        apiRequest<TResponse>(path, {
+          authToken: token,
+          body: params.body,
+          method: "PATCH",
+          query: params.query,
+        }),
       post: <TResponse, TBody = unknown>(
         path: string,
         params: ApiBodyRequestParams<TBody> = {},
@@ -166,7 +180,16 @@ async function apiRequest<TResponse>(
       throw new ApiError(await getErrorMessage(response), response.status);
     }
 
-    return response.json() as Promise<TResponse>;
+    if (response.status === 204) return undefined as TResponse;
+
+    const responseText = await response.text();
+    if (!responseText.trim()) return undefined as TResponse;
+
+    try {
+      return JSON.parse(responseText) as TResponse;
+    } catch {
+      throw new ApiError("O servidor retornou uma resposta inválida.", response.status);
+    }
   } catch (error) {
     if (didTimeout) {
       throw new ApiError("Tempo limite da requisição excedido.", 408);
