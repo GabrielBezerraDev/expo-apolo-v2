@@ -15,12 +15,12 @@
     },
     "android": {
       "package": "com.valorlogocrexpo",
+      "googleServicesFile": "./google-services.json",
       "icon": "./src/assets/apollo-icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/apollo-icon-foreground.png",
-        "backgroundColor": "#fff4fc"
+        "backgroundColor": "#fff4fd"
       },
-      "usesCleartextTraffic": true,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.REQUEST_INSTALL_PACKAGES"
@@ -30,18 +30,41 @@
       [
         "expo-camera",
         {
-            "cameraPermission": "Permita que o Apollo use a câmera para escanear etiquetas."
+          "cameraPermission": "Permita que o Apollo use a câmera para escanear etiquetas."
         }
       ],
       [
         "react-native-vision-camera",
         {
-            "cameraPermissionText": "Permita que o Apollo use a câmera para escanear etiquetas."
+          "cameraPermissionText": "Permita que o Apollo use a câmera para escanear etiquetas."
         }
       ],
       "@react-native-community/datetimepicker",
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ff6200",
+          "image": "./src/assets/apollo-splash.png",
+          "imageWidth": 220,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ]
   }
 }
