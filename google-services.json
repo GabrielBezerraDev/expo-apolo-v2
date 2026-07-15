@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "480683612283",
+    "project_id": "apolo-44879",
+    "storage_bucket": "apolo-44879.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480683612283:android:21467a139a80a9d5e96ade",
+        "android_client_info": {
+          "package_name": "com.Apolo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWBqygthUGaj71-yIfPrDCGYYNjpnMcZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480683612283:android:fd53f156b3cd0c1ae96ade",
+        "android_client_info": {
+          "package_name": "com.outputmaterials"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWBqygthUGaj71-yIfPrDCGYYNjpnMcZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480683612283:android:d1749d4bdfcd3745e96ade",
+        "android_client_info": {
+          "package_name": "com.valorlogocrexpo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWBqygthUGaj71-yIfPrDCGYYNjpnMcZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
