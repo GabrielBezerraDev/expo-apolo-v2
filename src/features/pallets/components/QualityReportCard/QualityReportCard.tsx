@@ -57,7 +57,6 @@ export function QualityReportCard({ item, reportType }: Props) {
   const { closeModal, openModal } = useModal();
   const navigation = useNavigation<Navigation>();
   const pallet = item.pallet ?? {};
-
   const openHistoryScreen = useCallback(() => {
     if (!pallet.id) return;
 
@@ -109,7 +108,7 @@ export function QualityReportCard({ item, reportType }: Props) {
       <Line>BATCH: {pallet.batch ?? "-"}</Line>
       <Line>Variante: {pallet.variant ?? "-"}</Line>
       <Line>Quantidade: {pallet.quantity ?? "-"}</Line>
-      <Line>Linha: {pallet.lineName ?? pallet.lineId ?? "-"}</Line>
+      <Line>Linha: {pallet.line?.name ?? pallet.line?.id ?? pallet.lineId ?? "-"}</Line>
     </AppCard>
   );
 }

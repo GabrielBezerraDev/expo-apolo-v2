@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react-native";
-import { Button, styled, Text, useWindowDimensions, View } from "tamagui";
+import { Button, ScrollView, styled, Text, useWindowDimensions, View } from "tamagui";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@navigation/navigation.protocol";
 import { useAuthSession } from "@shared/services/authSession";
@@ -21,15 +22,13 @@ import {
   saveRememberedCredentials,
 } from "../../services";
 import { useLoginMutation } from "./useLoginMutation";
+import { version as currentVersion } from "../../../../../package.json";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
-const Screen = styled(View, {
+const Screen = styled(ScrollView, {
   flex: 1,
   backgroundColor: "$background",
-  paddingHorizontal: 24,
-  paddingBottom: 18,
-  paddingTop: 18
 });
 const TopActions = styled(View, { alignItems: "flex-end", paddingTop:20 });
 const Form = styled(View, { gap: 16, flex: 4, alignItems: 'center', justifyContent: 'center', width: '100%' });
@@ -183,57 +182,79 @@ export function LoginScreen(_props: Props) {
   };
 
   return (
-    <Screen>
-      <LoginAnimatedHeader />
-      <Form>
-        <AppInput<LoginFormData>
-          controllerReactFormsProps={{
-            control,
-            name: "email",
-          }}
-          label="E-mail"
-          placeholder="operador@valorlog.com"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          error={errors.email?.message}
-        />
-        <AppInput<LoginFormData>
-          controllerReactFormsProps={{
-            control,
-            name: "password",
-          }}
-          label="Senha"
-          placeholder="Digite sua senha"
-          isPassword
-          error={errors.password?.message}
-        />
-        {loginError ? <AuthErrorText>{loginError}</AuthErrorText> : null}
-        <Inline>
-          <Remember onPress={toggleRemember}>
-            <Checkbox checked={remember}>
-              {remember ? <Check size={14} color={theme.white} /> : null}
-            </Checkbox>
-            <SmallText>Lembrar de mim</SmallText>
-          </Remember>
-          <LinkText>Esqueci minha senha</LinkText>
-        </Inline>
-        <AppButton
-          style={{ width: "100%", height: height * 0.06 }}
-          title="ENTRAR"
-          loading={isSubmitting || loginMutation.isPending}
-          onPress={handleSubmit(submit)}
-        />
-      </Form>
-      <FooterRow>
-        <Version>Versão Atual: 1.0.0</Version>
-        <PoweredRow paddingHorizontal={height * 0.0001}>
-          <PoweredText>powered by</PoweredText>
-          <ShinyConecthus />
-        </PoweredRow>
-      </FooterRow>
-    </Screen>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={keyboardAvoidingStyle}
+    >
+      <Screen
+        automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+        contentContainerStyle={screenContentStyle}
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <LoginAnimatedHeader />
+        <Form>
+          <AppInput<LoginFormData>
+            controllerReactFormsProps={{
+              control,
+              name: "email",
+            }}
+            label="E-mail"
+            placeholder="operador@valorlog.com"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            error={errors.email?.message}
+          />
+          <AppInput<LoginFormData>
+            controllerReactFormsProps={{
+              control,
+              name: "password",
+            }}
+            label="Senha"
+            placeholder="Digite sua senha"
+            isPassword
+            error={errors.password?.message}
+          />
+          {loginError ? <AuthErrorText>{loginError}</AuthErrorText> : null}
+          <Inline>
+            <Remember onPress={toggleRemember}>
+              <Checkbox checked={remember}>
+                {remember ? <Check size={14} color={theme.white} /> : null}
+              </Checkbox>
+              <SmallText>Lembrar de mim</SmallText>
+            </Remember>
+            <LinkText>Esqueci minha senha</LinkText>
+          </Inline>
+          <AppButton
+            style={{ width: "100%", height: height * 0.06 }}
+            title="ENTRAR"
+            loading={isSubmitting || loginMutation.isPending}
+            onPress={handleSubmit(submit)}
+          />
+        </Form>
+        <FooterRow>
+          <Version>Versão Atual: {currentVersion}</Version>
+          <PoweredRow paddingHorizontal={height * 0.0001}>
+            <PoweredText>powered by</PoweredText>
+            <ShinyConecthus />
+          </PoweredRow>
+        </FooterRow>
+      </Screen>
+    </KeyboardAvoidingView>
   );
 }
+
+const keyboardAvoidingStyle = {
+  flex: 1,
+};
+
+const screenContentStyle = {
+  flexGrow: 1,
+  paddingBottom: 18,
+  paddingHorizontal: 24,
+  paddingTop: 18,
+};
 
 async function persistCredentialsPreference({
   email,

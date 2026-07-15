@@ -3,6 +3,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import {
   Platform,
   LayoutChangeEvent,
+  PanResponder,
 } from 'react-native';
 import { Button, Spinner, styled, Text, View } from 'tamagui';
 import {
@@ -58,8 +59,10 @@ export const FramedCameraScanner: React.FC = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [liveResult, setLiveResult] = useState<LiveOCRResult | null>(null);
   const [cameraLayout, setCameraLayout] = useState({ width: 0, height: 0 });
+  const cameraLayoutRef = useRef(cameraLayout);
 
   // Refs avoid re-creating the poll loop on every render
+  const isCapturingRef = useRef(false);
   const isPollingRef = useRef(false);
   const isProcessingRef = useRef(false);
   const consecutiveSameReads = useRef(0);
@@ -85,6 +88,7 @@ export const FramedCameraScanner: React.FC = () => {
     geometry,
     ratios,
     scanner,
+    setRatios,
     handleScannerCapture,
     handleScannerCancel,
     formatTextDataWithRegex,
@@ -95,6 +99,13 @@ export const FramedCameraScanner: React.FC = () => {
   const isPhotoMode = mode === 'photo';
   const isLandscape = orientation === 'LandScape';
   const nativeOrientation = isLandscape ? 'landscape' : 'portrait';
+  const [frameRatios, setFrameRatios] = useState(ratios);
+  const [isResizing, setIsResizing] = useState(false);
+  const frameRatiosRef = useRef(ratios);
+  const frameRevisionRef = useRef(0);
+  const isResizingRef = useRef(false);
+  const hasFrameResizeChangedRef = useRef(false);
+  const resizeStartRatiosRef = useRef(ratios);
   
   const {
     screenWidth: SCREEN_W, screenHeight: SCREEN_H,
@@ -102,19 +113,130 @@ export const FramedCameraScanner: React.FC = () => {
 
   const PREVIEW_W = cameraLayout.width || SCREEN_W;
   const PREVIEW_H = cameraLayout.height || SCREEN_H;
-  const FRAME_W = PREVIEW_W * ratios.widthRatio;
-  const FRAME_H = PREVIEW_H * ratios.heightRatio;
+  const FRAME_W = PREVIEW_W * frameRatios.widthRatio;
+  const FRAME_H = PREVIEW_H * frameRatios.heightRatio;
   const FRAME_X = (PREVIEW_W - FRAME_W) / 2;
   const FRAME_Y = (PREVIEW_H - FRAME_H) / 2;
+  const minFrameWidthRatio = Math.max(
+    MIN_FRAME_WIDTH_RATIO,
+    MIN_FRAME_PIXEL_SIZE / PREVIEW_W,
+  );
+  const minFrameHeightRatio = Math.max(
+    MIN_FRAME_HEIGHT_RATIO,
+    MIN_FRAME_PIXEL_SIZE / PREVIEW_H,
+  );
+  const maxFrameWidthRatio = Math.max(
+    minFrameWidthRatio,
+    Math.min(MAX_FRAME_WIDTH_RATIO, 1 - RESIZE_HANDLE_KNOB_SIZE / PREVIEW_W),
+  );
+  const maxFrameHeightRatio = Math.max(
+    minFrameHeightRatio,
+    Math.min(MAX_FRAME_HEIGHT_RATIO, 1 - RESIZE_HANDLE_KNOB_SIZE / PREVIEW_H),
+  );
 
   const handleCameraLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
+    const current = cameraLayoutRef.current;
+    if (current.width === width && current.height === height) return;
 
-    setCameraLayout(current => {
-      if (current.width === width && current.height === height) return current;
-      return { width, height };
-    });
+    cameraLayoutRef.current = { width, height };
+    frameRevisionRef.current += 1;
+    consecutiveSameReads.current = 0;
+    lastTextRef.current = '';
+    setLiveResult(null);
+    setCameraLayout({ width, height });
   }, []);
+
+  const beginFrameResize = useCallback(() => {
+    if (isCapturingRef.current) return;
+
+    resizeStartRatiosRef.current = frameRatiosRef.current;
+    hasFrameResizeChangedRef.current = false;
+    isResizingRef.current = true;
+    setIsResizing(true);
+  }, []);
+
+  const updateFrameResize = useCallback((
+    horizontalDirection: number,
+    verticalDirection: number,
+    translationX: number,
+    translationY: number,
+  ) => {
+    const start = resizeStartRatiosRef.current;
+    const next = {
+      widthRatio: clamp(
+        start.widthRatio + horizontalDirection * ((translationX * 2) / PREVIEW_W),
+        minFrameWidthRatio,
+        maxFrameWidthRatio,
+      ),
+      heightRatio: clamp(
+        start.heightRatio + verticalDirection * ((translationY * 2) / PREVIEW_H),
+        minFrameHeightRatio,
+        maxFrameHeightRatio,
+      ),
+    };
+
+    if (
+      next.widthRatio === frameRatiosRef.current.widthRatio &&
+      next.heightRatio === frameRatiosRef.current.heightRatio
+    ) {
+      return;
+    }
+
+    if (!hasFrameResizeChangedRef.current) {
+      hasFrameResizeChangedRef.current = true;
+      setLiveResult(null);
+      consecutiveSameReads.current = 0;
+      lastTextRef.current = '';
+    }
+
+    frameRatiosRef.current = next;
+    frameRevisionRef.current += 1;
+    setFrameRatios(next);
+  }, [maxFrameHeightRatio, maxFrameWidthRatio, minFrameHeightRatio, minFrameWidthRatio, PREVIEW_H, PREVIEW_W]);
+
+  const finishFrameResize = useCallback(() => {
+    if (!isResizingRef.current) return;
+
+    isResizingRef.current = false;
+    setIsResizing(false);
+    if (hasFrameResizeChangedRef.current) {
+      setRatios(frameRatiosRef.current);
+    }
+  }, [setRatios]);
+
+  const resizeResponders = useMemo(() => {
+    const createResponder = (horizontalDirection: number, verticalDirection: number) =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_event, gestureState) =>
+          !isCapturingRef.current && (
+            Math.abs(gestureState.dx) >= RESIZE_GESTURE_THRESHOLD ||
+            Math.abs(gestureState.dy) >= RESIZE_GESTURE_THRESHOLD
+          ),
+        onPanResponderGrant: beginFrameResize,
+        onPanResponderMove: (_event, gestureState) => {
+          if (isCapturingRef.current) return;
+
+          updateFrameResize(
+            horizontalDirection,
+            verticalDirection,
+            gestureState.dx,
+            gestureState.dy,
+          );
+        },
+        onPanResponderRelease: finishFrameResize,
+        onPanResponderTerminate: finishFrameResize,
+        onPanResponderTerminationRequest: () => false,
+      });
+
+    return {
+      bottomLeft: createResponder(-1, 1),
+      bottomRight: createResponder(1, 1),
+      topLeft: createResponder(-1, -1),
+      topRight: createResponder(1, -1),
+    };
+  }, [beginFrameResize, finishFrameResize, updateFrameResize]);
 
   useEffect(() => {
     setOcrScreenOrientation(nativeOrientation).catch(() => undefined);
@@ -130,7 +252,11 @@ export const FramedCameraScanner: React.FC = () => {
   }, [resetScanner]);
 
   useEffect(() => {
-    isPollingRef.current = false;
+    frameRatiosRef.current = ratios;
+    frameRevisionRef.current += 1;
+    isResizingRef.current = false;
+    setFrameRatios(ratios);
+    setIsResizing(false);
     consecutiveSameReads.current = 0;
     lastTextRef.current = '';
     setLiveResult(null);
@@ -199,8 +325,9 @@ export const FramedCameraScanner: React.FC = () => {
   // Live OCR loop — takes snapshots and runs OCR in the background
   // -------------------------------------------------------------------------
   const runOCRTick = useCallback(async () => {
-    if (isProcessingRef.current || !cameraRef.current) return;
+    if (isProcessingRef.current || isResizingRef.current || !cameraRef.current) return;
     isProcessingRef.current = true;
+    const frameRevision = frameRevisionRef.current;
 
     try {
       // takeSnapshot is much faster than takePhoto — ~100ms vs ~800ms.
@@ -234,6 +361,8 @@ export const FramedCameraScanner: React.FC = () => {
         : rawText;
       const fields = ocrResult.fields || {};
       const matchedFields = ocrResult.matchedFields || 0;
+
+      if (isResizingRef.current || frameRevision !== frameRevisionRef.current) return;
 
       // Stability check — same read N times in a row = stable
       if (text === lastTextRef.current && text.length > 0) {
@@ -282,13 +411,15 @@ export const FramedCameraScanner: React.FC = () => {
   // Final capture — keeps the confirmed live text and captures its cropped photo
   // -------------------------------------------------------------------------
   const handleCapture = useCallback(async () => {
-    if (!cameraRef.current || isCapturing) return;
+    if (!cameraRef.current || isCapturingRef.current || isResizingRef.current) return;
 
     const stableLiveResult = liveResult?.isStable && liveResult.text.trim()
       ? liveResult
       : null;
+    const captureFrameRevision = frameRevisionRef.current;
 
     try {
+      isCapturingRef.current = true;
       setIsCapturing(true);
       isPollingRef.current = false; // stop live loop during capture
 
@@ -310,6 +441,10 @@ export const FramedCameraScanner: React.FC = () => {
           isStable: true,
         });
         return;
+      }
+
+      if (captureFrameRevision !== frameRevisionRef.current) {
+        throw new Error('A área de leitura foi alterada. Tente capturar novamente.');
       }
 
       const { cropX, cropY, cropW, cropH } = computePhotoCropRect(
@@ -334,6 +469,10 @@ export const FramedCameraScanner: React.FC = () => {
         matchedFields = ocrResult?.matchedFields || 0;
       }
 
+      if (captureFrameRevision !== frameRevisionRef.current) {
+        throw new Error('A área de leitura foi alterada. Tente capturar novamente.');
+      }
+
       if (!text) {
         throw new Error('Não foi possível ler o código na foto capturada. Tente novamente.');
       }
@@ -353,6 +492,7 @@ export const FramedCameraScanner: React.FC = () => {
         message: getCameraErrorMessage(error),
       });
     } finally {
+      isCapturingRef.current = false;
       setIsCapturing(false);
     }
   }, [isCapturing, isPhotoMode, liveResult, handleScannerCapture, computePhotoCropRect, showFeedback]);
@@ -389,6 +529,8 @@ export const FramedCameraScanner: React.FC = () => {
   const dim = 'rgba(0, 0, 0, 0.6)';
   const hasLive = liveResult && liveResult.text.length > 0;
   const frameBorderColor = liveResult?.isStable ? theme.success : hasLive ? theme.warning : theme.white;
+  const helpTop = Math.max(24, FRAME_Y - (isLandscape ? 120 : 220));
+  const scannerActionsTop = Math.min(FRAME_Y + FRAME_H + 40, PREVIEW_H - 72);
   return (
     <ScannerRoot>
       <Camera
@@ -407,16 +549,18 @@ export const FramedCameraScanner: React.FC = () => {
       {!isPhotoMode && (
         <>
           {/* Dimmed overlay */}
-          <OverlayBlock top={0} left={0} width={PREVIEW_W} height={FRAME_Y} backgroundColor={dim} />
+          <OverlayBlock pointerEvents="none" top={0} left={0} width={PREVIEW_W} height={FRAME_Y} backgroundColor={dim} />
           <OverlayBlock
+            pointerEvents="none"
             top={FRAME_Y + FRAME_H}
             left={0}
             width={PREVIEW_W}
             height={PREVIEW_H - (FRAME_Y + FRAME_H)}
             backgroundColor={dim}
           />
-          <OverlayBlock top={FRAME_Y} left={0} width={FRAME_X} height={FRAME_H} backgroundColor={dim} />
+          <OverlayBlock pointerEvents="none" top={FRAME_Y} left={0} width={FRAME_X} height={FRAME_H} backgroundColor={dim} />
           <OverlayBlock
+            pointerEvents="none"
             top={FRAME_Y}
             left={FRAME_X + FRAME_W}
             width={PREVIEW_W - (FRAME_X + FRAME_W)}
@@ -426,6 +570,7 @@ export const FramedCameraScanner: React.FC = () => {
 
           {/* Frame border — color changes based on detection state */}
           <FrameBorder
+            pointerEvents="none"
             top={FRAME_Y}
             left={FRAME_X}
             width={FRAME_W}
@@ -433,8 +578,45 @@ export const FramedCameraScanner: React.FC = () => {
             borderColor={frameBorderColor}
           />
 
+          <ResizeHandle
+            {...resizeResponders.topLeft.panHandlers}
+            accessible
+            accessibilityLabel="Ajustar canto superior esquerdo da área de leitura"
+            top={FRAME_Y - RESIZE_HANDLE_SIZE / 2}
+            left={FRAME_X - RESIZE_HANDLE_SIZE / 2}
+          >
+            <ResizeHandleKnob borderColor={frameBorderColor} />
+          </ResizeHandle>
+          <ResizeHandle
+            {...resizeResponders.topRight.panHandlers}
+            accessible
+            accessibilityLabel="Ajustar canto superior direito da área de leitura"
+            top={FRAME_Y - RESIZE_HANDLE_SIZE / 2}
+            left={FRAME_X + FRAME_W - RESIZE_HANDLE_SIZE / 2}
+          >
+            <ResizeHandleKnob borderColor={frameBorderColor} />
+          </ResizeHandle>
+          <ResizeHandle
+            {...resizeResponders.bottomLeft.panHandlers}
+            accessible
+            accessibilityLabel="Ajustar canto inferior esquerdo da área de leitura"
+            top={FRAME_Y + FRAME_H - RESIZE_HANDLE_SIZE / 2}
+            left={FRAME_X - RESIZE_HANDLE_SIZE / 2}
+          >
+            <ResizeHandleKnob borderColor={frameBorderColor} />
+          </ResizeHandle>
+          <ResizeHandle
+            {...resizeResponders.bottomRight.panHandlers}
+            accessible
+            accessibilityLabel="Ajustar canto inferior direito da área de leitura"
+            top={FRAME_Y + FRAME_H - RESIZE_HANDLE_SIZE / 2}
+            left={FRAME_X + FRAME_W - RESIZE_HANDLE_SIZE / 2}
+          >
+            <ResizeHandleKnob borderColor={frameBorderColor} />
+          </ResizeHandle>
+
           {/* Live OCR preview above the frame */}
-          <HelpBox top={FRAME_Y - (isLandscape ? 120 : 220)} width={PREVIEW_W}>
+          <HelpBox pointerEvents="none" top={helpTop} width={PREVIEW_W}>
             {hasLive ? (
               <LivePreview>
                 <LiveLabel>
@@ -450,7 +632,9 @@ export const FramedCameraScanner: React.FC = () => {
                 )}
               </LivePreview>
             ) : (
-              <HelpText>Alinhe a etiqueta dentro da área</HelpText>
+              <HelpText>
+                {isResizing ? 'Ajustando área de leitura...' : 'Alinhe a etiqueta ou arraste os cantos'}
+              </HelpText>
             )}
           </HelpBox>
         </>
@@ -465,12 +649,12 @@ export const FramedCameraScanner: React.FC = () => {
       {/* Action buttons */}
       <Actions
         width={PREVIEW_W}
-        {...(isPhotoMode ? { bottom: 32 } : { top: FRAME_Y + FRAME_H + 40 })}
+        {...(isPhotoMode ? { bottom: 32 } : { top: scannerActionsTop })}
       >
         <ActionButton
           actionVariant="cancel"
           onPress={handleCancel}
-          disabled={isCapturing}
+          disabled={isCapturing || isResizing}
         >
           <ActionButtonText>Cancelar</ActionButtonText>
         </ActionButton>
@@ -478,7 +662,7 @@ export const FramedCameraScanner: React.FC = () => {
         <ActionButton
           actionVariant={!isPhotoMode && liveResult?.isStable ? "stable" : "capture"}
           onPress={handleCapture}
-          disabled={isCapturing}
+          disabled={isCapturing || isResizing}
         >
           {isCapturing ? (
             <Spinner color={theme.white} />
@@ -501,7 +685,8 @@ function getCameraErrorMessage(error: unknown) {
     message.startsWith('Não ') ||
     message.startsWith('Nenhum ') ||
     message.startsWith('Ocorreu ') ||
-    message.startsWith('A câmera ')
+    message.startsWith('A câmera ') ||
+    message.startsWith('A área ')
   ) {
     return message;
   }
@@ -533,6 +718,15 @@ const absoluteFillStyle = {
   left: 0,
 };
 
+const MIN_FRAME_WIDTH_RATIO = 0.1;
+const MAX_FRAME_WIDTH_RATIO = 0.96;
+const MIN_FRAME_HEIGHT_RATIO = 0.05;
+const MAX_FRAME_HEIGHT_RATIO = 0.9;
+const RESIZE_HANDLE_SIZE = 44;
+const RESIZE_HANDLE_KNOB_SIZE = 20;
+const MIN_FRAME_PIXEL_SIZE = RESIZE_HANDLE_KNOB_SIZE + 8;
+const RESIZE_GESTURE_THRESHOLD = 4;
+
 const ScannerRoot = styled(View, {
   backgroundColor: '$black',
   flex: 1,
@@ -559,6 +753,23 @@ const FrameBorder = styled(View, {
   borderRadius: 8,
   borderWidth: 3,
   position: 'absolute',
+});
+
+const ResizeHandle = styled(View, {
+  alignItems: 'center',
+  height: RESIZE_HANDLE_SIZE,
+  justifyContent: 'center',
+  position: 'absolute',
+  width: RESIZE_HANDLE_SIZE,
+  zIndex: 20,
+});
+
+const ResizeHandleKnob = styled(View, {
+  backgroundColor: '$white',
+  borderRadius: 999,
+  borderWidth: 3,
+  height: RESIZE_HANDLE_KNOB_SIZE,
+  width: RESIZE_HANDLE_KNOB_SIZE,
 });
 
 const HelpBox = styled(View, {
@@ -620,6 +831,7 @@ const Actions = styled(View, {
   justifyContent: 'space-around',
   paddingHorizontal: 40,
   position: 'absolute',
+  zIndex: 30,
 });
 
 const ActionButton = styled(Button, {
@@ -644,3 +856,7 @@ const ActionButtonText = styled(Text, {
   fontSize: 16,
   fontWeight: '600',
 });
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(value, max));
+}

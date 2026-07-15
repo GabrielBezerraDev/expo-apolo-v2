@@ -14,13 +14,18 @@ export type PalletStage =
   | "VALORLOG_ENTRY"
   | "VALORLOG_EXIT";
 
+export type QualityReportLine = {
+  id: number;
+  name: string;
+};
+
 export type QualityReportPallet = {
   id?: number;
   batch?: string;
   createdAt?: string;
   currentStage?: PalletStage | string;
+  line?: QualityReportLine;
   lineId?: number;
-  lineName?: string;
   quantity?: number;
   variant?: string;
 };
