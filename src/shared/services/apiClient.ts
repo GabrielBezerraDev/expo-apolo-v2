@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useAuthSession } from "@shared/services/authSession";
+import { getCurrentDevicePushToken } from "@shared/services/pushNotifications/devicePushToken";
 
 type ApiRequestParams = {
   query?: Record<string, unknown>;
@@ -12,10 +13,14 @@ type ApiBodyRequestParams<TBody> = ApiRequestParams & {
 type ApiRequestOptions = ApiRequestParams & {
   authToken?: string;
   body?: unknown;
-  method: "GET" | "POST";
+  method: "DELETE" | "GET" | "POST";
 };
 
 export type ApiClient = {
+  delete: <TResponse, TBody = unknown>(
+    path: string,
+    params?: ApiBodyRequestParams<TBody>,
+  ) => Promise<TResponse>;
   get: <TResponse>(path: string, params?: ApiRequestParams) => Promise<TResponse>;
   hasAuthToken: boolean;
   post: <TResponse, TBody = unknown>(
@@ -72,6 +77,16 @@ export function useApiClient(): ApiClient {
 
   return useMemo(
     () => ({
+      delete: <TResponse, TBody = unknown>(
+        path: string,
+        params: ApiBodyRequestParams<TBody> = {},
+      ) =>
+        apiRequest<TResponse>(path, {
+          authToken: token,
+          body: params.body,
+          method: "DELETE",
+          query: params.query,
+        }),
       get: <TResponse>(path: string, params: ApiRequestParams = {}) =>
         apiRequest<TResponse>(path, {
           authToken: token,
@@ -125,6 +140,7 @@ async function apiRequest<TResponse>(
   const url = buildUrl(path, params.query);
   const isFormData = isFormDataBody(params.body);
   const requestBody = buildRequestBody(params.body);
+  const devicePushToken = getCurrentDevicePushToken();
   const controller = new AbortController();
   const timeoutMs = isFormData ? FORM_DATA_API_TIMEOUT_MS : DEFAULT_API_TIMEOUT_MS;
   let didTimeout = false;
@@ -141,6 +157,7 @@ async function apiRequest<TResponse>(
         Accept: "application/json",
         ...(params.body == null || isFormData ? {} : { "Content-Type": "application/json" }),
         ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}),
+        ...(devicePushToken ? { "X-Device-Token": devicePushToken } : {}),
       },
       ...(requestBody == null ? {} : { body: requestBody }),
     });
