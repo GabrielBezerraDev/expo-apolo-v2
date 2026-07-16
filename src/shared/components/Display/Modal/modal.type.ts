@@ -22,6 +22,7 @@ export interface ModalOptions {
   placement?: ModalPlacement;
   closeOnBackdrop?: boolean;
   preventClose?: boolean;
+  priority?: number;
   animationType?: ModalAnimation;
   backdropColor?: string;
   contentStyle?: StyleProp<ViewStyle>;

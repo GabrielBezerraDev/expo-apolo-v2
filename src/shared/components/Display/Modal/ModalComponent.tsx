@@ -20,11 +20,12 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 type Props = {
   modal: ModalConfig;
   index: number;
+  isTopModal: boolean;
   requestClose: (id: string) => void;
   removeModal: (id: string) => void;
 };
 
-export function ModalComponent({ modal, index, requestClose, removeModal }: Props) {
+export function ModalComponent({ modal, index, isTopModal, requestClose, removeModal }: Props) {
   const {
     backdropAnimatedStyle,
     backdropColor,
@@ -53,6 +54,9 @@ export function ModalComponent({ modal, index, requestClose, removeModal }: Prop
 
   return (
     <AnimatedView
+      accessibilityElementsHidden={!isTopModal}
+      accessibilityViewIsModal={isTopModal && !isNotification}
+      importantForAccessibility={isTopModal ? "yes" : "no-hide-descendants"}
       pointerEvents={isNotification ? "box-none" : "auto"}
       style={[
         backdropBaseStyle,
@@ -93,7 +97,12 @@ export function ModalComponent({ modal, index, requestClose, removeModal }: Prop
             </ModalHeader>
           ) : null}
 
-          <ModalBody showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+          <ModalBody
+            automaticallyAdjustKeyboardInsets
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
             <ModalBodyContent style={bodyStyle}>{modal.component}</ModalBodyContent>
           </ModalBody>
 
