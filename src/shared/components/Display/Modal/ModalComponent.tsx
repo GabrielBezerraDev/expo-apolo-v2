@@ -1,4 +1,5 @@
 import React from "react";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import Animated from "react-native-reanimated";
 import { View } from "tamagui";
 import {
@@ -60,7 +61,6 @@ export function ModalComponent({ modal, index, isTopModal, requestClose, removeM
       pointerEvents={isNotification ? "box-none" : "auto"}
       style={[
         backdropBaseStyle,
-        placementStyles[resolvedPlacement],
         {
           backgroundColor: isNotification ? "transparent" : backdropColor || "rgba(0, 0, 0, 0.5)",
           zIndex: 1000 + index * 10,
@@ -70,45 +70,59 @@ export function ModalComponent({ modal, index, isTopModal, requestClose, removeM
     >
       {!isNotification ? <ModalBackdropButton onPress={handleBackdropPress} /> : null}
 
-      <AnimatedView
-        style={[
-          {
-            elevation: 8,
-            width: screenWidth * (widthPercent / 100),
-            height: heightPercent ? screenHeight * (heightPercent / 100) : undefined,
-            maxHeight: resolvedMaxHeight,
-            maxWidth,
-            left,
-            top,
-          },
-          contentAnimatedStyle,
-          contentStyle,
-        ]}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        enabled={!isNotification}
+        pointerEvents="box-none"
+        style={[keyboardAvoidingBaseStyle, placementStyles[resolvedPlacement]]}
       >
-        <ModalContent style={[{minHeight:resolvedMinHeight}]} onStartShouldSetResponder={() => true}>
-          {showHeader ? (
-            <ModalHeader>
-              <ModalTitle>{title || "Modal"}</ModalTitle>
-              {showCloseButton ? (
-                <ModalCloseButton onPress={handleClose} hitSlop={8}>
-                  <ModalCloseText>x</ModalCloseText>
-                </ModalCloseButton>
-              ) : null}
-            </ModalHeader>
-          ) : null}
-
-          <ModalBody
-            automaticallyAdjustKeyboardInsets
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ flexGrow: 1 }}
+        <AnimatedView
+          style={[
+            {
+              elevation: 8,
+              flexShrink: 1,
+              width: screenWidth * (widthPercent / 100),
+              height: heightPercent ? screenHeight * (heightPercent / 100) : undefined,
+              maxHeight: resolvedMaxHeight,
+              maxWidth,
+              left,
+              top,
+            },
+            contentAnimatedStyle,
+            contentStyle,
+          ]}
+        >
+          <ModalContent
+            style={{
+              flexShrink: 1,
+              maxHeight: "100%",
+              minHeight: resolvedMinHeight,
+            }}
           >
-            <ModalBodyContent style={bodyStyle}>{modal.component}</ModalBodyContent>
-          </ModalBody>
+            {showHeader ? (
+              <ModalHeader>
+                <ModalTitle>{title || "Modal"}</ModalTitle>
+                {showCloseButton ? (
+                  <ModalCloseButton onPress={handleClose} hitSlop={8}>
+                    <ModalCloseText>x</ModalCloseText>
+                  </ModalCloseButton>
+                ) : null}
+              </ModalHeader>
+            ) : null}
 
-          {showFooter && footerComponent ? <ModalFooter>{footerComponent}</ModalFooter> : null}
-        </ModalContent>
-      </AnimatedView>
+            <ModalBody
+              automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ flexGrow: 1 }}
+            >
+              <ModalBodyContent style={bodyStyle}>{modal.component}</ModalBodyContent>
+            </ModalBody>
+
+            {showFooter && footerComponent ? <ModalFooter>{footerComponent}</ModalFooter> : null}
+          </ModalContent>
+        </AnimatedView>
+      </KeyboardAvoidingView>
     </AnimatedView>
   );
 }
@@ -119,7 +133,12 @@ const backdropBaseStyle = {
   right: 0,
   bottom: 0,
   left: 0,
+};
+
+const keyboardAvoidingBaseStyle = {
+  flex: 1,
   padding: 20,
+  width: "100%" as const,
 };
 
 const placementStyles = {

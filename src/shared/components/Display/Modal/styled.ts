@@ -78,6 +78,7 @@ export const ModalCloseText = styled(Text, {
 
 export const ModalBody = styled(ScrollView, {
   flexGrow: 0,
+  flexShrink: 1,
 });
 
 export const ModalBodyContent = styled(View, {

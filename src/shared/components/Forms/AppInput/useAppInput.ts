@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { Dimensions, useWindowDimensions } from "react-native";
 import type { InputProps } from "tamagui";
 import { ControllerRenderProps, FieldValues } from "react-hook-form";
-import { useWindowDimensions } from "tamagui";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 
 type TextInputBlurEvent = unknown;
@@ -23,7 +23,9 @@ export function useAppInput({
   value,
 }: UseAppInputParams) {
   const { theme } = useThemeMode();
-  const { height } = useWindowDimensions();
+  // Subscribe to screen changes without sizing against the keyboard-resized window.
+  useWindowDimensions();
+  const screenHeight = Dimensions.get("screen").height;
   const [hidden, setHidden] = useState(Boolean(isPassword || secureTextEntry));
   const [focused, setFocused] = useState(false);
 
@@ -66,7 +68,7 @@ export function useAppInput({
     handleChangeText,
     handleFocus,
     hidden,
-    inputHeight: height * 0.07,
+    inputHeight: Math.max(52, screenHeight * 0.07),
     theme,
     toggleHidden,
   };
