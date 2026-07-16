@@ -15,7 +15,14 @@ export function ModalProvider({ children }: PropsWithChildren) {
       {modals.length > 0 ? (
         <ModalContainer pointerEvents="box-none">
           {modals.map((modal, index) => (
-            <ModalComponent key={modal.id} modal={modal} index={index} requestClose={closeModal} removeModal={removeModal} />
+            <ModalComponent
+              key={modal.id}
+              modal={modal}
+              index={index}
+              isTopModal={index === modals.length - 1}
+              requestClose={closeModal}
+              removeModal={removeModal}
+            />
           ))}
         </ModalContainer>
       ) : null}

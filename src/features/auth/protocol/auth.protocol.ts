@@ -3,18 +3,20 @@ export type LoginRequest = {
   password: string;
 };
 
-export type LoginResponse = {
+export type AuthTokenResponse = {
   accessToken?: string;
   refreshToken?: string;
   token?: string;
 };
+
+export type LoginResponse = AuthTokenResponse;
 
 export type AuthTokens = {
   refreshToken?: string;
   token: string;
 };
 
-export function normalizeAuthTokens(response: LoginResponse): AuthTokens {
+export function normalizeAuthTokens(response: AuthTokenResponse): AuthTokens {
   const token = response.token ?? response.accessToken;
 
   if (!token) {

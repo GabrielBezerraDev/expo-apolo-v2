@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { ModalProvider } from "@shared/components/Display/Modal";
+import { AuthSessionProvider } from "@shared/services/authSession";
 import { NetworkProvider } from "@shared/services/network";
 import { AppQueryProvider } from "./QueryProvider";
 import { AppThemeProvider } from "./ThemeProvider";
@@ -32,7 +33,9 @@ function AppSafeArea({ children }: PropsWithChildren) {
     >
       <View flex={1} backgroundColor="$black">
         <AppQueryProvider>
-          <ModalProvider>{children}</ModalProvider>
+          <AuthSessionProvider>
+            <ModalProvider>{children}</ModalProvider>
+          </AuthSessionProvider>
         </AppQueryProvider>
       </View>
     </SafeAreaView>

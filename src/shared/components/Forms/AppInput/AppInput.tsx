@@ -18,6 +18,8 @@ type AppInputControllerProps<T extends FieldValues> = Omit<
 type AppInputBaseProps = Pick<
   InputProps,
   | "autoCapitalize"
+  | "autoComplete"
+  | "autoCorrect"
   | "disabled"
   | "keyboardType"
   | "onBlur"
@@ -25,6 +27,7 @@ type AppInputBaseProps = Pick<
   | "onFocus"
   | "placeholder"
   | "secureTextEntry"
+  | "textContentType"
   | "value"
 >;
 
@@ -44,6 +47,8 @@ export function AppInput<T extends FieldValues>({
   leftIcon,
   rightIcon,
   autoCapitalize,
+  autoComplete,
+  autoCorrect,
   editable,
   disabled,
   isPassword,
@@ -53,6 +58,7 @@ export function AppInput<T extends FieldValues>({
   onFocus,
   placeholder,
   secureTextEntry,
+  textContentType,
   value,
   controllerReactFormsProps,
 }: Props<T>) {
@@ -89,9 +95,12 @@ export function AppInput<T extends FieldValues>({
             color="$text"
             height={inputHeight}
             autoCapitalize={autoCapitalize}
+            autoComplete={autoComplete}
+            autoCorrect={autoCorrect}
             keyboardType={keyboardType}
             placeholder={placeholder}
             disabled={editable === false || disabled}
+            textContentType={textContentType}
             value={getValue(field)}
             onChangeText={(value) => handleChangeText(value, field)}
             onBlur={(event) => handleBlur(event, field)}
@@ -99,7 +108,11 @@ export function AppInput<T extends FieldValues>({
           />
 
           {isPassword ? (
-            <InputIconButton onPress={toggleHidden} hitSlop={10}>
+            <InputIconButton
+              accessibilityLabel={hidden ? "Mostrar senha" : "Ocultar senha"}
+              onPress={toggleHidden}
+              hitSlop={10}
+            >
               {hidden ? (
                 <EyeOff
                   size={20}

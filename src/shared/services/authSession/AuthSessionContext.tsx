@@ -13,20 +13,62 @@ import React, {
 const AUTH_TOKEN_STORAGE_KEY = "valorlog.authToken";
 const AUTH_REFRESH_TOKEN_STORAGE_KEY = "valorlog.refreshToken";
 
-type AuthSessionTokens = {
+export type AuthSessionTokens = {
   refreshToken?: string;
   token: string;
 };
 
-type AuthSessionContextValue = {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (tokens: AuthSessionTokens) => Promise<void>;
-  logout: () => Promise<void>;
+export type AuthSessionStatus =
+  | "loading"
+  | "signedOut"
+  | "passwordChangeRequired"
+  | "authenticated";
+
+export type AuthSessionUser = {
+  email?: string;
+  id: number | string;
+  lastName?: string;
+  name?: string;
+  resetPassword: boolean;
+  [claim: string]: unknown;
+};
+
+export type PasswordChangePreference = {
+  email: string;
+  shouldRemember: boolean;
+};
+
+type ActiveAuthSessionStatus = Extract<
+  AuthSessionStatus,
+  "authenticated" | "passwordChangeRequired"
+>;
+
+type ActiveAuthSession = {
+  passwordChangePreference?: PasswordChangePreference;
   refreshToken?: string;
+  status: ActiveAuthSessionStatus;
+  token: string;
+  user: AuthSessionUser;
+  userId: number;
+};
+
+type AuthSessionState =
+  | { status: "loading" | "signedOut" }
+  | ActiveAuthSession;
+
+type AuthSessionContextValue = {
+  login: (
+    tokens: AuthSessionTokens,
+    passwordChangePreference?: PasswordChangePreference,
+  ) => Promise<ActiveAuthSessionStatus>;
+  logout: () => Promise<void>;
+  passwordChangePreference?: PasswordChangePreference;
+  refreshToken?: string;
+  replaceSessionTokens: (tokens: AuthSessionTokens) => Promise<void>;
+  status: AuthSessionStatus;
   token?: string;
   userId?: number;
-  user?: any;
+  user?: AuthSessionUser;
 };
 
 const AuthSessionContext = createContext<AuthSessionContextValue | undefined>(undefined);
@@ -35,24 +77,36 @@ type AuthSessionProviderProps = PropsWithChildren;
 
 export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
   const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshToken, setRefreshToken] = useState<string | undefined>();
-  const [token, setToken] = useState<string | undefined>();
+  const [session, setSession] = useState<AuthSessionState>({ status: "loading" });
 
   useEffect(() => {
     let active = true;
 
     async function loadStoredSession() {
       try {
-        const storedToken = await getStoredSessionItem(AUTH_TOKEN_STORAGE_KEY);
-        const storedRefreshToken = await getStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY);
+        const [storedToken, storedRefreshToken] = await Promise.all([
+          getStoredSessionItem(AUTH_TOKEN_STORAGE_KEY),
+          getStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY),
+        ]);
 
         if (!active) return;
 
-        setToken(storedToken ?? undefined);
-        setRefreshToken(storedRefreshToken || undefined);
-      } finally {
-        if (active) setIsLoading(false);
+        const storedSession = storedToken
+          ? createActiveSession({
+              refreshToken: storedRefreshToken ?? undefined,
+              token: storedToken,
+            })
+          : null;
+
+        if (storedSession) {
+          setSession(storedSession);
+          return;
+        }
+
+        await clearStoredSession();
+        if (active) setSession({ status: "signedOut" });
+      } catch {
+        if (active) setSession({ status: "signedOut" });
       }
     }
 
@@ -63,40 +117,61 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
     };
   }, []);
 
-  const login = useCallback(async (tokens: AuthSessionTokens) => {
-    await setStoredSessionItem(AUTH_TOKEN_STORAGE_KEY, tokens.token);
-
-    if (tokens.refreshToken) {
-      await setStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY, tokens.refreshToken);
-    } else {
-      await removeStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY);
+  const login = useCallback(async (
+    tokens: AuthSessionTokens,
+    passwordChangePreference?: PasswordChangePreference,
+  ) => {
+    const nextSession = createActiveSession(tokens);
+    if (!nextSession) {
+      throw new Error("O servidor retornou um token de sessão inválido.");
     }
 
-    setToken(tokens.token);
-    setRefreshToken(tokens.refreshToken);
+    await replaceStoredSessionTokens(tokens);
+    setSession({
+      ...nextSession,
+      passwordChangePreference:
+        nextSession.status === "passwordChangeRequired"
+          ? passwordChangePreference
+          : undefined,
+    });
+
+    return nextSession.status;
   }, []);
 
   const logout = useCallback(async () => {
-    await removeStoredSessionItem(AUTH_TOKEN_STORAGE_KEY);
-    await removeStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY);
-
-    setToken(undefined);
-    setRefreshToken(undefined);
-    queryClient.clear();
+    try {
+      await clearStoredSession();
+    } finally {
+      setSession({ status: "signedOut" });
+      queryClient.clear();
+    }
   }, [queryClient]);
+
+  const replaceSessionTokens = useCallback(async (tokens: AuthSessionTokens) => {
+    const nextSession = createActiveSession(tokens);
+    if (!nextSession || nextSession.status !== "authenticated") {
+      throw new Error("O servidor retornou um token de sessão inválido.");
+    }
+
+    await replaceStoredSessionTokens(tokens);
+    setSession(nextSession);
+  }, []);
+
+  const activeSession = isActiveSession(session) ? session : undefined;
 
   const value = useMemo<AuthSessionContextValue>(
     () => ({
-      isAuthenticated: Boolean(token),
-      isLoading,
       login,
       logout,
-      refreshToken,
-      token,
-      userId: getUserIdFromToken(token),
-      user: getUserFromToken(token)
+      passwordChangePreference: activeSession?.passwordChangePreference,
+      refreshToken: activeSession?.refreshToken,
+      replaceSessionTokens,
+      status: session.status,
+      token: activeSession?.token,
+      user: activeSession?.user,
+      userId: activeSession?.userId,
     }),
-    [isLoading, login, logout, refreshToken, token],
+    [activeSession, login, logout, replaceSessionTokens, session.status],
   );
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;
@@ -124,23 +199,100 @@ async function removeStoredSessionItem(key: string) {
   return SecureStore.deleteItemAsync(key);
 }
 
-function getUserIdFromToken(token?: string) {
-  const payload = decodeJwtPayload(token);
-  const userId = payload?.payload?.id;
-  const normalizedUserId = typeof userId === "string" ? Number(userId) : userId;
-
-  return Number.isInteger(normalizedUserId) ? normalizedUserId : undefined;
+async function clearStoredSession() {
+  await Promise.all([
+    removeStoredSessionItem(AUTH_TOKEN_STORAGE_KEY),
+    removeStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY),
+  ]);
 }
 
-function getUserFromToken(token?: string) {
-  const payload = decodeJwtPayload(token);
-  const user = payload?.payload;
-  return user ?? {}
+async function replaceStoredSessionTokens(tokens: AuthSessionTokens) {
+  const writes = await Promise.allSettled([
+    setStoredSessionItem(AUTH_TOKEN_STORAGE_KEY, tokens.token),
+    setOrRemoveStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY, tokens.refreshToken),
+  ]);
+
+  const failedWrite = writes.find(result => result.status === "rejected");
+  if (!failedWrite) return;
+
+  await Promise.allSettled([
+    removeStoredSessionItem(AUTH_TOKEN_STORAGE_KEY),
+    removeStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY),
+  ]);
+
+  throw failedWrite.reason;
+}
+
+function setOrRemoveStoredSessionItem(key: string, value?: string) {
+  return value ? setStoredSessionItem(key, value) : removeStoredSessionItem(key);
+}
+
+function isActiveSession(session: AuthSessionState): session is ActiveAuthSession {
+  return session.status === "authenticated" || session.status === "passwordChangeRequired";
+}
+
+function createActiveSession(tokens: AuthSessionTokens): ActiveAuthSession | null {
+  const user = getUserFromToken(tokens.token);
+  if (!user) return null;
+
+  const normalizedUserId = typeof user.id === "string" ? Number(user.id) : user.id;
+
+  if (!Number.isInteger(normalizedUserId)) return null;
+
+  return {
+    refreshToken: tokens.refreshToken,
+    status: user.resetPassword ? "passwordChangeRequired" : "authenticated",
+    token: tokens.token,
+    user,
+    userId: normalizedUserId,
+  };
+}
+
+function getUserFromToken(token: string): AuthSessionUser | null {
+  const claims = decodeJwtPayload(token);
+  if (!isRecord(claims) || !isRecord(claims.payload)) return null;
+
+  const expiresAt = claims.exp;
+  if (
+    typeof expiresAt !== "number" ||
+    !Number.isFinite(expiresAt) ||
+    expiresAt * 1000 <= Date.now()
+  ) {
+    return null;
   }
 
-function decodeJwtPayload(token?: string): { payload?: { id?: number | string } } | null {
-  const encodedPayload = token?.split(".")[1];
-  if (!encodedPayload || typeof globalThis.atob !== "function") return null;
+  const userId = claims.payload.id;
+  const resetPassword = claims.payload.resetPassword;
+  const normalizedUserId = typeof userId === "string" ? Number(userId) : userId;
+
+  if (
+    !Number.isInteger(normalizedUserId) ||
+    (typeof userId === "string" && !userId.trim()) ||
+    typeof resetPassword !== "boolean"
+  ) {
+    return null;
+  }
+
+  if (typeof userId !== "number" && typeof userId !== "string") return null;
+
+  return {
+    ...claims.payload,
+    id: userId,
+    resetPassword,
+  };
+}
+
+function decodeJwtPayload(token: string): unknown {
+  const tokenParts = token.split(".");
+  if (
+    tokenParts.length !== 3 ||
+    tokenParts.some(part => !part) ||
+    typeof globalThis.atob !== "function"
+  ) {
+    return null;
+  }
+
+  const encodedPayload = tokenParts[1];
 
   try {
     const base64 = encodedPayload
@@ -152,4 +304,8 @@ function decodeJwtPayload(token?: string): { payload?: { id?: number | string } 
   } catch {
     return null;
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

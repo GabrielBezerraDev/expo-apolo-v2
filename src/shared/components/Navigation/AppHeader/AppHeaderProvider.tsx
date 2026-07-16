@@ -40,12 +40,12 @@ export function AppHeaderProvider({ children }: PropsWithChildren) {
     setHeaderConfigState({
       ...defaultHeaderConfig,
       ...config,
-      subtitle: `Bem-vindo ${user.name}`,
+      subtitle: `Bem-vindo ${user?.name ?? ""}`,
       visible: config.visible ?? true,
       showBack: config.showBack ?? false,
       showMenu: config.showMenu ?? true,
     });
-  }, []);
+  }, [user?.name]);
 
   const value = useMemo(
     () => ({ headerConfig, setHeaderConfig }),
