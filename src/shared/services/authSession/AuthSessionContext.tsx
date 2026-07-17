@@ -82,40 +82,25 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
   useEffect(() => {
     let active = true;
 
-    async function loadStoredSession() {
+    async function initializeSession() {
       try {
-        const [storedToken, storedRefreshToken] = await Promise.all([
-          getStoredSessionItem(AUTH_TOKEN_STORAGE_KEY),
-          getStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY),
-        ]);
-
+        await clearStoredSession();
+      } catch {
+        // Legacy tokens must never prevent the current process from starting signed out.
+      } finally {
         if (!active) return;
 
-        const storedSession = storedToken
-          ? createActiveSession({
-              refreshToken: storedRefreshToken ?? undefined,
-              token: storedToken,
-            })
-          : null;
-
-        if (storedSession) {
-          setSession(storedSession);
-          return;
-        }
-
-        await clearStoredSession();
-        if (active) setSession({ status: "signedOut" });
-      } catch {
-        if (active) setSession({ status: "signedOut" });
+        queryClient.clear();
+        setSession({ status: "signedOut" });
       }
     }
 
-    loadStoredSession();
+    void initializeSession();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [queryClient]);
 
   const login = useCallback(async (
     tokens: AuthSessionTokens,
@@ -126,7 +111,6 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
       throw new Error("O servidor retornou um token de sessão inválido.");
     }
 
-    await replaceStoredSessionTokens(tokens);
     setSession({
       ...nextSession,
       passwordChangePreference:
@@ -153,7 +137,6 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
       throw new Error("O servidor retornou um token de sessão inválido.");
     }
 
-    await replaceStoredSessionTokens(tokens);
     setSession(nextSession);
   }, []);
 
@@ -187,14 +170,6 @@ export function useAuthSession() {
   return context;
 }
 
-async function getStoredSessionItem(key: string) {
-  return SecureStore.getItemAsync(key);
-}
-
-async function setStoredSessionItem(key: string, value: string) {
-  return SecureStore.setItemAsync(key, value);
-}
-
 async function removeStoredSessionItem(key: string) {
   return SecureStore.deleteItemAsync(key);
 }
@@ -204,27 +179,6 @@ async function clearStoredSession() {
     removeStoredSessionItem(AUTH_TOKEN_STORAGE_KEY),
     removeStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY),
   ]);
-}
-
-async function replaceStoredSessionTokens(tokens: AuthSessionTokens) {
-  const writes = await Promise.allSettled([
-    setStoredSessionItem(AUTH_TOKEN_STORAGE_KEY, tokens.token),
-    setOrRemoveStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY, tokens.refreshToken),
-  ]);
-
-  const failedWrite = writes.find(result => result.status === "rejected");
-  if (!failedWrite) return;
-
-  await Promise.allSettled([
-    removeStoredSessionItem(AUTH_TOKEN_STORAGE_KEY),
-    removeStoredSessionItem(AUTH_REFRESH_TOKEN_STORAGE_KEY),
-  ]);
-
-  throw failedWrite.reason;
-}
-
-function setOrRemoveStoredSessionItem(key: string, value?: string) {
-  return value ? setStoredSessionItem(key, value) : removeStoredSessionItem(key);
 }
 
 function isActiveSession(session: AuthSessionState): session is ActiveAuthSession {
