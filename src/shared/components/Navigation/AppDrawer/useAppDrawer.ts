@@ -1,3 +1,6 @@
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@navigation/navigation.protocol";
 import { useAuthSession } from "@shared/services/authSession";
 import { useApiClient } from "@shared/services/apiClient";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
@@ -9,8 +12,11 @@ type UseAppDrawerParams = {
   visible: boolean;
 };
 
+type Navigation = NativeStackNavigationProp<RootStackParamList>;
+
 export function useAppDrawer({ onClose, visible }: UseAppDrawerParams) {
   const { theme } = useThemeMode();
+  const navigation = useNavigation<Navigation>();
   const apiClient = useApiClient();
   const { logout } = useAuthSession();
   const { backdropStyle, closeWithAnimation, panelStyle } = useAppDrawerAnimation(visible);
@@ -37,10 +43,18 @@ export function useAppDrawer({ onClose, visible }: UseAppDrawerParams) {
     });
   };
 
+  const handleOpenManual = () => {
+    closeWithAnimation(() => {
+      onClose();
+      navigation.navigate("Manual");
+    });
+  };
+
   return {
     backdropStyle,
     closeDrawer,
     handleLogout,
+    handleOpenManual,
     panelStyle,
     theme,
   };

@@ -11,6 +11,7 @@ import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { FrameProvider, FramedCameraScanner } from "@features/camera";
 import { PasswordChangeBootstrap } from "@features/auth";
 import { NotificationBootstrap } from "@features/notifications";
+import { ManualScreen } from "@features/manual";
 import {
   ExitExtraEvidence,
   FormScreenRoadmap,
@@ -100,6 +101,7 @@ function LoggedInStack() {
               }}
             >
               <Stack.Screen name="Main" component={MainTabsNavigator} />
+              <Stack.Screen name="Manual" component={ManualScreen} />
               <Stack.Screen name="FormScreenRoadmap" component={FormScreenRoadmap} />
               <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
               <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
