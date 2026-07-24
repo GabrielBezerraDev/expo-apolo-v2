@@ -4,7 +4,6 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      '@babel/plugin-transform-export-namespace-from',
       [
         '@tamagui/babel-plugin',
         {

@@ -131,7 +131,7 @@ function wait(milliseconds: number) {
 }
 
 async function getAndroidDevicePushTokenAsync(): Promise<Notifications.DevicePushToken> {
-  // Expo SDK 54 caches rejected token promises, so retries must call the native module directly.
+  // expo-notifications 57.0.7 still caches rejected token promises, so retries call native directly.
   const tokenManager = requireNativeModule<{
     getDevicePushTokenAsync: () => Promise<string>;
   }>("ExpoPushTokenManager");

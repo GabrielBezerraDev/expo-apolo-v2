@@ -6,7 +6,6 @@
     "icon": "./src/assets/apollo-icon.png",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -28,12 +27,6 @@
       ]
     },
     "plugins": [
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Permita que o Apollo use a câmera para escanear etiquetas."
-        }
-      ],
       [
         "react-native-vision-camera",
         {
