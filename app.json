@@ -10,7 +10,10 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Permita que o Apollo use a câmera para escanear etiquetas."
+      }
     },
     "android": {
       "package": "com.valorlogocrexpo",
@@ -27,12 +30,6 @@
       ]
     },
     "plugins": [
-      [
-        "react-native-vision-camera",
-        {
-          "cameraPermissionText": "Permita que o Apollo use a câmera para escanear etiquetas."
-        }
-      ],
       "@react-native-community/datetimepicker",
       "expo-sqlite",
       "expo-secure-store",
