@@ -24,6 +24,18 @@ export type PalletHistoryChangeSocket = {
   lastName?: string;
   name?: string;
   palletId?: number;
+  source?: string | null;
   typeOperation: "CREATE" | "UPDATE" | "DELETE" | string;
   userId?: number;
+};
+
+export type PalletIncidentCreatedSocket = {
+  changedPalletStageTo: "STORAGE" | "VALORLOG_ENTRY" | "VALORLOG_EXIT";
+  createdAt: string;
+  incidentDescription: string;
+  incidentId: number;
+  incidentStage: "WIP" | "STORAGE" | "VALORLOG_ENTRY";
+  palletBatch: string;
+  palletId: number;
+  reportedBySRSUserName: string;
 };
