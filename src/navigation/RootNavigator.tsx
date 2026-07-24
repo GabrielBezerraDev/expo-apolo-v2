@@ -32,6 +32,7 @@ import { useAuthSession } from "@shared/services/authSession";
 import { AuthNavigator } from "./AuthNavigator";
 import { MainTabsNavigator } from "./MainTabsNavigator";
 import { SocketProvider } from "@shared/services/socket";
+import { InventoryListScreen } from '@features/inventoryCount';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -100,6 +101,7 @@ function LoggedInStack() {
                 header: props => <AppHeader {...props} />,
               }}
             >
+              <Stack.Screen name="InventoryList" component={InventoryListScreen} />
               <Stack.Screen name="Main" component={MainTabsNavigator} />
               <Stack.Screen name="Manual" component={ManualScreen} />
               <Stack.Screen name="FormScreenRoadmap" component={FormScreenRoadmap} />

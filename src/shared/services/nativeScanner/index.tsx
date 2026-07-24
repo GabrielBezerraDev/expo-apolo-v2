@@ -1,0 +1,1 @@
+export { addZebraScanListener } from "./useNativeScanner"

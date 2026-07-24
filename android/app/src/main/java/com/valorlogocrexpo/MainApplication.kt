@@ -10,6 +10,7 @@ import com.facebook.react.ReactHost
 import com.facebook.react.common.ReleaseLevel
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 import com.valorlogocrexpo.ocr.OCRPackage
+import com.valorlogocrexpo.zebrascanner.ZebraScannerPackage
 
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ExpoReactHostFactory
@@ -22,6 +23,7 @@ class MainApplication : Application(), ReactApplication {
       packageList =
         PackageList(this).packages.apply {
           add(OCRPackage())
+          add(ZebraScannerPackage())
         }
     )
   }
