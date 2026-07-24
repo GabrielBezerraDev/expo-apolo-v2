@@ -1,0 +1,1 @@
+export { getLocalManualUri } from "./manualAssetService";

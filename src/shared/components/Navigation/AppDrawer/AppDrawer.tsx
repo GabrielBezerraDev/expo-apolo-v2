@@ -23,7 +23,14 @@ type Props = {
 };
 
 export function AppDrawer({ visible, onClose }: Props) {
-  const { backdropStyle, closeDrawer, handleLogout, panelStyle, theme } = useAppDrawer({ onClose, visible });
+  const {
+    backdropStyle,
+    closeDrawer,
+    handleLogout,
+    handleOpenManual,
+    panelStyle,
+    theme,
+  } = useAppDrawer({ onClose, visible });
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={closeDrawer}>
@@ -40,6 +47,10 @@ export function AppDrawer({ visible, onClose }: Props) {
             </DrawerHeader>
 
             <DrawerSubtitle>Atalhos do sistema</DrawerSubtitle>
+
+            <DrawerItem onPress={handleOpenManual}>
+              <DrawerItemText>Manual do Usuário</DrawerItemText>
+            </DrawerItem>
 
             <DrawerItem onPress={handleLogout}>
               <DrawerItemText>Sair</DrawerItemText>

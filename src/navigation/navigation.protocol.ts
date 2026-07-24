@@ -13,6 +13,7 @@ export type MainTabsParamList = {
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
+  Manual: undefined;
   Scanner: undefined;
   FormScreenRoadmap: undefined;
   PalletsEvidence: undefined;
