@@ -1,7 +1,6 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "baseUrl": ".",
     "strict": true,
     "lib": ["esnext", "dom"],
     "paths": {
@@ -11,7 +10,7 @@
       "@features/*": ["./src/features/*"],
       "@navigation/*": ["./src/navigation/*"],
       "@shared/*": ["./src/shared/*"],
-      "@styles/*": ["src/shared/styles/*"]
+      "@styles/*": ["./src/shared/styles/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],

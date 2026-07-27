@@ -122,7 +122,9 @@ export function useOfflinePalletOperation() {
 
   const persistPalletPhoto = useCallback(async ({ palletIndex, photoIndex, sourceUri }: PersistPalletPhotoParams) => {
     const operation = await ensureOperationExists(saveFormDraft);
-    if (!operation) return sourceUri;
+    if (!operation) {
+      throw new Error("Não foi possível preparar o armazenamento da foto.");
+    }
     const previousUri = palletEvidence[palletIndex]?.photos[photoIndex] ?? null;
 
     const localUri = await savePalletOperationImage({
@@ -152,7 +154,9 @@ export function useOfflinePalletOperation() {
 
   const persistOperationPhoto = useCallback(async ({ fileName, sourceUri, step }: PersistOperationPhotoParams) => {
     const operation = await ensureOperationExists(saveFormDraft);
-    if (!operation) return sourceUri;
+    if (!operation) {
+      throw new Error("Não foi possível preparar o armazenamento da foto.");
+    }
 
     return savePalletOperationImage({
       fileName,

@@ -1,23 +1,26 @@
 // FramedCameraScanner.tsx
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  Platform,
+  Linking,
   LayoutChangeEvent,
   PanResponder,
 } from 'react-native';
+import { File } from 'expo-file-system';
 import { Button, Spinner, styled, Text, View } from 'tamagui';
 import {
   Camera,
-  useCameraDevices,
+  CommonResolutions,
+  useCameraDevice,
+  useCameraPermission,
+  usePhotoOutput,
 } from 'react-native-vision-camera';
 import { LottieAnimLoading } from '@shared/components/Feedback';
 import { useThemeMode } from '@shared/components/Actions/ThemeToggle';
 import { useFeedbackModal } from '@shared/components/Display/Modal';
 import { buttonPressStyle } from '@shared/styles/pressFeedback';
 import type {
-  CameraPermissionStatus,
-  CameraDevice,
-  CameraDeviceFormat,
+  CameraOrientation,
+  CameraRef,
 } from 'react-native-vision-camera';
 import { cropImageForOcr, recognizeTextFromImage, setOcrScreenOrientation } from '../../services';
 import { useFrame } from '../../providers';
@@ -32,34 +35,30 @@ export interface LiveOCRResult {
 }
 
 export const FramedCameraScanner: React.FC = () => {
-  const cameraRef = useRef<Camera>(null);
+  const cameraRef = useRef<CameraRef>(null);
   const { theme } = useThemeMode();
   const { showFeedback } = useFeedbackModal();
-  const devices = useCameraDevices();
-  const device = useMemo(() => {
-    if (!devices) return undefined;
-    if (Array.isArray(devices)) {
-      return devices.find((d: CameraDevice) => d.position === 'back');
-    }
-    return devices;
-  }, [devices]);
-  const bestPhotoFormat = useMemo<CameraDeviceFormat | undefined>(() => {
-    const firstFormat = device?.formats?.[0];
-    if (!firstFormat) return undefined;
+  const device = useCameraDevice('back');
+  const {
+    status: permissionStatus,
+    hasPermission,
+    canRequestPermission,
+    requestPermission,
+  } = useCameraPermission();
+  const photoOutput = usePhotoOutput({
+    targetResolution: CommonResolutions.HIGHEST_4_3,
+    containerFormat: 'jpeg',
+    quality: 0.95,
+    qualityPrioritization: 'quality',
+  });
 
-    return device.formats.reduce((best, format) => {
-      const bestPixels = best.photoWidth * best.photoHeight;
-      const formatPixels = format.photoWidth * format.photoHeight;
-
-      return formatPixels > bestPixels ? format : best;
-    }, firstFormat);
-  }, [device]);
-
-  const [permissionStatus, setPermissionStatus] = useState<CameraPermissionStatus>('not-determined');
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isRequestingPermission, setIsRequestingPermission] = useState(canRequestPermission);
   const [liveResult, setLiveResult] = useState<LiveOCRResult | null>(null);
   const [cameraLayout, setCameraLayout] = useState({ width: 0, height: 0 });
   const cameraLayoutRef = useRef(cameraLayout);
+  const hasRequestedPermissionRef = useRef(false);
 
   // Refs avoid re-creating the poll loop on every render
   const isCapturingRef = useRef(false);
@@ -68,21 +67,44 @@ export const FramedCameraScanner: React.FC = () => {
   const consecutiveSameReads = useRef(0);
   const lastTextRef = useRef<string>('');
 
-  const requestPermission = useCallback(async () => {
-    const status = await Camera.requestCameraPermission();
-    setPermissionStatus(status);
-    return status;
-  }, []);
+  const requestCameraPermission = useCallback(async () => {
+    setIsRequestingPermission(true);
+
+    try {
+      await requestPermission();
+    } catch (error) {
+      showFeedback({
+        title: 'Erro',
+        message: getCameraErrorMessage(error),
+      });
+    } finally {
+      setIsRequestingPermission(false);
+    }
+  }, [requestPermission, showFeedback]);
 
   useEffect(() => {
-    (async () => {
-      const current = await Camera.getCameraPermissionStatus();
-      setPermissionStatus(current);
-      if (current !== 'denied') await requestPermission();
-    })();
-  }, [requestPermission]);
+    if (canRequestPermission && !hasRequestedPermissionRef.current) {
+      hasRequestedPermissionRef.current = true;
+      void requestCameraPermission();
+    } else if (!canRequestPermission) {
+      setIsRequestingPermission(false);
+    }
+  }, [canRequestPermission, requestCameraPermission]);
 
-  const hasPermission = permissionStatus === 'granted';
+  const handlePermissionAction = useCallback(async () => {
+    try {
+      if (canRequestPermission) {
+        await requestCameraPermission();
+      } else {
+        await Linking.openSettings();
+      }
+    } catch (error) {
+      showFeedback({
+        title: 'Erro',
+        message: getCameraErrorMessage(error),
+      });
+    }
+  }, [canRequestPermission, requestCameraPermission, showFeedback]);
 
   const {
     geometry,
@@ -265,16 +287,16 @@ export const FramedCameraScanner: React.FC = () => {
   // -------------------------------------------------------------------------
   // Map screen frame → photo pixel coords
   // -------------------------------------------------------------------------
-  const computePhotoCropRect = useCallback((rawW: number, rawH: number) => {
-    // Normalize photo dims to match screen orientation. vision-camera returns
-    // sensor-native dims (landscape on most Android phones), but the native
-    // cropImage rotates the bitmap via EXIF before cropping. Swap so our math
-    // targets the post-rotation bitmap — this is why it worked on Tab A9 but
-    // broke on other devices with different sensor/EXIF alignment.
-    const screenIsPortrait = PREVIEW_H > PREVIEW_W;
-    const photoIsPortrait = rawH > rawW;
-    const photoW = screenIsPortrait === photoIsPortrait ? rawW : rawH;
-    const photoH = screenIsPortrait === photoIsPortrait ? rawH : rawW;
+  const computePhotoCropRect = useCallback((
+    rawW: number,
+    rawH: number,
+    photoOrientation: CameraOrientation,
+  ) => {
+    // The native OCR module applies EXIF rotation before cropping, so map the
+    // preview frame to the post-rotation bitmap dimensions.
+    const swapsDimensions = photoOrientation === 'left' || photoOrientation === 'right';
+    const photoW = swapsDimensions ? rawH : rawW;
+    const photoH = swapsDimensions ? rawW : rawH;
 
     const screenAspect = PREVIEW_W / PREVIEW_H;
     const photoAspect = photoW / photoH;
@@ -304,12 +326,7 @@ export const FramedCameraScanner: React.FC = () => {
   }, [PREVIEW_W, PREVIEW_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H]);
 
   const computeSnapshotCropRect = useCallback((rawW: number, rawH: number) => {
-    if (Platform.OS !== 'android') {
-      return computePhotoCropRect(rawW, rawH);
-    }
-
-    // Android snapshots are screenshots of the preview view, not sensor photos.
-    // Therefore the overlay maps directly to the snapshot bitmap dimensions.
+    // Snapshots are already rendered in preview orientation.
     const scaleX = rawW / PREVIEW_W;
     const scaleY = rawH / PREVIEW_H;
 
@@ -319,70 +336,80 @@ export const FramedCameraScanner: React.FC = () => {
       cropW: Math.round(FRAME_W * scaleX),
       cropH: Math.round(FRAME_H * scaleY),
     };
-  }, [PREVIEW_W, PREVIEW_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H, computePhotoCropRect]);
+  }, [PREVIEW_W, PREVIEW_H, FRAME_X, FRAME_Y, FRAME_W, FRAME_H]);
 
   // -------------------------------------------------------------------------
   // Live OCR loop — takes snapshots and runs OCR in the background
   // -------------------------------------------------------------------------
   const runOCRTick = useCallback(async () => {
-    if (isProcessingRef.current || isResizingRef.current || !cameraRef.current) return;
+    if (
+      isProcessingRef.current ||
+      isResizingRef.current ||
+      !isCameraReady ||
+      !cameraRef.current
+    ) return;
     isProcessingRef.current = true;
     const frameRevision = frameRevisionRef.current;
 
     try {
       // takeSnapshot is much faster than takePhoto — ~100ms vs ~800ms.
       // Perfect for live feedback, though lower quality.
-      const snapshot = await cameraRef.current.takeSnapshot({
-        quality: 80,
-      });
+      const snapshot = await cameraRef.current.takeSnapshot();
+      let snapshotPath: string | undefined;
+      let croppedPath: string | undefined;
 
-      const snapPath = Platform.OS === 'android'
-        ? `file://${snapshot.path}`
-        : snapshot.path;
+      try {
+        snapshotPath = toFileUri(await snapshot.saveToTemporaryFileAsync('jpg', 80));
 
-      // Crop to frame before OCR — faster and filters out noise outside the frame
-      const { cropX, cropY, cropW, cropH } = computeSnapshotCropRect(
-        snapshot.width, snapshot.height,
-      );
+        // Crop to frame before OCR — faster and filters out noise outside the frame
+        const { cropX, cropY, cropW, cropH } = computeSnapshotCropRect(
+          snapshot.width, snapshot.height,
+        );
 
-      const cropped = await cropImageForOcr(
-        snapPath, cropX, cropY, cropW, cropH,
-      );
+        const cropped = await cropImageForOcr(
+          snapshotPath, cropX, cropY, cropW, cropH,
+        );
+        croppedPath = cropped.path;
 
-      // Single pass OCR, no rotation retries — speed matters here
-      const ocrResult = await recognizeTextFromImage(cropped.path, {
-        multipleAttempts: false,
-      });
-      if (!ocrResult) return;
+        // Single pass OCR, no rotation retries — speed matters here
+        const ocrResult = await recognizeTextFromImage(cropped.path, {
+          multipleAttempts: false,
+        });
+        if (!ocrResult) return;
 
-      const rawText = ocrResult.text?.trim() || '';
-      const text = formatTextDataWithRegex.current
-        ? formatTextDataWithRegex.current(rawText)
-        : rawText;
-      const fields = ocrResult.fields || {};
-      const matchedFields = ocrResult.matchedFields || 0;
+        const rawText = ocrResult.text?.trim() || '';
+        const text = formatTextDataWithRegex.current
+          ? formatTextDataWithRegex.current(rawText)
+          : rawText;
+        const fields = ocrResult.fields || {};
+        const matchedFields = ocrResult.matchedFields || 0;
 
-      if (isResizingRef.current || frameRevision !== frameRevisionRef.current) return;
+        if (isResizingRef.current || frameRevision !== frameRevisionRef.current) return;
 
-      // Stability check — same read N times in a row = stable
-      if (text === lastTextRef.current && text.length > 0) {
-        consecutiveSameReads.current++;
-      } else {
-        consecutiveSameReads.current = 1;
-        lastTextRef.current = text;
+        // Stability check — same read N times in a row = stable
+        if (text === lastTextRef.current && text.length > 0) {
+          consecutiveSameReads.current++;
+        } else {
+          consecutiveSameReads.current = 1;
+          lastTextRef.current = text;
+        }
+
+        const isStable = consecutiveSameReads.current >= stableReadsRequired;
+
+        const result: LiveOCRResult = { text, fields, matchedFields, isStable };
+        setLiveResult(result);
+      } finally {
+        deleteTemporaryFile(croppedPath);
+        deleteTemporaryFile(snapshotPath);
+        disposeSafely(snapshot);
       }
-
-      const isStable = consecutiveSameReads.current >= stableReadsRequired;
-
-      const result: LiveOCRResult = { text, fields, matchedFields, isStable };
-      setLiveResult(result);
 
     } catch {
       // Failed OCR on a snapshot isn't fatal — just skip this tick
     } finally {
       isProcessingRef.current = false;
     }
-  }, [computeSnapshotCropRect, formatTextDataWithRegex, stableReadsRequired]);
+  }, [computeSnapshotCropRect, formatTextDataWithRegex, isCameraReady, stableReadsRequired]);
 
   const handleCancel = useCallback(async () => {
     await setOcrScreenOrientation('portrait').catch(() => undefined);
@@ -391,7 +418,7 @@ export const FramedCameraScanner: React.FC = () => {
 
   // Start/stop the polling loop based on camera readiness
   useEffect(() => {
-    if (isPhotoMode || !hasPermission || !device || isCapturing) {
+    if (isPhotoMode || !hasPermission || !device || !isCameraReady || isCapturing) {
       isPollingRef.current = false;
       return;
     }
@@ -405,36 +432,39 @@ export const FramedCameraScanner: React.FC = () => {
       isPollingRef.current = false;
       clearInterval(interval);
     };
-  }, [isPhotoMode, hasPermission, device, isCapturing, pollIntervalMs, runOCRTick]);
+  }, [isPhotoMode, hasPermission, device, isCameraReady, isCapturing, pollIntervalMs, runOCRTick]);
 
   // -------------------------------------------------------------------------
   // Final capture — keeps the confirmed live text and captures its cropped photo
   // -------------------------------------------------------------------------
   const handleCapture = useCallback(async () => {
-    if (!cameraRef.current || isCapturingRef.current || isResizingRef.current) return;
+    if (
+      !cameraRef.current ||
+      !isCameraReady ||
+      isCapturingRef.current ||
+      isResizingRef.current
+    ) return;
 
     const stableLiveResult = liveResult?.isStable && liveResult.text.trim()
       ? liveResult
       : null;
     const captureFrameRevision = frameRevisionRef.current;
+    let outputImagePath: string | undefined;
 
     try {
       isCapturingRef.current = true;
       setIsCapturing(true);
       isPollingRef.current = false; // stop live loop during capture
 
-      const photo = await cameraRef.current.takePhoto({
-        flash: 'off',
-      });
-
-      const photoPath = Platform.OS === 'android'
-        ? `file://${photo.path}`
-        : photo.path;
-
       if (isPhotoMode) {
-        await setOcrScreenOrientation('portrait').catch(() => undefined);
-        handleScannerCapture({
-          imageUri: photoPath,
+        const photoFile = await photoOutput.capturePhotoToFile(
+          { flashMode: 'off' },
+          {},
+        );
+        outputImagePath = toFileUri(photoFile.filePath);
+
+        await handleScannerCapture({
+          imageUri: outputImagePath,
           text: '',
           fields: {},
           matchedFields: 0,
@@ -443,48 +473,74 @@ export const FramedCameraScanner: React.FC = () => {
         return;
       }
 
-      if (captureFrameRevision !== frameRevisionRef.current) {
-        throw new Error('A área de leitura foi alterada. Tente capturar novamente.');
-      }
-
-      const { cropX, cropY, cropW, cropH } = computePhotoCropRect(
-        photo.width, photo.height,
+      const photo = await photoOutput.capturePhoto(
+        { flashMode: 'off' },
+        {},
       );
+      let photoPath: string | undefined;
+      let scannerCaptureResult: {
+        imageUri: string;
+        text: string;
+        fields: Record<string, string>;
+        matchedFields: number;
+        isStable: boolean;
+      } | undefined;
 
-      const result = await cropImageForOcr(
-        photoPath, cropX, cropY, cropW, cropH,
-      );
+      try {
+        photoPath = toFileUri(await photo.saveToTemporaryFileAsync());
 
-      let text = stableLiveResult?.text.trim() || '';
-      let fields = stableLiveResult?.fields || {};
-      let matchedFields = stableLiveResult?.matchedFields || 0;
+        if (captureFrameRevision !== frameRevisionRef.current) {
+          throw new Error('A área de leitura foi alterada. Tente capturar novamente.');
+        }
 
-      if (!text) {
-        const ocrResult = await recognizeTextFromImage(result.path);
-        const rawText = ocrResult?.text?.trim() || '';
-        text = formatTextDataWithRegex.current
-          ? formatTextDataWithRegex.current(rawText)
-          : rawText;
-        fields = ocrResult?.fields || {};
-        matchedFields = ocrResult?.matchedFields || 0;
+        const { cropX, cropY, cropW, cropH } = computePhotoCropRect(
+          photo.width,
+          photo.height,
+          photo.orientation,
+        );
+
+        const result = await cropImageForOcr(
+          photoPath, cropX, cropY, cropW, cropH,
+        );
+        outputImagePath = result.path;
+
+        let text = stableLiveResult?.text.trim() || '';
+        let fields = stableLiveResult?.fields || {};
+        let matchedFields = stableLiveResult?.matchedFields || 0;
+
+        if (!text) {
+          const ocrResult = await recognizeTextFromImage(result.path);
+          const rawText = ocrResult?.text?.trim() || '';
+          text = formatTextDataWithRegex.current
+            ? formatTextDataWithRegex.current(rawText)
+            : rawText;
+          fields = ocrResult?.fields || {};
+          matchedFields = ocrResult?.matchedFields || 0;
+        }
+
+        if (captureFrameRevision !== frameRevisionRef.current) {
+          throw new Error('A área de leitura foi alterada. Tente capturar novamente.');
+        }
+
+        if (!text) {
+          throw new Error('Não foi possível ler o código na foto capturada. Tente novamente.');
+        }
+
+        scannerCaptureResult = {
+          imageUri: outputImagePath,
+          text,
+          fields,
+          matchedFields,
+          isStable: true,
+        };
+      } finally {
+        deleteTemporaryFile(photoPath);
+        disposeSafely(photo);
       }
 
-      if (captureFrameRevision !== frameRevisionRef.current) {
-        throw new Error('A área de leitura foi alterada. Tente capturar novamente.');
+      if (scannerCaptureResult) {
+        await handleScannerCapture(scannerCaptureResult);
       }
-
-      if (!text) {
-        throw new Error('Não foi possível ler o código na foto capturada. Tente novamente.');
-      }
-
-      await setOcrScreenOrientation('portrait').catch(() => undefined);
-      handleScannerCapture({
-        imageUri: result.path,
-        text,
-        fields,
-        matchedFields,
-        isStable: true,
-      });
     } catch (error) {
       console.error('Capture error:', error);
       showFeedback({
@@ -492,15 +548,24 @@ export const FramedCameraScanner: React.FC = () => {
         message: getCameraErrorMessage(error),
       });
     } finally {
+      deleteTemporaryFile(outputImagePath);
       isCapturingRef.current = false;
       setIsCapturing(false);
     }
-  }, [isCapturing, isPhotoMode, liveResult, handleScannerCapture, computePhotoCropRect, showFeedback]);
+  }, [
+    computePhotoCropRect,
+    handleScannerCapture,
+    isCameraReady,
+    isPhotoMode,
+    liveResult,
+    photoOutput,
+    showFeedback,
+  ]);
 
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
-  if (permissionStatus === 'not-determined') {
+  if (permissionStatus === 'not-determined' && isRequestingPermission) {
     return <Center><LottieAnimLoading label="Carregando câmera" size={150} /></Center>;
   }
 
@@ -508,8 +573,10 @@ export const FramedCameraScanner: React.FC = () => {
     return (
       <Center>
         <PermissionText>Permissão de câmera necessária</PermissionText>
-        <ActionButton actionVariant="capture" onPress={requestPermission}>
-          <ActionButtonText>Solicitar permissão</ActionButtonText>
+        <ActionButton actionVariant="capture" onPress={() => void handlePermissionAction()}>
+          <ActionButtonText>
+            {canRequestPermission ? 'Solicitar permissão' : 'Abrir configurações'}
+          </ActionButtonText>
         </ActionButton>
         <ActionButton actionVariant="cancel" marginTop={12} onPress={handleCancel}>
           <ActionButtonText>Voltar</ActionButtonText>
@@ -539,10 +606,15 @@ export const FramedCameraScanner: React.FC = () => {
         onLayout={handleCameraLayout}
         device={device}
         isActive={true}
-        photo={true}
-        format={isPhotoMode ? bestPhotoFormat : undefined}
-        photoQualityBalance={isPhotoMode ? 'quality' : 'balanced'}
-        outputOrientation="preview"
+        outputs={[photoOutput]}
+        orientationSource="interface"
+        onPreviewStarted={() => setIsCameraReady(true)}
+        onPreviewStopped={() => setIsCameraReady(false)}
+        onStopped={() => setIsCameraReady(false)}
+        onError={(error) => {
+          setIsCameraReady(false);
+          console.error('Camera error:', error);
+        }}
         resizeMode="cover"
       />
 
@@ -662,7 +734,7 @@ export const FramedCameraScanner: React.FC = () => {
         <ActionButton
           actionVariant={!isPhotoMode && liveResult?.isStable ? "stable" : "capture"}
           onPress={handleCapture}
-          disabled={isCapturing || isResizing}
+          disabled={!isCameraReady || isCapturing || isResizing}
         >
           {isCapturing ? (
             <Spinner color={theme.white} />
@@ -708,6 +780,29 @@ function getCameraErrorMessage(error: unknown) {
   }
 
   return 'Não foi possível capturar a imagem. Tente novamente.';
+}
+
+function toFileUri(path: string) {
+  return path.startsWith('file://') ? path : `file://${path}`;
+}
+
+function deleteTemporaryFile(path: string | undefined) {
+  if (!path) return;
+
+  try {
+    const file = new File(toFileUri(path));
+    if (file.exists) file.delete();
+  } catch {
+    // Temporary-file cleanup must not hide the capture or OCR result.
+  }
+}
+
+function disposeSafely(object: { dispose: () => void }) {
+  try {
+    object.dispose();
+  } catch {
+    // Nitro objects will still be reclaimed by the runtime as a fallback.
+  }
 }
 
 const absoluteFillStyle = {
@@ -858,6 +953,5 @@ const ActionButtonText = styled(Text, {
 });
 
 function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(value, max)); 
+  return Math.max(min, Math.min(value, max));
 }
-  

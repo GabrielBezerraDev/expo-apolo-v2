@@ -67,7 +67,7 @@ type ScannerConfig = {
 };
 
 type ScannerOptions = Partial<ScannerConfig> & {
-  onCapture?: (result: ScannerCaptureResult) => void;
+  onCapture?: (result: ScannerCaptureResult) => void | Promise<void>;
   onCancel?: () => void;
   formatTextDataWithRegex?: ScannerTextFormatter;
 };
@@ -79,7 +79,7 @@ type FrameContextValue = {
   setRatios: (ratios: FrameRatios) => void;
   setPreset: (preset: FramePresetName) => void;
   configureScanner: (options: ScannerOptions) => void;
-  handleScannerCapture: (result: ScannerCaptureResult) => void;
+  handleScannerCapture: (result: ScannerCaptureResult) => Promise<void>;
   handleScannerCancel: () => void;
   formatTextDataWithRegex: React.MutableRefObject<ScannerTextFormatter | undefined>;
   resetScanner: () => void;
@@ -109,7 +109,7 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
     stableReadsRequired: 2,
   });
   const onCaptureRef = useRef<
-    ((result: ScannerCaptureResult) => void) | undefined
+    ((result: ScannerCaptureResult) => void | Promise<void>) | undefined
   >(undefined);
   const onCancelRef = useRef<(() => void) | undefined>(undefined);
   const formatTextDataWithRegex = useRef<ScannerTextFormatter | undefined>(undefined);
@@ -163,8 +163,8 @@ export function FrameProvider({ children, initial = "singleField" }: Props) {
     if ("onCancel" in options) onCancelRef.current = options.onCancel;
   }, []);
 
-  const handleScannerCapture = useCallback((result: ScannerCaptureResult) => {
-    onCaptureRef.current?.(result);
+  const handleScannerCapture = useCallback(async (result: ScannerCaptureResult) => {
+    await onCaptureRef.current?.(result);
   }, []);
 
   const handleScannerCancel = useCallback(() => {
