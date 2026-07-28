@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { PropsWithChildren, ReactNode, useEffect, useMemo } from "react";
 import { View } from "tamagui";
 import {
   NavigationContainer,
@@ -11,29 +11,19 @@ import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { FrameProvider, FramedCameraScanner } from "@features/camera";
 import { PasswordChangeBootstrap } from "@features/auth";
 import { NotificationBootstrap } from "@features/notifications";
-import { ManualScreen } from "@features/manual";
-import {
-  ExitExtraEvidence,
-  FormScreenRoadmap,
-  OperationSuccess,
-  OperationSyncError,
-  PalletsEvidence,
-} from "@features/pallets/screens/form";
-import {
-  PalletHistoryScreen,
-  PalletPhotosScreen,
-} from "@features/pallets/screens/details";
-import { PalletOperationSummary } from "@features/pallets/screens/summary";
-import { RoadmapPhotosScreen } from "@features/pallets/screens/roadmap";
 import { PalletProvider } from "@features/pallets/providers";
 import { LottieAnimLoading } from "@shared/components/Feedback";
-import { AppHeader, AppHeaderProvider } from "@shared/components/Navigation/AppHeader";
+import {
+  AppHeader,
+  AppHeaderProvider,
+} from "@shared/components/Navigation/AppHeader";
 import { useAuthSession } from "@shared/services/authSession";
 import { AuthNavigator } from "./AuthNavigator";
 import { MainTabsNavigator } from "./MainTabsNavigator";
 import { SocketProvider } from "@shared/services/socket";
-import { InventoryListScreen } from '@features/inventoryCount';
-import { WorkStage } from '../shared/services/authSession/AuthSessionContext';
+import { WorkStage } from "../shared/services/authSession/AuthSessionContext";
+import { DefaultStack } from "./Stack/DefaultStack";
+import { CycleCountStack } from "./Stack/CycleCountStack";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -79,7 +69,12 @@ function RootNavigatorContent() {
 
   if (status === "passwordChangeRequired") {
     return (
-      <View flex={1} alignItems="center" justifyContent="center" backgroundColor="$background">
+      <View
+        flex={1}
+        alignItems="center"
+        justifyContent="center"
+        backgroundColor="$background"
+      >
         <PasswordChangeBootstrap />
         <LottieAnimLoading label="Atualizando segurança da conta" />
       </View>
@@ -92,34 +87,27 @@ function RootNavigatorContent() {
 function LoggedInStack() {
   const { userWorkStage } = useAuthSession();
 
+  const RedirectByWorkStage = () => {
+    const routes = new Map<WorkStage | "DEFAULT", ReactNode>([
+      [
+        "DEFAULT",
+        <PalletProvider>
+          <FrameProvider>
+            <DefaultStack Stack={Stack} />
+          </FrameProvider>
+        </PalletProvider>,
+      ],
+      ["CYCLE_COUNT", <CycleCountStack Stack={Stack} />],
+    ]);
+
+    return routes.get(userWorkStage as WorkStage) ?? routes.get("DEFAULT");
+  };
+
   return (
     <AppHeaderProvider>
       <SocketProvider>
         <NotificationBootstrap />
-        <FrameProvider>
-          <PalletProvider>
-            <Stack.Navigator
-              screenOptions={{
-                headerShown: true,
-                header: props => <AppHeader {...props} />,
-              }}
-            >
-              <Stack.Screen name="Main" component={MainTabsNavigator} />
-              <Stack.Screen name="InventoryList" component={InventoryListScreen} />
-              <Stack.Screen name="Manual" getComponent={() => require("@features/manual/screens/ManualScreen/ManualScreen").ManualScreen} />
-              <Stack.Screen name="FormScreenRoadmap" component={FormScreenRoadmap} />
-              <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
-              <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
-              <Stack.Screen name="PalletOperationSummary" getComponent={() => require("@features/pallets/screens/summary/PalletOperationSummary/PalletOperationSummary").PalletOperationSummary} />
-              <Stack.Screen name="PalletHistory" getComponent={() => require("@features/pallets/screens/details/PalletHistoryScreen/PalletHistoryScreen").PalletHistoryScreen} />
-              <Stack.Screen name="PalletPhotos" getComponent={() => require("@features/pallets/screens/details/PalletPhotosScreen/PalletPhotosScreen").PalletPhotosScreen} />
-              <Stack.Screen name="RoadmapPhotos" getComponent={() => require("@features/pallets/screens/roadmap/RoadmapPhotosScreen/RoadmapPhotosScreen").RoadmapPhotosScreen}/>
-              <Stack.Screen name="OperationSuccess" component={OperationSuccess} options={{ headerShown: false }} />
-              <Stack.Screen name="OperationSyncError" component={OperationSyncError} options={{ headerShown: false }} />
-              <Stack.Screen name="Scanner" component={FramedCameraScanner} options={{ headerShown: false }} />
-            </Stack.Navigator>
-          </PalletProvider>
-        </FrameProvider>
+        <RedirectByWorkStage />
       </SocketProvider>
     </AppHeaderProvider>
   );
