@@ -6,10 +6,21 @@ import { ModalConfig, ModalContextType, ModalOptions } from "./modal.type";
 export function useModalProvider() {
   const [modals, setModals] = useState<ModalConfig[]>([]);
   const idCounter = useRef(0);
+  const modalIdsByGroup = useRef(new Map<string, string>());
+  const modalGroupsById = useRef(new Map<string, string>());
 
   const openModal = useCallback((component: ReactNode, options?: ModalOptions) => {
+    const groupId = options?.groupId;
+    const activeModalId = groupId ? modalIdsByGroup.current.get(groupId) : undefined;
+    if (activeModalId) return activeModalId;
+
     idCounter.current += 1;
     const id = `modal-${Date.now()}-${idCounter.current}`;
+
+    if (groupId) {
+      modalIdsByGroup.current.set(groupId, id);
+      modalGroupsById.current.set(id, groupId);
+    }
 
     setModals(current => sortModals([...current, { id, component, options }]));
     return id;
@@ -36,7 +47,7 @@ export function useModalProvider() {
     );
   }, []);
 
-  const updateModal = useCallback((id: string, options: Partial<ModalOptions>) => {
+  const updateModal = useCallback((id: string, options: Partial<Omit<ModalOptions, "groupId">>) => {
     setModals(current =>
       sortModals(
         current.map(modal =>
@@ -49,6 +60,12 @@ export function useModalProvider() {
   }, []);
 
   const removeModal = useCallback((id: string) => {
+    const groupId = modalGroupsById.current.get(id);
+    if (groupId && modalIdsByGroup.current.get(groupId) === id) {
+      modalIdsByGroup.current.delete(groupId);
+    }
+    modalGroupsById.current.delete(id);
+
     setModals(current => current.filter(modal => modal.id !== id));
   }, []);
 
