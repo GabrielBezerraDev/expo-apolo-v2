@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { View } from "tamagui";
 import {
   NavigationContainer,
@@ -33,6 +33,7 @@ import { AuthNavigator } from "./AuthNavigator";
 import { MainTabsNavigator } from "./MainTabsNavigator";
 import { SocketProvider } from "@shared/services/socket";
 import { InventoryListScreen } from '@features/inventoryCount';
+import { WorkStage } from '../shared/services/authSession/AuthSessionContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -89,6 +90,8 @@ function RootNavigatorContent() {
 }
 
 function LoggedInStack() {
+  const { userWorkStage } = useAuthSession();
+
   return (
     <AppHeaderProvider>
       <SocketProvider>
