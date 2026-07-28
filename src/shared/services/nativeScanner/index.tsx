@@ -1,1 +1,2 @@
-export { addZebraScanListener } from "./useNativeScanner"
+export { addZebraScanListener } from "./useNativeScanner";
+export type { ZebraScanResult } from "./useNativeScanner";

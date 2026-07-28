@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, ReactNode, useEffect, useMemo } from "react";
+import React from "react";
 import { View } from "tamagui";
 import {
   NavigationContainer,
@@ -8,20 +8,15 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@navigation/navigation.protocol";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
-import { FrameProvider, FramedCameraScanner } from "@features/camera";
+import { FrameProvider } from "@features/camera";
 import { PasswordChangeBootstrap } from "@features/auth";
 import { NotificationBootstrap } from "@features/notifications";
 import { PalletProvider } from "@features/pallets/providers";
 import { LottieAnimLoading } from "@shared/components/Feedback";
-import {
-  AppHeader,
-  AppHeaderProvider,
-} from "@shared/components/Navigation/AppHeader";
+import { AppHeaderProvider } from "@shared/components/Navigation/AppHeader";
 import { useAuthSession } from "@shared/services/authSession";
 import { AuthNavigator } from "./AuthNavigator";
-import { MainTabsNavigator } from "./MainTabsNavigator";
 import { SocketProvider } from "@shared/services/socket";
-import { WorkStage } from "../shared/services/authSession/AuthSessionContext";
 import { DefaultStack } from "./Stack/DefaultStack";
 import { CycleCountStack } from "./Stack/CycleCountStack";
 
@@ -87,27 +82,19 @@ function RootNavigatorContent() {
 function LoggedInStack() {
   const { userWorkStage } = useAuthSession();
 
-  const RedirectByWorkStage = () => {
-    const routes = new Map<WorkStage | "DEFAULT", ReactNode>([
-      [
-        "DEFAULT",
-        <PalletProvider>
-          <FrameProvider>
-            <DefaultStack Stack={Stack} />
-          </FrameProvider>
-        </PalletProvider>,
-      ],
-      ["CYCLE_COUNT", <CycleCountStack Stack={Stack} />],
-    ]);
-
-    return routes.get(userWorkStage as WorkStage) ?? routes.get("DEFAULT");
-  };
-
   return (
     <AppHeaderProvider>
       <SocketProvider>
         <NotificationBootstrap />
-        <RedirectByWorkStage />
+        {userWorkStage !== "CYCLE_COUNT" ? (
+          <CycleCountStack Stack={Stack} />
+        ) : (
+          <PalletProvider>
+            <FrameProvider>
+              <DefaultStack Stack={Stack} />
+            </FrameProvider>
+          </PalletProvider>
+        )}
       </SocketProvider>
     </AppHeaderProvider>
   );
