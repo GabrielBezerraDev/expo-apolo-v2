@@ -85,7 +85,6 @@ export function usePushNotifications() {
           await Notifications.setNotificationChannelAsync(DEFAULT_NOTIFICATION_CHANNEL, {
             name: "Atualizacoes do Apollo",
             importance: Notifications.AndroidImportance.HIGH,
-            sound: "default",
             vibrationPattern: [0, 250, 250, 250],
           });
 
