@@ -110,7 +110,7 @@ export function usePushNotifications() {
 
       if (active && !isDevicePushTokenSessionEnding()) {
         console.warn(
-          "Nao foi possivel inicializar as notificacoes.",
+          "Não foi possível inicializar as notificações.",
           lastError instanceof Error ? lastError.message : lastError,
         );
       }
