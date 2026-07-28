@@ -68,7 +68,7 @@ export function usePushNotifications() {
 
       if (active) {
         console.warn(
-          "Nao foi possivel registrar este dispositivo para notificacoes.",
+          "Não foi possível registrar este dispositivo para notificações.",
           lastError instanceof Error ? lastError.message : lastError,
         );
       }
@@ -83,7 +83,7 @@ export function usePushNotifications() {
 
         try {
           await Notifications.setNotificationChannelAsync(DEFAULT_NOTIFICATION_CHANNEL, {
-            name: "Atualizacoes do Apollo",
+            name: "Atualizações do Apollo",
             importance: Notifications.AndroidImportance.HIGH,
             vibrationPattern: [0, 250, 250, 250],
           });
