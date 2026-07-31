@@ -78,7 +78,7 @@ const CardEyebrow = styled(Text, {
 
 const CardTitle = styled(Text, {
   ...typography.headingSmall,
-  color: "$text",
+  color: "$text"
 });
 
 const StatusBadge = styled(View, {

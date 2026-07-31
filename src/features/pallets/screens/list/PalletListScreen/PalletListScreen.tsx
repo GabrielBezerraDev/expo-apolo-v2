@@ -20,6 +20,7 @@ import { QualityReportCard } from "../../../components/QualityReportCard";
 import { PalletReportType, QualityReport } from "../../../protocol";
 import { usePalletListFilters } from "./usePalletListFilters";
 import { useQualityReportList } from "./useQualityReportList";
+import { useQualityReportApi } from "@features/pallets/services";
 
 export function PalletListScreen() {
   return (
@@ -31,6 +32,7 @@ export function PalletListScreen() {
 
 function PalletListScreenContent() {
   const { theme } = useThemeMode();
+  const { getFilterQualityReport } = useQualityReportApi();
   const { hasCheckedNetwork, isOnline } = useNetworkState();
   const [batchSearch, setBatchSearch] = useState("");
   const deferredBatchSearch = useDeferredValue(batchSearch.trim());
@@ -50,7 +52,6 @@ function PalletListScreenContent() {
     reportType,
   });
 
-
   const reports = qualityReportQuery.data?.data ?? [];
   const canLoadReports = hasApiBaseUrl();
   const isOfflineState = canLoadReports && hasCheckedNetwork && !isOnline;
@@ -60,6 +61,10 @@ function PalletListScreenContent() {
   const refresh = qualityReportQuery.isRefetching && !qualityReportQuery.isLoading;
   const refreshReports = canLoadReports ? () => { void qualityReportQuery.refetch(); } : undefined;
   useEffect(() => {
+    (async () => {
+      let result = await getFilterQualityReport({page:1,pageSize:10, palletType:"releasedPallet"});
+      console.log(result);
+    })()
     sendToFirstPage();
   }, [appliedFilters, deferredBatchSearch, reportType, sendToFirstPage]);
 

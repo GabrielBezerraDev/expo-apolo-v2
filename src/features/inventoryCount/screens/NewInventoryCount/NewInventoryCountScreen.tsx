@@ -17,7 +17,10 @@ import {
   ScanPrompt,
 } from "../../components";
 import { useFocusedZebraScanner } from "../../hooks";
-import { useInventoryCount } from "../../providers";
+import {
+  useInventoryCount,
+  useInventoryScanAudio,
+} from "../../providers";
 import { parseBinCode } from "../../services";
 
 type Props = NativeStackScreenProps<RootStackParamList, "NewInventoryCount">;
@@ -29,6 +32,7 @@ export function NewInventoryCountScreen({ navigation }: Props) {
     finishCount,
     startBin,
   } = useInventoryCount();
+  const { playError, playSuccess } = useInventoryScanAudio();
   const { showConfirm } = useFeedbackModal();
   const [isAwaitingBin, setIsAwaitingBin] = useState(true);
   const [isConfirmingExit, setIsConfirmingExit] = useState(false);
@@ -49,6 +53,7 @@ export function NewInventoryCountScreen({ navigation }: Props) {
     onScan: result => {
       const bin = parseBinCode(result.data);
       if (!bin) {
+        playError();
         setFeedback({
           message: "Código inválido. Bipe um bin no formato 101 A-07-01.",
           tone: "error",
@@ -58,6 +63,7 @@ export function NewInventoryCountScreen({ navigation }: Props) {
 
       const startResult = startBin(bin);
       if (startResult.status === "duplicate") {
+        playError();
         setFeedback({
           message: `O bin ${bin.address} já foi contado nesta contagem.`,
           tone: "error",
@@ -65,6 +71,7 @@ export function NewInventoryCountScreen({ navigation }: Props) {
         return;
       }
       if (startResult.status === "invalidState") {
+        playError();
         setFeedback({
           message: "Não foi possível iniciar este bin. Tente novamente.",
           tone: "error",
@@ -72,6 +79,7 @@ export function NewInventoryCountScreen({ navigation }: Props) {
         return;
       }
 
+      playSuccess();
       setFeedback(null);
       setIsAwaitingBin(false);
       navigation.navigate("InventoryBinCount", {

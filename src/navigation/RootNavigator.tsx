@@ -81,12 +81,12 @@ function RootNavigatorContent() {
 
 function LoggedInStack() {
   const { userWorkStage } = useAuthSession();
-
+  //O módulo CycleCountStack nunca é renderizado para usar normal. Este módulo esta em processo de desenvolvimento para os PDAs
   return (
     <AppHeaderProvider>
       <SocketProvider>
         <NotificationBootstrap />
-        {userWorkStage !== "CYCLE_COUNT" ? (
+        {userWorkStage === "CYCLE_COUNT" ? (
           <CycleCountStack Stack={Stack} />
         ) : (
           <PalletProvider>

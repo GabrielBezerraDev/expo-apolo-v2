@@ -4,7 +4,7 @@ import {
   type NavigationAction,
 } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { FlatList } from "react-native";
+import { SectionList } from "react-native";
 import { ScanLine } from "lucide-react-native";
 import { styled, Text, View, XStack } from "tamagui";
 import type { RootStackParamList } from "@navigation/navigation.protocol";
@@ -18,8 +18,18 @@ import {
   type ScanFeedbackState,
 } from "../../components";
 import { useFocusedZebraScanner } from "../../hooks";
-import { useInventoryCount } from "../../providers";
+import {
+  useInventoryCount,
+  useInventoryScanAudio,
+} from "../../providers";
 import { parseBinCode, parseMaterialCode } from "../../services";
+import { InventoryMaterialGroupHeader } from "./InventoryMaterialGroupHeader";
+import { InventoryOrganizationTabs } from "./InventoryOrganizationTabs";
+import {
+  buildInventoryMaterialSections,
+  type InventoryMaterialSection,
+  type InventoryOrganizationMode,
+} from "./inventoryMaterialGrouping";
 
 type Props = NativeStackScreenProps<RootStackParamList, "InventoryBinCount">;
 
@@ -30,9 +40,15 @@ export function InventoryBinCountScreen({ navigation, route }: Props) {
     completeActiveBin,
     draft,
   } = useInventoryCount();
+  const { playError, playSuccess } = useInventoryScanAudio();
   const { showConfirm } = useFeedbackModal();
   const { theme } = useThemeMode();
   const [feedback, setFeedback] = useState<ScanFeedbackState | null>(null);
+  const [organizationMode, setOrganizationMode] =
+    useState<InventoryOrganizationMode>("labelId");
+  const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [isConfirmingExit, setIsConfirmingExit] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const pendingActionRef = useRef<NavigationAction | null>(null);
@@ -42,6 +58,11 @@ export function InventoryBinCountScreen({ navigation, route }: Props) {
   const totalQuantity = materials.reduce(
     (total, material) => total + material.quantity,
     0,
+  );
+  const materialSections = buildInventoryMaterialSections(
+    materials,
+    organizationMode,
+    expandedGroupKeys,
   );
 
   const showError = (message: string) => {
@@ -68,6 +89,7 @@ export function InventoryBinCountScreen({ navigation, route }: Props) {
       const scannedBin = parseBinCode(result.data);
       if (scannedBin) {
         if (scannedBin.address !== activeBin.address) {
+          playError();
           showError(
             `O bin ativo é ${activeBin.address}. Bipe esse mesmo bin para concluir.`,
           );
@@ -75,27 +97,35 @@ export function InventoryBinCountScreen({ navigation, route }: Props) {
         }
 
         if (completeActiveBin()) {
+          playSuccess();
           setIsLeaving(true);
+        } else {
+          playError();
+          showError("Não foi possível concluir o bin atual.");
         }
         return;
       }
 
       const material = parseMaterialCode(result.data);
       if (!material) {
+        playError();
         showError("Etiqueta inválida. Verifique o material e bipe novamente.");
         return;
       }
 
       const addResult = addMaterial(material);
       if (addResult === "duplicate") {
+        playError();
         showError(`A etiqueta ${material.labelId} já foi contada.`);
         return;
       }
       if (addResult === "invalidState") {
+        playError();
         showError("Não foi possível adicionar a etiqueta ao bin atual.");
         return;
       }
 
+      playSuccess();
       showSuccess(`Material ${material.materialCode} adicionado.`);
     },
     onUnavailable: () => {
@@ -154,18 +184,58 @@ export function InventoryBinCountScreen({ navigation, route }: Props) {
     return () => clearTimeout(timeout);
   }, [feedback]);
 
+  const changeOrganizationMode = (nextMode: InventoryOrganizationMode) => {
+    setOrganizationMode(nextMode);
+    setExpandedGroupKeys(new Set());
+  };
+
+  const toggleGroup = (section: InventoryMaterialSection) => {
+    if (section.kind === "labelId") return;
+
+    setExpandedGroupKeys(current => {
+      const next = new Set(current);
+      if (next.has(section.key)) {
+        next.delete(section.key);
+      } else {
+        next.add(section.key);
+      }
+      return next;
+    });
+  };
+
   return (
     <Screen>
-      <FlatList
-        data={materials}
+      <OrganizationControl>
+        <InventoryOrganizationTabs
+          value={organizationMode}
+          onChange={changeOrganizationMode}
+        />
+      </OrganizationControl>
+
+      <SectionList
+        sections={materialSections}
         keyExtractor={item => item.id}
         renderItem={({ item }) => <MaterialScanCard material={item} />}
+        renderSectionHeader={({ section }) =>
+          section.kind === "labelId" ? null : (
+            <InventoryMaterialGroupHeader
+              expanded={section.expanded}
+              itemCount={section.itemCount}
+              kind={section.kind}
+              onPress={() => toggleGroup(section)}
+              title={section.title}
+              totalQuantity={section.totalQuantity}
+            />
+          )
+        }
+        ItemSeparatorComponent={ListItemSeparator}
+        SectionSeparatorComponent={ListSectionSeparator}
+        extraData={expandedGroupKeys}
         contentContainerStyle={{
           flexGrow: materials.length === 0 ? 1 : undefined,
-          gap: 12,
           paddingBottom: 14,
           paddingHorizontal: 14,
-          paddingTop: 14,
+          gap: 4
         }}
         ListEmptyComponent={
           <EmptyMaterials>
@@ -176,6 +246,7 @@ export function InventoryBinCountScreen({ navigation, route }: Props) {
           </EmptyMaterials>
         }
         showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
         style={{ flex: 1 }}
       />
 
@@ -192,7 +263,7 @@ export function InventoryBinCountScreen({ navigation, route }: Props) {
 
       <CountFooter>
         <ScanLine size={21} color={theme.primary} />
-        <SummaryText>
+        <SummaryText numberOfLines={1}>
           {materials.length} etiqueta(s) · {totalQuantity.toLocaleString("pt-BR", {
             maximumFractionDigits: 3,
           })} unidades
@@ -207,6 +278,12 @@ const Screen = styled(View, {
   flex: 1,
 });
 
+const OrganizationControl = styled(View, {
+  paddingBottom: 8,
+  paddingHorizontal: 14,
+  paddingTop: 10,
+});
+
 const CountFooter = styled(XStack, {
   alignItems: "center",
   backgroundColor: "$card",
@@ -214,7 +291,7 @@ const CountFooter = styled(XStack, {
   borderTopWidth: 1,
   flexShrink: 0,
   gap: 8,
-  minHeight: 50,
+  height: 50,
   paddingHorizontal: 14,
   paddingVertical: 9,
 });
@@ -222,14 +299,15 @@ const CountFooter = styled(XStack, {
 const SummaryText = styled(Text, {
   ...typography.bodyMedium,
   color: "$text",
+  flex: 1,
   fontWeight: "600",
 });
 
 const ToastOverlay = styled(View, {
+  bottom: 58,
   left: 12,
   position: "absolute",
   right: 12,
-  top: 12,
   zIndex: 50,
 });
 
@@ -252,3 +330,11 @@ const EmptyDescription = styled(Text, {
   color: "$mutedText",
   textAlign: "center",
 });
+
+function ListItemSeparator() {
+  return <View height={12} />;
+}
+
+function ListSectionSeparator() {
+  return <View height={12} />;
+}
