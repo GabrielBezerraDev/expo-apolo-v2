@@ -23,7 +23,8 @@ export const Logo = styled(View, {
   justifyContent: "center",
 });
 
-export const Title = styled(Text, { ...typography.headingSmall, color: "$text" });
+export const Title = styled(Text, { ...typography.headingSmall, color: "$text", $smPDA: 
+  { ...typography.bodySmall } });
 
 export const Subtitle = styled(Text, { ...typography.bodySmall, color: "$mutedText" });
 

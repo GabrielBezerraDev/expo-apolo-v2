@@ -69,7 +69,5 @@ export function useNetworkState() {
 }
 
 function getIsOnline(state: NetInfoState) {
-  if (state.isConnected === false || state.isInternetReachable === false) return false;
-
-  return state.isConnected === true || state.isInternetReachable === true;
+  return state.isConnected === true;
 }

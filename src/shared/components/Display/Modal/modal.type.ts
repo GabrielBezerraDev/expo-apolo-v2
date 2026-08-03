@@ -5,6 +5,8 @@ export type ModalAnimation = "fade" | "slide" | "none";
 export type ModalPlacement = "center" | "top" | "bottom" | "notification";
 
 export interface ModalOptions {
+  /** Only one modal with the same group ID can be mounted at a time. */
+  groupId?: string;
   title?: string;
   showCloseButton?: boolean;
   showHeader?: boolean;
@@ -43,5 +45,5 @@ export interface ModalContextType {
   closeModal: (id: string) => void;
   closeAllModals: () => void;
   closeTopModal: () => void;
-  updateModal: (id: string, options: Partial<ModalOptions>) => void;
+  updateModal: (id: string, options: Partial<Omit<ModalOptions, "groupId">>) => void;
 }

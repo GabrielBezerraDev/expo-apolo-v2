@@ -1,4 +1,5 @@
 import { createTamagui, createTokens } from 'tamagui';
+import { defaultConfig } from '@tamagui/config/v5'
 import { darkTheme, lightTheme } from '@shared/theme';
 
 const tokens = createTokens({
@@ -22,6 +23,12 @@ const tokens = createTokens({
 
 export const config = createTamagui({
   tokens,
+  media: {
+      smPDA: {
+        maxWidth: 450,
+      },
+    ...defaultConfig.media
+  },
   themes: {
     light: {
       ...lightTheme,

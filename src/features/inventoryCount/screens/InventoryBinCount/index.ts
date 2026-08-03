@@ -1,0 +1,1 @@
+export { InventoryBinCountScreen } from "./InventoryBinCountScreen";

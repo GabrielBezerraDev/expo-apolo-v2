@@ -50,7 +50,6 @@ function PalletListScreenContent() {
     reportType,
   });
 
-
   const reports = qualityReportQuery.data?.data ?? [];
   const canLoadReports = hasApiBaseUrl();
   const isOfflineState = canLoadReports && hasCheckedNetwork && !isOnline;
@@ -59,6 +58,7 @@ function PalletListScreenContent() {
     : "Não foi possível carregar os relatórios. Verifique a configuração da API.";
   const refresh = qualityReportQuery.isRefetching && !qualityReportQuery.isLoading;
   const refreshReports = canLoadReports ? () => { void qualityReportQuery.refetch(); } : undefined;
+
   useEffect(() => {
     sendToFirstPage();
   }, [appliedFilters, deferredBatchSearch, reportType, sendToFirstPage]);

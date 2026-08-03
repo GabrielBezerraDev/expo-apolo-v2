@@ -24,12 +24,15 @@ export type AuthSessionStatus =
   | "passwordChangeRequired"
   | "authenticated";
 
+export type WorkStage = "PACKAGING" | "WIP" | "VALORLOG" | "CYCLE_COUNT";
+
 export type AuthSessionUser = {
   email?: string;
   id: number | string;
   lastName?: string;
   name?: string;
   resetPassword: boolean;
+  workStage: WorkStage;
   [claim: string]: unknown;
 };
 
@@ -50,6 +53,7 @@ type ActiveAuthSession = {
   token: string;
   user: AuthSessionUser;
   userId: number;
+  workStage: WorkStage;
 };
 
 type AuthSessionState =
@@ -69,6 +73,7 @@ type AuthSessionContextValue = {
   token?: string;
   userId?: number;
   user?: AuthSessionUser;
+  userWorkStage?: WorkStage
 };
 
 const AuthSessionContext = createContext<AuthSessionContextValue | undefined>(undefined);
@@ -153,6 +158,7 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
       token: activeSession?.token,
       user: activeSession?.user,
       userId: activeSession?.userId,
+      userWorkStage: activeSession?.workStage
     }),
     [activeSession, login, logout, replaceSessionTokens, session.status],
   );
@@ -199,6 +205,7 @@ function createActiveSession(tokens: AuthSessionTokens): ActiveAuthSession | nul
     token: tokens.token,
     user,
     userId: normalizedUserId,
+    workStage: user.workStage
   };
 }
 
@@ -218,6 +225,7 @@ function getUserFromToken(token: string): AuthSessionUser | null {
   const userId = claims.payload.id;
   const resetPassword = claims.payload.resetPassword;
   const normalizedUserId = typeof userId === "string" ? Number(userId) : userId;
+  const userWorkStage = claims.payload.workStage;
 
   if (
     !Number.isInteger(normalizedUserId) ||
@@ -233,6 +241,7 @@ function getUserFromToken(token: string): AuthSessionUser | null {
     ...claims.payload,
     id: userId,
     resetPassword,
+    workStage: userWorkStage as WorkStage
   };
 }
 

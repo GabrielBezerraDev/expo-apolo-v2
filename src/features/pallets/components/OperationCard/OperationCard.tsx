@@ -48,6 +48,7 @@ export function OperationCard({ item }: { item: OperationItem }) {
       />,
       {
         animationType: 'slide',
+        groupId: 'operation-options',
         heightPercent: 26,
         maxHeightPercent: 42,
         minHeight: 0,
