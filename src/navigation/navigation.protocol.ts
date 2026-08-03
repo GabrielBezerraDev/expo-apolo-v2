@@ -15,6 +15,8 @@ export type RootStackParamList = {
   Main: undefined;
   Manual: undefined;
   InventoryList: undefined;
+  NewInventoryCount: undefined;
+  InventoryBinCount: { binId: string };
   Scanner: undefined;
   FormScreenRoadmap: undefined;
   PalletsEvidence: undefined;

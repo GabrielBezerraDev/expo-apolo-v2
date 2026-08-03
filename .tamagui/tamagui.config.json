@@ -25424,7 +25424,104 @@
     "fonts": {},
     "onlyAllowShorthands": false,
     "fontLanguages": [],
-    "media": {},
+    "media": {
+      "smPDA": {
+        "maxWidth": 450
+      },
+      "touchable": {
+        "pointer": "coarse"
+      },
+      "hoverable": {
+        "hover": "hover"
+      },
+      "max-xxl": {
+        "maxWidth": 1535.98
+      },
+      "max-xl": {
+        "maxWidth": 1279.98
+      },
+      "max-lg": {
+        "maxWidth": 1023.98
+      },
+      "max-md": {
+        "maxWidth": 767.98
+      },
+      "max-sm": {
+        "maxWidth": 639.98
+      },
+      "max-xs": {
+        "maxWidth": 459.98
+      },
+      "max-xxs": {
+        "maxWidth": 339.98
+      },
+      "max-xxxs": {
+        "maxWidth": 259.98
+      },
+      "max-200": {
+        "maxWidth": 199.98
+      },
+      "max-100": {
+        "maxWidth": 99.98
+      },
+      "xxxs": {
+        "minWidth": 260
+      },
+      "xxs": {
+        "minWidth": 340
+      },
+      "xs": {
+        "minWidth": 460
+      },
+      "sm": {
+        "minWidth": 640
+      },
+      "md": {
+        "minWidth": 768
+      },
+      "lg": {
+        "minWidth": 1024
+      },
+      "xl": {
+        "minWidth": 1280
+      },
+      "xxl": {
+        "minWidth": 1536
+      },
+      "max-height-lg": {
+        "maxHeight": 1023.98
+      },
+      "max-height-md": {
+        "maxHeight": 767.98
+      },
+      "max-height-sm": {
+        "maxHeight": 639.98
+      },
+      "max-height-xs": {
+        "maxHeight": 459.98
+      },
+      "max-height-xxs": {
+        "maxHeight": 339.98
+      },
+      "max-height-xxxs": {
+        "maxHeight": 259.98
+      },
+      "max-height-200": {
+        "maxHeight": 199.98
+      },
+      "max-height-100": {
+        "maxHeight": 99.98
+      },
+      "height-sm": {
+        "minHeight": 640
+      },
+      "height-md": {
+        "minHeight": 768
+      },
+      "height-lg": {
+        "minHeight": 1024
+      }
+    },
     "tokens": {
       "color": {
         "orange": {

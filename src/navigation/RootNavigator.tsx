@@ -8,31 +8,17 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@navigation/navigation.protocol";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
-import { FrameProvider, FramedCameraScanner } from "@features/camera";
+import { FrameProvider } from "@features/camera";
 import { PasswordChangeBootstrap } from "@features/auth";
 import { NotificationBootstrap } from "@features/notifications";
-import { ManualScreen } from "@features/manual";
-import {
-  ExitExtraEvidence,
-  FormScreenRoadmap,
-  OperationSuccess,
-  OperationSyncError,
-  PalletsEvidence,
-} from "@features/pallets/screens/form";
-import {
-  PalletHistoryScreen,
-  PalletPhotosScreen,
-} from "@features/pallets/screens/details";
-import { PalletOperationSummary } from "@features/pallets/screens/summary";
-import { RoadmapPhotosScreen } from "@features/pallets/screens/roadmap";
 import { PalletProvider } from "@features/pallets/providers";
 import { LottieAnimLoading } from "@shared/components/Feedback";
-import { AppHeader, AppHeaderProvider } from "@shared/components/Navigation/AppHeader";
+import { AppHeaderProvider } from "@shared/components/Navigation/AppHeader";
 import { useAuthSession } from "@shared/services/authSession";
 import { AuthNavigator } from "./AuthNavigator";
-import { MainTabsNavigator } from "./MainTabsNavigator";
 import { SocketProvider } from "@shared/services/socket";
-import { InventoryListScreen } from '@features/inventoryCount';
+import { DefaultStack } from "./Stack/DefaultStack";
+import { CycleCountStack } from "./Stack/CycleCountStack";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -78,7 +64,12 @@ function RootNavigatorContent() {
 
   if (status === "passwordChangeRequired") {
     return (
-      <View flex={1} alignItems="center" justifyContent="center" backgroundColor="$background">
+      <View
+        flex={1}
+        alignItems="center"
+        justifyContent="center"
+        backgroundColor="$background"
+      >
         <PasswordChangeBootstrap />
         <LottieAnimLoading label="Atualizando segurança da conta" />
       </View>
@@ -89,34 +80,21 @@ function RootNavigatorContent() {
 }
 
 function LoggedInStack() {
+  const { userWorkStage } = useAuthSession();
+  //O módulo CycleCountStack nunca é renderizado. Este módulo esta em processo de desenvolvimento para os PDAs
   return (
     <AppHeaderProvider>
       <SocketProvider>
         <NotificationBootstrap />
-        <FrameProvider>
+        {userWorkStage === "CYCLE_COUNT" ? (
+          <CycleCountStack Stack={Stack} />
+        ) : (
           <PalletProvider>
-            <Stack.Navigator
-              screenOptions={{
-                headerShown: true,
-                header: props => <AppHeader {...props} />,
-              }}
-            >
-              <Stack.Screen name="InventoryList" component={InventoryListScreen} />
-              <Stack.Screen name="Main" component={MainTabsNavigator} />
-              <Stack.Screen name="Manual" component={ManualScreen} />
-              <Stack.Screen name="FormScreenRoadmap" component={FormScreenRoadmap} />
-              <Stack.Screen name="PalletsEvidence" component={PalletsEvidence} />
-              <Stack.Screen name="ExitExtraEvidence" component={ExitExtraEvidence} />
-              <Stack.Screen name="PalletOperationSummary" component={PalletOperationSummary} />
-              <Stack.Screen name="PalletHistory" component={PalletHistoryScreen} />
-              <Stack.Screen name="PalletPhotos" component={PalletPhotosScreen} />
-              <Stack.Screen name="RoadmapPhotos" component={RoadmapPhotosScreen} />
-              <Stack.Screen name="OperationSuccess" component={OperationSuccess} options={{ headerShown: false }} />
-              <Stack.Screen name="OperationSyncError" component={OperationSyncError} options={{ headerShown: false }} />
-              <Stack.Screen name="Scanner" component={FramedCameraScanner} options={{ headerShown: false }} />
-            </Stack.Navigator>
+            <FrameProvider>
+              <DefaultStack Stack={Stack} />
+            </FrameProvider>
           </PalletProvider>
-        </FrameProvider>
+        )}
       </SocketProvider>
     </AppHeaderProvider>
   );
