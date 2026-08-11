@@ -16,7 +16,7 @@ config.transformer = {
 
 config.resolver = {
   ...config.resolver,
-  assetExts: assetExts.filter(ext => ext !== 'svg'),
+  assetExts: [...assetExts.filter(ext => ext !== 'svg'), 'pte'],
   sourceExts: [...sourceExts, 'svg'],
 };
 

@@ -8,6 +8,7 @@ export type MainTabsParamList = {
   EntryList: undefined;
   ExitList: undefined;
   PalletList: undefined;
+  ObjectDetectionDemo: undefined;
 };
 
 export type RootStackParamList = {

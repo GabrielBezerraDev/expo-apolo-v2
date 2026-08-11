@@ -1,9 +1,10 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Package, PackageOpen, Truck } from "lucide-react-native";
+import { Package, PackageOpen, ScanSearch, Truck } from "lucide-react-native";
 import { MainTabsParamList } from "@navigation/navigation.protocol";
 import { OfflineSyncBootstrap } from "@features/pallets/components";
 import { OperationListScreen, PalletListScreen } from "@features/pallets/screens/list";
+import { ObjectDetectionDemoScreen } from "@features/objectDetection";
 import { useThemeMode } from "@shared/components/Actions/ThemeToggle";
 import { OutlinedTabIcon } from "@shared/components/Navigation/OutlinedTabIcon";
 import { typography } from "@shared/typography";
@@ -79,6 +80,21 @@ export function MainTabsNavigator() {
           tabBarIcon: ({ color, focused }) => (
             <OutlinedTabIcon
               Icon={Package}
+              color={color}
+              outlineColor={theme.black}
+              focused={focused}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="ObjectDetectionDemo"
+        component={ObjectDetectionDemoScreen}
+        options={{
+          title: "Objetos",
+          tabBarIcon: ({ color, focused }) => (
+            <OutlinedTabIcon
+              Icon={ScanSearch}
               color={color}
               outlineColor={theme.black}
               focused={focused}
