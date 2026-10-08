@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useAuthSession } from "@shared/services/authSession";
 import { getCurrentDevicePushToken } from "@shared/services/pushNotifications/devicePushToken";
+import { version as appVersion } from "../../../package.json";
 
 type ApiRequestParams = {
   query?: Record<string, unknown>;
@@ -45,6 +46,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly cause?: unknown,
   ) {
     super(message);
   }
@@ -122,10 +124,9 @@ export function useApiClient(): ApiClient {
         path: string,
         params: ApiBodyRequestParams<FormData> = {},
       ) =>
-        apiRequest<TResponse>(path, {
+        apiXhrRequest<TResponse>(path, {
           authToken: token,
           body: params.body,
-          method: "POST",
           query: params.query,
         }),
     }),
@@ -135,6 +136,51 @@ export function useApiClient(): ApiClient {
 
 export function hasApiBaseUrl() {
   return API_BASE_URL.trim().length > 0;
+}
+
+function apiXhrRequest<TResponse>(
+  path: string,
+  params: { authToken?: string; body?: unknown; query?: Record<string, unknown> },
+) {
+  const url = buildUrl(path, params.query);
+  const isFormData = isFormDataBody(params.body);
+  const devicePushToken = getCurrentDevicePushToken();
+  return new Promise<TResponse>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", url);
+    request.timeout = isFormData ? FORM_DATA_API_TIMEOUT_MS : DEFAULT_API_TIMEOUT_MS;
+    request.setRequestHeader("Accept", "application/json");
+    request.setRequestHeader("X-App-Version", appVersion);
+    if (!isFormData) request.setRequestHeader("Content-Type", "application/json");
+    if (params.authToken) request.setRequestHeader("Authorization", `Bearer ${params.authToken}`);
+    if (devicePushToken) request.setRequestHeader("X-Device-Token", devicePushToken);
+    const failTransport = (cause: unknown) => {
+      logTransportError("xhr", "POST", path, cause);
+      reject(new ApiError("Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.", 0, cause));
+    };
+    request.onerror = () => failTransport(new Error(request.responseText || "Falha no transporte nativo da requisição."));
+    request.onabort = () => failTransport(new Error("Requisição nativa cancelada."));
+    request.ontimeout = () => reject(new ApiError("Tempo limite da requisição excedido.", 408));
+    request.onload = () => {
+      if (request.status === 0) {
+        failTransport(new Error(request.responseText || "A requisição nativa não recebeu uma resposta HTTP."));
+        return;
+      }
+      if (request.status < 200 || request.status >= 300) {
+        reject(new ApiError(getResponseErrorMessage(request.responseText), request.status));
+        return;
+      }
+      if (!request.responseText.trim()) {
+        resolve(undefined as TResponse);
+        return;
+      }
+      try { resolve(JSON.parse(request.responseText) as TResponse); }
+      catch (cause) { reject(new ApiError("O servidor retornou uma resposta inválida.", request.status, cause)); }
+    };
+    // Preserve RN URI file parts: Expo 57 fetch does not support this format.
+    try { request.send(isFormData ? params.body : params.body == null ? null : JSON.stringify(params.body)); }
+    catch (cause) { failTransport(cause); }
+  });
 }
 
 function buildUrl(path: string, query?: Record<string, unknown>) {
@@ -172,6 +218,7 @@ async function apiRequest<TResponse>(
         ...(params.body == null || isFormData ? {} : { "Content-Type": "application/json" }),
         ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}),
         ...(devicePushToken ? { "X-Device-Token": devicePushToken } : {}),
+        "X-App-Version": appVersion
       },
       ...(requestBody == null ? {} : { body: requestBody }),
     });
@@ -197,13 +244,22 @@ async function apiRequest<TResponse>(
 
     if (error instanceof ApiError) throw error;
 
+    logTransportError("fetch", params.method, path, error);
     throw new ApiError(
       "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
       0,
+      error,
     );
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+function logTransportError(transport: "xhr" | "fetch", method: string, path: string, cause: unknown) {
+  // Do not include authentication headers, push tokens or request bodies.
+  console.warn("API transport failure", { transport, method, path, status: 0,
+    causeName: cause instanceof Error ? cause.name : typeof cause,
+    causeMessage: cause instanceof Error ? cause.message : "Falha de transporte sem detalhes." });
 }
 
 function isFormDataBody(body: unknown): body is FormData {
@@ -276,4 +332,16 @@ function translateLegacyApiMessage(message: string) {
 
   const normalizedMessage = message.trim();
   return translations[normalizedMessage] ?? normalizedMessage;
+}
+
+function getResponseErrorMessage(responseText: string) {
+  try {
+    const body = JSON.parse(responseText);
+    const message = body?.message ?? body?.error;
+    if (Array.isArray(message)) {
+      return message.filter((item): item is string => typeof item === "string")
+        .map(translateLegacyApiMessage).join("\n") || "Não foi possível processar a solicitação.";
+    }
+    return typeof message === "string" ? translateLegacyApiMessage(message) : "Erro ao carregar dados da API.";
+  } catch { return "Erro ao carregar dados da API."; }
 }

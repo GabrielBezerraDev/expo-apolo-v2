@@ -19,6 +19,7 @@ export function getPalletStageLabel(value?: string | null) {
 export function getPalletStagePhotoTitle(value?: string | null) {
   const label = getPalletStageLabel(value);
 
+  if (value === "PACKAGING") return "Foto do Palete (Qualidade)";
   if (value === "WIP") return "Fotos da WIP";
   if (value === "STORAGE") return "Fotos da Expedição";
   if (value === "VALORLOG_ENTRY") return "Fotos da ENTRADA VALORLOG";
