@@ -1,6 +1,7 @@
 import type { QualityReportPallet } from "./qualityReport.protocol";
 
 export type PalletPhotoStage =
+  | "PACKAGING"
   | "WIP"
   | "STORAGE"
   | "VALORLOG_ENTRY"
@@ -10,6 +11,7 @@ export type PalletStagePhoto = {
   createdAt?: string;
   filePath: string;
   id: number | string;
+  kind?: "LABEL" | "PALLET" | "TRUCK" | "LICENSE_PLATE" | "SEAL";
   reportId?: number;
   roadmap?: string;
   roadmapId?: number;
@@ -31,7 +33,7 @@ export type PalletPhotosByStageResponse = {
   stages: PalletPhotosByStage[];
   sticker: {
     filePath: string;
-    id: number;
+    id: number | string;
   } | null;
 };
 
