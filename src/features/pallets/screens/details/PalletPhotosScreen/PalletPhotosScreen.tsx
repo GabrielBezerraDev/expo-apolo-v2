@@ -16,7 +16,7 @@ import { getPalletStageLabel, getPalletStagePhotoTitle } from "../../../utils";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PalletPhotos">;
 
-const PHOTO_STAGE_ORDER: PalletPhotoStage[] = ["WIP", "STORAGE", "VALORLOG_ENTRY", "VALORLOG_EXIT"];
+const PHOTO_STAGE_ORDER: PalletPhotoStage[] = ["PACKAGING", "WIP", "VALORLOG_ENTRY", "VALORLOG_EXIT"];
 
 export function PalletPhotosScreen({ navigation, route }: Props) {
   const palletApi = usePalletApi();
@@ -114,9 +114,19 @@ function buildPhotoItems(stage: PalletPhotosByStage): PhotoCarouselItem[] {
   return stage.photos.map((photo, index) => ({
     id: String(photo.id ?? `${stage.stage}-${index}`),
     subtitle: buildPhotoSubtitle(photo, index, stage.photos.length),
-    title: stage.label,
+    title: buildPhotoTitle(photo, stage),
     uri: resolvePalletPhotoUri(photo.filePath),
   }));
+}
+
+function buildPhotoTitle(photo: PalletStagePhoto, stage: PalletPhotosByStage) {
+  if (photo.kind === "LABEL" && stage.stage === "WIP") return "Etiqueta do palete (WIP)";
+  if (stage.stage === "VALORLOG_EXIT") {
+    if (photo.kind === "TRUCK") return "Carga (Saída Valorlog)";
+    if (photo.kind === "LICENSE_PLATE") return "Placa (Saída Valorlog)";
+    if (photo.kind === "SEAL") return "Lacre (Saída Valorlog)";
+  }
+  return stage.label;
 }
 
 function buildPhotoSubtitle(photo: PalletStagePhoto, index: number, total: number) {
@@ -136,7 +146,9 @@ function normalizePhotoStages(stages: PalletPhotosByStage[] = []) {
 
   stages.forEach(section => {
     section.photos.forEach(photo => {
-      const targetStage = getStageFromPalletImagePath(photo.filePath) ?? section.stage;
+      const targetStage = photo.source === "ROADMAP"
+        ? section.stage
+        : getStageFromPalletImagePath(photo.filePath) ?? section.stage;
       const targetSection = stagesByName.get(targetStage);
       if (!targetSection) return;
 

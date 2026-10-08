@@ -23,3 +23,13 @@ allprojects {
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
+
+// The app's native clean reads autolinked libraries' generated JNI directories.
+// Keep those directories until app clean finishes, including parallel builds.
+subprojects { subproject ->
+  if (subproject.path != ":app") {
+    subproject.tasks.matching { it.name == "clean" }.configureEach {
+      mustRunAfter(":app:clean")
+    }
+  }
+}
